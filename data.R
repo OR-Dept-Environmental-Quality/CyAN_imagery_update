@@ -31,7 +31,7 @@ tbl.data <- tbl.data.7days %>%
   dplyr::distinct(GNISIDNAME, .keep_all = TRUE) %>% 
   dplyr::mutate(max_7DayMean = format(round(max_7DayMean,0),big.mark=",",scientific = FALSE)) %>% 
   dplyr::rename(Waterbody_GNISID = GNISIDNAME,
-                `Maximum 7 Daily Mean` = max_7DayMean)
+                `Maximum 7 Daily Mean (cells/mL)` = max_7DayMean)
 
 #plot.dta <- dta2 %>% 
 #  dplyr::rename(Mean = MEAN_cellsml,
