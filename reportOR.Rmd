@@ -1,0 +1,79 @@
+---
+date: "`r format(Sys.Date(), '%m/%d/%Y')`"
+output:
+  word_document: default
+  reference_docx: W:/CyAN_Weekly_Report/CyAN_imagery_update/Report_Template.docx
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+options(knitr.duplicate.label = 'allow')
+options(tinytex.verbose = TRUE)
+
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+                      warning = FALSE,
+                      error = TRUE,
+                      cache = FALSE,
+                      cache.comments = FALSE,
+                      include = TRUE,
+                      autodep = TRUE,
+                      eval = TRUE)
+
+library(readxl)
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+library(plotly)
+library(scales)
+library(zoo)
+library(knitr)
+
+load("report.RData")
+
+```
+---
+title: "`r paste0("CyAN Update (", min(dta2$Date)," - ", max(dta2$Date), ")")`"
+---
+
+```{r table, echo=FALSE, results = 'asis'}
+
+knitr::kable(tbl.data[1:10,],
+             caption = paste0("Top 10 waterbodies ranked by the maximum daily mean of cyanobacteria abundance (cells/mL) during the 7 days from ", as.Date(max(dta2$Date))-7, " to ",max(dta2$Date), ". The basin names and the dates associated with the maximum daily means are shown in the table."))
+
+```
+
+```{r ggplot, fig.width=10, fig.height=5, echo=FALSE}
+
+# test: i <- "Odell Lake_01147159"
+
+for(i in gnisidname) {
+  
+  plot <- ggplot(subset(dta2, dta2$GNISIDNAME == i),
+                 aes(x=as.Date(Date), y=MEAN_cellsml)) +
+    geom_line(size=1.5, color = "blue") +
+    geom_point(color="black", alpha=0.3, size=3) +
+    xlab("Date") +
+    scale_x_date(date_labels = "%b-%d",
+                 date_breaks = "week") +
+    ylab("Cyanobacteria (cells/mL): Daily Mean") +
+    scale_y_continuous(labels = comma) +
+    #scale_y_continuous(trans = log10_trans(),
+    #                   breaks = trans_breaks("log10", function(x) 10^x),
+    #                   labels = trans_format("log10", math_format(10^.x))) +
+    geom_hline(yintercept=100000,linetype="dashed",color="red",size=1.5) +
+    annotate("text", as.Date(min(dta2$Date)), 100000, vjust = 1, hjust = 0,  label = "WHO Guideline") +
+    ggtitle(i) +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, size = 10),
+          axis.text.y = element_text(size = 10),
+          axis.title.x = element_text(size = 12),
+          axis.title.y = element_text(size = 12),
+          plot.title = element_text(size=15))
+  
+  print(plot)
+  
+}
+
+```
