@@ -36,7 +36,7 @@ for (r in region) {
     dplyr::mutate(max_7DayMean = ifelse(max_7DayMean <= 6310, "Non-detect",
                                         format(round(max_7DayMean,0),big.mark=",",scientific = FALSE))) %>% 
     dplyr::rename(Waterbody_GNISID = GNISIDNAME,
-                  `Maximum 7 Daily Mean` = max_7DayMean)
+                  `Maximum 7 Daily Mean (cells/mL)` = max_7DayMean)
   
   dta2 <- dta2 %>% 
     dplyr::filter(GNISIDNAME %in% tbl.data$Waterbody_GNISID) 

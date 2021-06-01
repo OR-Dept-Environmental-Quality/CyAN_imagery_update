@@ -39,8 +39,8 @@ title: "`r paste0("CyAN Update (", min(dta2$Date)," - ", max(dta2$Date), ")")`"
 
 ```{r table, echo=FALSE, results = 'asis'}
 
-knitr::kable(tbl.data[1:10,],
-             caption = paste0("Top 10 waterbodies ranked by the maximum daily mean of cyanobacteria abundance (cells/mL) during the 7 days from ", as.Date(max(dta2$Date))-7, " to ",max(dta2$Date), ". The basin names and the dates associated with the maximum daily means are shown in the table."))
+knitr::kable(tbl.data[1:12,],
+             caption = paste0("Waterbodies ranked by the maximum daily means of cyanobacteria abundance (cells/mL) that are above the WHO guideline (100,000 cells/mL) for cyanobacteria in recreational freshwater during the 7 days from ", as.Date(max(dta2$Date))-7, " to ",max(dta2$Date), ". The basin names and the dates associated with the maximum daily means are shown in the table."))
 
 ```
 

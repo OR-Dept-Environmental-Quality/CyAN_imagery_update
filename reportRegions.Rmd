@@ -43,14 +43,14 @@ Attn: `r knitr::combine_words(unique(sort(bc_region$STAFF)))`
 
 ```{r table, echo=FALSE, results = 'asis'}
 
-if(NROW(tbl.data[which(!tbl.data$`Maximum 7 Daily Mean`=="Non-detect"),])<10){
+if(NROW(tbl.data[which(!tbl.data$`Maximum 7 Daily Mean (cells/mL)`=="Non-detect"),])<10){
   
-  knitr::kable(tbl.data[which(!tbl.data$`Maximum 7 Daily Mean`=="Non-detect"),],
+  knitr::kable(tbl.data[which(!tbl.data$`Maximum 7 Daily Mean (cells/mL)`=="Non-detect"),],
                caption = paste0("Table: Waterbodies ranked by the maximum daily mean of cyanobacteria abundance (cells/mL) during the 7 days from ", as.Date(max(dta2$Date))-7, " to ",max(dta2$Date), ". The basin names and the dates associated with the maximum daily means are shown in the table. The waterbodies, which maximum daily means of cyanobacteria abundance during the 7 days are less than 6310 cells/mL (the satellite detection threshold value), are not included in the table."))
   
 } else {
   
-  knitr::kable(tbl.data[which(!tbl.data$`Maximum 7 Daily Mean`=="Non-detect"),][1:10,],
+  knitr::kable(tbl.data[which(!tbl.data$`Maximum 7 Daily Mean (cells/mL)`=="Non-detect"),][1:10,],
                caption = paste0("Table: Waterbodies ranked by the maximum daily mean of cyanobacteria abundance (cells/mL) during the 7 days from ", as.Date(max(dta2$Date))-7, " to ",max(dta2$Date), ". The basin names and the dates associated with the maximum daily means are shown in the table. The waterbodies, which maximum daily means of cyanobacteria abundance during the 7 days are less than 6310 cells/mL (the satellite detection threshold value), are not included in the table."))
   
 }
