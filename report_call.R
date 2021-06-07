@@ -1,11 +1,12 @@
 library(rmarkdown)
+library(officedown)
 library(tidyverse)
 
 # OR Report ----
 rmarkdown::render(input="reportOR.Rmd",
-                  output_format = "word_document",
+                  output_format = "officedown::rdocx_document",
                   output_dir = "./Reports/",
-                  output_file= "OR_Report.docx")
+                  output_file= paste0("Satellite imagery of cyanobacteria for Oregon waterbodies_", Sys.Date(),".docx"))
 
 # Region Reports ----
 region <- c("Eastern Region","Northwest Region","Western Region")
@@ -21,7 +22,7 @@ for (r in region) {
   print(r)
   load("report.RData")
   
-  tbl.data <- tbl.data.7days %>% 
+  tbl.max.of.daily.mean <- tbl.data.7days %>% 
     dplyr::group_by(GNISIDNAME) %>% 
     dplyr::summarise(max_7DayMean = max(MEAN_cellsml)) %>% 
     dplyr::ungroup() %>% 
@@ -38,23 +39,41 @@ for (r in region) {
     dplyr::rename(Waterbody_GNISID = GNISIDNAME,
                   `Maximum 7 Daily Mean (cells/mL)` = max_7DayMean)
   
-  dta2 <- dta2 %>% 
-    dplyr::filter(GNISIDNAME %in% tbl.data$Waterbody_GNISID) 
+  dta2.max.of.daily.mean <- dta2 %>% 
+    dplyr::filter(GNISIDNAME %in% tbl.max.of.daily.mean$Waterbody_GNISID)
+
+  tbl.mean.of.daily.max <- tbl.data.7days %>% 
+    dplyr::group_by(GNISIDNAME) %>% 
+    dplyr::summarise(mean_7DayMax = mean(MAX_cellsml)) %>% 
+    dplyr::ungroup() %>% 
+    dplyr::arrange(desc(mean_7DayMax)) %>% 
+    dplyr::left_join(lakes.resolvable@data, by = "GNISIDNAME") %>% 
+    dplyr::filter(Region == r) %>% # Region selection
+    dplyr::mutate(Basin = ifelse(Name_1 == "Willamette",Name,Name_1)) %>% 
+    dplyr::select(GNISIDNAME,Basin,mean_7DayMax) %>% 
+    dplyr::distinct(GNISIDNAME, .keep_all = TRUE) %>% 
+    dplyr::mutate(mean_7DayMax = ifelse(mean_7DayMax<= 6310, "Non-detect",
+                                        format(round(mean_7DayMax,0),big.mark=",",scientific = FALSE))) %>% 
+    dplyr::rename(Waterbody_GNISID = GNISIDNAME,
+                  `Average 7 Daily Maximum (cells/mL)` = mean_7DayMax)
   
-  gnisidname <- unique(sort(dta2$GNISIDNAME))
+  dta2.mean.of.daily.max <- dta2 %>% 
+    dplyr::filter(GNISIDNAME %in% tbl.max.of.daily.mean$Waterbody_GNISID)
+  
+  gnisidname <- unique(sort(dta2.mean.of.daily.max$GNISIDNAME))
   
   bc_region <- bc %>% dplyr::filter(REGION == r)
   
   save(r,
        bc_region,
        dta2,
-       tbl.data,
+       tbl.max.of.daily.mean,
        gnisidname,
        file = "report_region.RData")
   
   rmarkdown::render(input="reportRegions.Rmd",
-                    output_format = "word_document",
+                    output_format = "officedown::rdocx_document",
                     output_dir = "./Reports/",
-                    output_file= paste0(r,"_Report.docx"))
+                    output_file= paste0("Satellite imagery of cyanobacteria for ", r, " waterbodies_", Sys.Date(),".docx"))
   
 }

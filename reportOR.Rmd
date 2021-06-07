@@ -1,10 +1,8 @@
 ---
-date: "`r format(Sys.Date(), '%m/%d/%Y')`"
-output:
-  word_document: default
-  reference_docx: W:/CyAN_Weekly_Report/CyAN_imagery_update/Report_Template.docx
-  html_document:
-    df_print: paged
+date: "`r Sys.Date()`"
+output: 
+  officedown::rdocx_document:
+    reference_docx: template_officedown.docx
 ---
 
 ```{r setup, include=FALSE}
@@ -33,16 +31,24 @@ library(knitr)
 load("report.RData")
 
 ```
+
 ---
 title: "`r paste0("CyAN Update (", min(dta2$Date)," - ", max(dta2$Date), ")")`"
 ---
 
+<!---BLOCK_LANDSCAPE_START--->
+
 ```{r table, echo=FALSE, results = 'asis'}
 
-knitr::kable(tbl.data[1:12,],
-             caption = paste0("Waterbodies ranked by the maximum daily means of cyanobacteria abundance (cells/mL) that are above the WHO guideline (100,000 cells/mL) for cyanobacteria in recreational freshwater during the 7 days from ", as.Date(max(dta2$Date))-7, " to ",max(dta2$Date), ". The basin names and the dates associated with the maximum daily means are shown in the table."))
+knitr::kable(tbl.max.of.daily.mean[1:12,],
+             caption = paste0("Table 1. Waterbodies ranked by the maximum daily mean of cyanobacteria abundance (cells/mL) that are above the WHO guideline (100,000 cells/mL) for cyanobacteria in recreational freshwater during the 7 days from ", as.Date(max(dta2$Date))-7, " to ",max(dta2$Date), ". The basin names and the dates associated with the maximum daily means are shown in the table."))
+
+knitr::kable(tbl.mean.of.daily.max[1:12,],
+             caption = paste0("Table 2. Waterbodies ranked by the average daily maximum of cyanobacteria abundance (cells/mL) that are above the WHO guideline (100,000 cells/mL) for cyanobacteria in recreational freshwater during the 7 days from ", as.Date(max(dta2$Date))-7, " to ",max(dta2$Date), ". The basin names are shown in the table."))
 
 ```
+
+Figures: Time series plots of daily maximums and daily means of cyanobacteria abundance (cells/mL) of the waterbodies.
 
 ```{r ggplot, fig.width=10, fig.height=5, echo=FALSE}
 
@@ -50,18 +56,21 @@ knitr::kable(tbl.data[1:12,],
 
 for(i in gnisidname) {
   
-  plot <- ggplot(subset(dta2, dta2$GNISIDNAME == i),
-                 aes(x=as.Date(Date), y=MEAN_cellsml)) +
-    geom_line(size=1.5, color = "blue") +
+  plot <- ggplot(subset(dta, dta$GNISIDNAME == i),
+                 aes(x=as.Date(Date), 
+                     y=`Cyanobacteria (cells/mL)`,
+                     group=`Summary Statistics`,
+                     color=`Summary Statistics`)) +
+    geom_line(size=1.5) +
     geom_point(color="black", alpha=0.3, size=3) +
     xlab("Date") +
     scale_x_date(date_labels = "%b-%d",
                  date_breaks = "week") +
-    ylab("Cyanobacteria (cells/mL): Daily Mean") +
-    scale_y_continuous(labels = comma) +
-    #scale_y_continuous(trans = log10_trans(),
-    #                   breaks = trans_breaks("log10", function(x) 10^x),
-    #                   labels = trans_format("log10", math_format(10^.x))) +
+    ylab("Cyanobacteria (cells/mL)") +
+    #scale_y_continuous(labels = comma) +
+    scale_y_continuous(trans = log10_trans(),
+                       breaks = trans_breaks("log10", function(x) 10^x),
+                       labels = trans_format("log10", math_format(10^.x))) +
     geom_hline(yintercept=100000,linetype="dashed",color="red",size=1.5) +
     annotate("text", as.Date(min(dta2$Date)), 100000, vjust = 1, hjust = 0,  label = "WHO Guideline") +
     ggtitle(i) +
@@ -77,3 +86,5 @@ for(i in gnisidname) {
 }
 
 ```
+
+<!---BLOCK_LANDSCAPE_STOP--->
