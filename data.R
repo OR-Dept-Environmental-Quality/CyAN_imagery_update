@@ -29,20 +29,20 @@ tbl.data.7days <- dta2 %>%
   dplyr::arrange(GNISIDNAME, desc(Date)) %>% 
   dplyr::filter(as.Date(Date) <= as.Date(max(dta2$Date)) & as.Date(Date) >= as.Date(max(dta2$Date))-7)
 
-tbl.max.of.daily.mean <- tbl.data.7days %>% 
-  dplyr::group_by(GNISIDNAME) %>% 
-  dplyr::summarise(max_7DayMean = max(MEAN_cellsml)) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::left_join(tbl.data.7days,by="GNISIDNAME") %>% 
-  dplyr::filter(max_7DayMean == MEAN_cellsml) %>% 
-  dplyr::arrange(desc(max_7DayMean)) %>% 
-  dplyr::left_join(lakes.resolvable@data, by = "GNISIDNAME") %>% 
-  dplyr::mutate(Basin = ifelse(Name_1 == "Willamette",Name,Name_1)) %>% 
-  dplyr::select(GNISIDNAME,Basin,Date,max_7DayMean) %>% 
-  dplyr::distinct(GNISIDNAME, .keep_all = TRUE) %>% 
-  dplyr::mutate(max_7DayMean = format(round(max_7DayMean,0),big.mark=",",scientific = FALSE)) %>% 
-  dplyr::rename(Waterbody_GNISID = GNISIDNAME,
-                `Maximum 7 Daily Mean (cells/mL)` = max_7DayMean)
+#tbl.max.of.daily.mean <- tbl.data.7days %>% 
+#  dplyr::group_by(GNISIDNAME) %>% 
+#  dplyr::summarise(max_7DayMean = max(MEAN_cellsml)) %>% 
+#  dplyr::ungroup() %>% 
+#  dplyr::left_join(tbl.data.7days,by="GNISIDNAME") %>% 
+#  dplyr::filter(max_7DayMean == MEAN_cellsml) %>% 
+#  dplyr::arrange(desc(max_7DayMean)) %>% 
+#  dplyr::left_join(lakes.resolvable@data, by = "GNISIDNAME") %>% 
+#  dplyr::mutate(Basin = ifelse(Name_1 == "Willamette",Name,Name_1)) %>% 
+#  dplyr::select(GNISIDNAME,Basin,Date,max_7DayMean) %>% 
+#  dplyr::distinct(GNISIDNAME, .keep_all = TRUE) %>% 
+#  dplyr::mutate(max_7DayMean = format(round(max_7DayMean,0),big.mark=",",scientific = FALSE)) %>% 
+#  dplyr::rename(Waterbody_GNISID = GNISIDNAME,
+#                `Maximum 7 Daily Mean (cells/mL)` = max_7DayMean)
 
 tbl.mean.of.daily.max <- tbl.data.7days %>% 
   dplyr::group_by(GNISIDNAME) %>% 
@@ -52,10 +52,16 @@ tbl.mean.of.daily.max <- tbl.data.7days %>%
   dplyr::left_join(lakes.resolvable@data, by = "GNISIDNAME") %>% 
   dplyr::mutate(Basin = ifelse(Name_1 == "Willamette",Name,Name_1)) %>% 
   dplyr::select(GNISIDNAME,Basin,mean_7DayMax) %>% 
-  dplyr::distinct(GNISIDNAME, .keep_all = TRUE) %>% 
-  dplyr::mutate(mean_7DayMax = format(round(mean_7DayMax,0),big.mark=",",scientific = FALSE)) %>% 
+  dplyr::distinct(GNISIDNAME, .keep_all = TRUE)  
+
+num <- nrow(tbl.mean.of.daily.max[which(tbl.mean.of.daily.max$mean_7DayMax>=100000),])
+
+tbl.7dmdm <- tbl.mean.of.daily.max %>%
+  dplyr::mutate(mean_7DayMax = ifelse(mean_7DayMax<= 6310, "Non-detect",
+                                      format(round(mean_7DayMax,0),big.mark=",",scientific = FALSE))) %>% 
   dplyr::rename(Waterbody_GNISID = GNISIDNAME,
                 `Average 7 Daily Maximum (cells/mL)` = mean_7DayMax)
+
 #plot.dta <- dta2 %>% 
 #  dplyr::rename(Mean = MEAN_cellsml,
 #                Maximum = MAX_cellsml,
@@ -71,11 +77,33 @@ tbl.mean.of.daily.max <- tbl.data.7days %>%
 
 gnisidname <- unique(sort(dta2$GNISIDNAME))
 
+
+caption_1 <- paste0("Top 10 waterbodies ranked by the average daily maximum of cyanobacteria abundance (cells/mL) during the 7 days from ", 
+                    as.Date(max(dta2$Date))-7, " to ",max(dta2$Date), 
+                    ". The basin names are shown in the table.")
+
+caption_2 <- paste0("Waterbodies ranked by the average daily maximum of cyanobacteria abundance (cells/mL) ",
+                    "that are above the WHO guideline (100,000 cells/mL) for cyanobacteria in recreational freshwater during the 7 days from ", 
+                    as.Date(max(dta2$Date))-7, " to ",max(dta2$Date), 
+                    ". The basin names are shown in the table.")
+
+caption_3 <- paste0("Waterbodies ranked by the average daily maximum of cyanobacteria abundance (cells/mL) ",
+                    "that are above the WHO guideline (100,000 cells/mL) for cyanobacteria in recreational freshwater during the 7 days from ", 
+                    as.Date(max(dta2$Date))-7, " to ",max(dta2$Date), 
+                    ". The basin names are shown in the table. ",
+                    "The waterbodies, which seven day average daily maximum of cyanobacteria abundance are less than 6310 cells/mL ",
+                    "(the satellite detection threshold value), are not included in the table.")
+
 save(lakes.resolvable,
-     dta2,
      dta,
+     dta2,
      tbl.data.7days,
-     tbl.max.of.daily.mean,
+     #tbl.max.of.daily.mean,
      tbl.mean.of.daily.max,
+     num,
+     tbl.7dmdm,
      gnisidname,
+     caption_1,
+     caption_2,
+     caption_3,
      file = "report.RData")

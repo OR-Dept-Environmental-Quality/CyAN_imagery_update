@@ -1,5 +1,5 @@
 ---
-date: "`r Sys.Date()`"
+date: "`r paste0('Report Date: ', Sys.Date())`"
 output: 
   officedown::rdocx_document:
     reference_docx: template_officedown.docx
@@ -33,22 +33,35 @@ load("report.RData")
 ```
 
 ---
-title: "`r paste0("CyAN Update (", min(dta2$Date)," - ", max(dta2$Date), ")")`"
+title: "`r paste0("CyAN Update (2021-04-01 - ", max(dta2$Date), ")")`"
 ---
 
 <!---BLOCK_LANDSCAPE_START--->
 
 ```{r table, echo=FALSE, results = 'asis'}
 
-knitr::kable(tbl.max.of.daily.mean[1:12,],
-             caption = paste0("Table 1. Waterbodies ranked by the maximum daily mean of cyanobacteria abundance (cells/mL) that are above the WHO guideline (100,000 cells/mL) for cyanobacteria in recreational freshwater during the 7 days from ", as.Date(max(dta2$Date))-7, " to ",max(dta2$Date), ". The basin names and the dates associated with the maximum daily means are shown in the table."))
-
-knitr::kable(tbl.mean.of.daily.max[1:12,],
-             caption = paste0("Table 2. Waterbodies ranked by the average daily maximum of cyanobacteria abundance (cells/mL) that are above the WHO guideline (100,000 cells/mL) for cyanobacteria in recreational freshwater during the 7 days from ", as.Date(max(dta2$Date))-7, " to ",max(dta2$Date), ". The basin names are shown in the table."))
+if(num>10){
+  
+  knitr::kable(tbl.7dmdm[1:num,], caption = caption_2)
+  
+} else {
+  
+  numb <- nrow(tbl.7dmdm[which(!tbl.7dmdm$`Average 7 Daily Maximum (cells/mL)` == "Non-detect"),])
+  
+  if(num == numb){
+    
+    knitr::kable(tbl.7dmdm[1:num,], caption = caption_2)
+    
+  } else {
+    
+    knitr::kable(tbl.7dmdm[1:numb,], caption = caption_3)
+  }
+  
+}
 
 ```
 
-Figures: Time series plots of daily maximums and daily means of cyanobacteria abundance (cells/mL) of the waterbodies.
+`r paste0("Figures: Time series plots of daily maximums and daily means of cyanobacteria abundance (cells/mL) of the waterbodies during 2021-04-01 and ", as.Date(max(dta2$Date)), ".")`
 
 ```{r ggplot, fig.width=10, fig.height=5, echo=FALSE}
 
@@ -56,7 +69,9 @@ Figures: Time series plots of daily maximums and daily means of cyanobacteria ab
 
 for(i in gnisidname) {
   
-  plot <- ggplot(subset(dta, dta$GNISIDNAME == i),
+  dta.plot <- dta %>% dplyr::filter(as.Date(Date) >= as.Date("2021-04-01"))
+  
+  plot <- ggplot(subset(dta.plot, dta.plot$GNISIDNAME == i),
                  aes(x=as.Date(Date), 
                      y=`Cyanobacteria (cells/mL)`,
                      group=`Summary Statistics`,
@@ -72,7 +87,7 @@ for(i in gnisidname) {
                        breaks = trans_breaks("log10", function(x) 10^x),
                        labels = trans_format("log10", math_format(10^.x))) +
     geom_hline(yintercept=100000,linetype="dashed",color="red",size=1.5) +
-    annotate("text", as.Date(min(dta2$Date)), 100000, vjust = 1, hjust = 0,  label = "WHO Guideline") +
+    annotate("text", as.Date(min(dta.plot$Date)), 100000, vjust = 1, hjust = 0,  label = "WHO Guideline") +
     ggtitle(i) +
     theme_bw() +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, size = 10),
@@ -88,3 +103,8 @@ for(i in gnisidname) {
 ```
 
 <!---BLOCK_LANDSCAPE_STOP--->
+
+```{r notuse, echo=FALSE, results = 'asis'}
+#knitr::kable(tbl.max.of.daily.mean[1:12,],
+#             caption = paste0("Table 1. Waterbodies ranked by the maximum daily mean of cyanobacteria abundance (cells/mL) that are above the WHO guideline (100,000 cells/mL) for cyanobacteria in recreational freshwater during the 7 days from ", as.Date(max(dta2$Date))-7, " to ",max(dta2$Date), ". The basin names and the dates associated with the maximum daily means are shown in the table."))
+```
