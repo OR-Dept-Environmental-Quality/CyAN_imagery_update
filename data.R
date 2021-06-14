@@ -60,7 +60,7 @@ tbl.7dmdm <- tbl.mean.of.daily.max %>%
   dplyr::mutate(mean_7DayMax = ifelse(mean_7DayMax<= 6310, "Non-detect",
                                       format(round(mean_7DayMax,0),big.mark=",",scientific = FALSE))) %>% 
   dplyr::rename(Waterbody_GNISID = GNISIDNAME,
-                `Average 7 Daily Maximum (cells/mL)` = mean_7DayMax)
+                `7-Day Average Daily Maximum (cells/mL)` = mean_7DayMax)
 
 #plot.dta <- dta2 %>% 
 #  dplyr::rename(Mean = MEAN_cellsml,

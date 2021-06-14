@@ -49,7 +49,7 @@ if(num>10){
   
 } else {
   
-  numb <- nrow(tbl.7dmdm[which(!tbl.7dmdm$`Average 7 Daily Maximum (cells/mL)` == "Non-detect"),])
+  numb <- nrow(tbl.7dmdm[which(!tbl.7dmdm$`7-Day Average Daily Maximum (cells/mL)` == "Non-detect"),])
   
   if(num == numb){
     
