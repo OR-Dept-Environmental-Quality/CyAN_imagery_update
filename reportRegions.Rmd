@@ -44,7 +44,7 @@ load("report_region.RData")
 
 `r email.address_cc`
 
-*Copy to the email contents:*
+*Cut to the email contents:*
 
 Hello all,
 
@@ -61,6 +61,8 @@ Please note in the report that:
 *	All data presented in this report are provisional and subject to change. We suggest examining additional imagery from Sentinel 2 (https://www.sentinel-hub.com/explore/sentinelplayground/) or following up with site visits if necessary.    
 
 Cheers!
+
+*DELETE ABOVE AFTER CUT AND PASTE*
 
 ---
 title: "`r paste0("CyAN Update (2021-04-01 - ", max(dta2$Date), ") for ",r)`"
