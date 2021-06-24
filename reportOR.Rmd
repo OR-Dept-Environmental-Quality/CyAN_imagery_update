@@ -32,7 +32,7 @@ load("report.RData")
 
 ```
 
-*Cut to the email recipient field:*
+*------Cut to the email recipient field:------------------------------------*
 
 **TO:**
 
@@ -42,7 +42,7 @@ load("report.RData")
 
 `r email.address_cc`
 
-*Cut to the email contents:*
+*------Cut to the email contents:------------------------------------*
 
 Hello all,
 
@@ -60,7 +60,7 @@ Please note in the report that:
 
 Cheers!
 
-*DELETE ABOVE AFTER CUT AND PASTE*
+*------DELETE ABOVE AFTER CUT AND PASTE------*
 
 ---
 title: "`r paste0("CyAN Update (2021-04-01 - ", max(dta2$Date), ")")`"
