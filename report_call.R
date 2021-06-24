@@ -77,6 +77,10 @@ for (r in region) {
        caption_1,
        caption_2,
        caption_3,
+       email.address_ER,
+       email.address_NWR,
+       email.address_WR,
+       email.address_cc,
        file = "report_region.RData")
   
   rmarkdown::render(input="reportRegions.Rmd",
