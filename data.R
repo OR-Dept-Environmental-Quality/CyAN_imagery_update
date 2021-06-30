@@ -94,15 +94,42 @@ caption_3 <- paste0("Waterbodies ranked by the 7-Day Average Daily Maximum of cy
                     "The waterbodies, which 7-Day Average Daily Maximum of cyanobacteria abundance are less than 6310 cells/mL ",
                     "(the satellite detection threshold value), are not included in the table.")
 
-email.address_OR <- "DEQ [WQ] Harmful Algal Blooms Coordination Team <_WQ_HABsCoordinationTeam-1-471932883@deq.state.or.us>; Hillwig Rebecca <Rebecca.Hillwig@dhsoha.state.or.us>; Cude Curtis G <CURTIS.G.CUDE@dhsoha.state.or.us>; Hofeld Evan E <EVAN.E.HOFELD@dhsoha.state.or.us>; Baird Gregg C <GREGG.C.BAIRD@dhsoha.state.or.us>; Labiosa, Rochelle <labiosa.rochelle@epa.gov>; Compton, Jana <Compton.Jana@epa.gov>; Handler, Amalia <Handler.Amalia@epa.gov>; Carpenter, Kurt <kdcar@usgs.gov>; Brian Fulfrost <bfaconsult@gmail.com>"
+email.address_OR <- "DEQ [WQ] Harmful Algal Blooms Coordination Team <_WQ_HABsCoordinationTeam-1-471932883@deq.state.or.us>; 
+Hillwig Rebecca <Rebecca.Hillwig@dhsoha.state.or.us>; 
+Cude Curtis G <CURTIS.G.CUDE@dhsoha.state.or.us>; 
+Hofeld Evan E <EVAN.E.HOFELD@dhsoha.state.or.us>; 
+Baird Gregg C <GREGG.C.BAIRD@dhsoha.state.or.us>; 
+Labiosa, Rochelle <labiosa.rochelle@epa.gov>; 
+Compton, Jana <Compton.Jana@epa.gov>; 
+Handler, Amalia <Handler.Amalia@epa.gov>; 
+Carpenter, Kurt <kdcar@usgs.gov>; 
+Brian Fulfrost <bfaconsult@gmail.com>"
 
-email.address_ER <- "BUTCHER Don * DEQ <don.butcher@deq.state.or.us>; DADOLY John * DEQ <john.dadoly@deq.state.or.us>; HIATT Mike * DEQ <mike.hiatt@deq.state.or.us>; MEHTA Smita * DEQ <smita.mehta@deq.state.or.us>"
+email.address_ER <- "BUTCHER Don * DEQ <don.butcher@deq.state.or.us>; 
+DADOLY John * DEQ <john.dadoly@deq.state.or.us>; 
+HIATT Mike * DEQ <mike.hiatt@deq.state.or.us>; 
+MEHTA Smita * DEQ <smita.mehta@deq.state.or.us>; 
+STOKEN Olivia * DEQ <olivia.stoken@deq.state.or.us>"
 
-email.address_NWR <- "MATZKE Andrea * DEQ <andrea.matzke@deq.state.or.us>; CREUTZBURG Brian * DEQ <brian.creutzburg@deq.state.or.us>; NAYAR Roxy * DEQ <roxy.nayar@deq.state.or.us>; JOHNSON York * DEQ <york.johnson@deq.state.or.us>"
+email.address_NWR <- "MATZKE Andrea * DEQ <andrea.matzke@deq.state.or.us>; 
+CREUTZBURG Brian * DEQ <brian.creutzburg@deq.state.or.us>; 
+NAYAR Roxy * DEQ <roxy.nayar@deq.state.or.us>; 
+JOHNSON York * DEQ <york.johnson@deq.state.or.us>"
 
-email.address_WR <- "MEYERS Bill * DEQ <bill.meyers@deq.state.or.us>; DUGGAN Bryan * DEQ <bryan.duggan@deq.state.or.us>; WALTZ David * DEQ <david.waltz@deq.state.or.us>; TUGAW Heather * DEQ <heather.tugaw@deq.state.or.us>; GRAMLICH Nancy H * DEQ <nancy.h.gramlich@deq.state.or.us>; WOOLVERTON Priscilla * DEQ <priscilla.woolverton@deq.state.or.us>"
+email.address_WR <- "MEYERS Bill * DEQ <bill.meyers@deq.state.or.us>; 
+DUGGAN Bryan * DEQ <bryan.duggan@deq.state.or.us>; 
+WALTZ David * DEQ <david.waltz@deq.state.or.us>; 
+TUGAW Heather * DEQ <heather.tugaw@deq.state.or.us>; 
+GRAMLICH Nancy H * DEQ <nancy.h.gramlich@deq.state.or.us>; 
+WOOLVERTON Priscilla * DEQ <priscilla.woolverton@deq.state.or.us>;
+GIRARD Kendra * DEQ <kendra.girard@deq.state.or.us>;
+SAUTER Sarah * DEQ <sarah.sauter@deq.state.or.us>;
+FERN Jacqueline * DEQ <jacqueline.fern@deq.state.or.us>"
   
-email.address_cc <- "GRUND Yuan * DEQ <yuan.grund@deq.state.or.us>; COSTELLO Erin * DEQ <erin.costello@deq.state.or.us>; ADHAR Ratnanjali * DEQ <Ratnanjali.ADHAR@deq.state.or.us>; SOBOTA Daniel * DEQ <daniel.sobota@deq.state.or.us>"
+email.address_cc <- "GRUND Yuan * DEQ <yuan.grund@deq.state.or.us>; 
+COSTELLO Erin * DEQ <erin.costello@deq.state.or.us>; 
+ADHAR Ratnanjali * DEQ <Ratnanjali.ADHAR@deq.state.or.us>; 
+SOBOTA Daniel * DEQ <daniel.sobota@deq.state.or.us>"
 
 save(lakes.resolvable,
      dta,
