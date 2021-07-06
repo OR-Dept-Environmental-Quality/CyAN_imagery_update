@@ -46,17 +46,17 @@ load("report.RData")
 
 Hello all,
 
-Below is the statewide update for satellite imagery of cyanobacteria in Oregon waterbodies.  
+Below is the statewide update for satellite imagery estimates of cyanobacteria in Oregon waterbodies.  
 
-Please note in the report that:
+Please note that:
 
-*   The 7-Day Average Daily Maximum is now used for summarizing the cyanobacterial cell counts.       
+*   The 7-Day Average Daily Maximum is used for summarizing the cyanobacterial cell counts.       
 
 *   The table includes all waterbodies with 7-Day Average Daily Maximum of cell counts above WHO thresholds (100,000 cells/mL) in the last 7 days.        
 
 *   The time series plots include all resolvable waterbodies identified from EPA’s CyAN project. The plots report both the daily average and daily maximum cell counts from April 1st through the present.       
 
-*	All data presented in this report are provisional and subject to change. We suggest examining additional imagery from Sentinel 2 (https://www.sentinel-hub.com/explore/sentinelplayground/) or following up with site visits if necessary.       
+*   All data presented in this report are provisional and subject to change. Estimates of cyanobacteria abundance may be skewed by cloud cover, ice cover, sun glint, water surface roughness, dry lake beds, algal mats and shoreline effects. We suggest examining additional imagery from Sentinel 2 (https://www.sentinel-hub.com/explore/sentinelplayground/) or following up with site visits to confirm on the ground conditions.       
 
 Cheers!
 
