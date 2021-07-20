@@ -134,7 +134,3 @@ for(i in gnisidname) {
 
 <!---BLOCK_LANDSCAPE_STOP--->
 
-```{r notuse, echo=FALSE, results = 'asis'}
-#knitr::kable(tbl.max.of.daily.mean[1:12,],
-#             caption = paste0("Table 1. Waterbodies ranked by the maximum daily mean of cyanobacteria abundance (cells/mL) that are above the WHO guideline (100,000 cells/mL) for cyanobacteria in recreational freshwater during the 7 days from ", as.Date(max(dta2$Date))-7, " to ",max(dta2$Date), ". The basin names and the dates associated with the maximum daily means are shown in the table."))
-```

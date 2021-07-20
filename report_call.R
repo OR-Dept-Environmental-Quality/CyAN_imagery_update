@@ -21,26 +21,6 @@ for (r in region) {
   
   print(r)
   load("report.RData")
-  
-  #tbl.max.of.daily.mean <- tbl.data.7days %>% 
-  #  dplyr::group_by(GNISIDNAME) %>% 
-  #  dplyr::summarise(max_7DayMean = max(MEAN_cellsml)) %>% 
-  #  dplyr::ungroup() %>% 
-  #  dplyr::left_join(tbl.data.7days,by="GNISIDNAME") %>% 
-  #  dplyr::filter(max_7DayMean == MEAN_cellsml) %>% 
-  #  dplyr::arrange(desc(max_7DayMean)) %>% 
-  #  dplyr::left_join(lakes.resolvable@data, by = "GNISIDNAME") %>% 
-  #  dplyr::filter(Region == r) %>% # Region selection
-  #  dplyr::mutate(Basin = ifelse(Name_1 == "Willamette",Name,Name_1)) %>% 
-  #  dplyr::select(GNISIDNAME,Basin,Date,max_7DayMean) %>% 
-  #  dplyr::distinct(GNISIDNAME, .keep_all = TRUE) %>% 
-  #  dplyr::mutate(max_7DayMean = ifelse(max_7DayMean <= 6310, "Non-detect",
-  #                                      format(round(max_7DayMean,0),big.mark=",",scientific = FALSE))) %>% 
-  #  dplyr::rename(Waterbody_GNISID = GNISIDNAME,
-  #                `Maximum 7 Daily Mean (cells/mL)` = max_7DayMean)
-  
-  #dta2.max.of.daily.mean <- dta2 %>% 
-  #  dplyr::filter(GNISIDNAME %in% tbl.max.of.daily.mean$Waterbody_GNISID)
 
   tbl.mean.of.daily.max <- tbl.data.7days %>% 
     dplyr::group_by(GNISIDNAME) %>% 
@@ -50,7 +30,7 @@ for (r in region) {
     dplyr::left_join(lakes.resolvable@data, by = "GNISIDNAME") %>% 
     dplyr::filter(Region == r) %>% # Region selection
     dplyr::mutate(Basin = ifelse(Name_1 == "Willamette",Name,Name_1)) %>% 
-    dplyr::select(GNISIDNAME,Basin,mean_7DayMax) %>% 
+    dplyr::select(GNISIDNAME,Hydro_Type,Basin,mean_7DayMax) %>%  
     dplyr::distinct(GNISIDNAME, .keep_all = TRUE) 
   
   num <- nrow(tbl.mean.of.daily.max[which(tbl.mean.of.daily.max$mean_7DayMax>=100000),])
@@ -59,6 +39,7 @@ for (r in region) {
     dplyr::mutate(mean_7DayMax = ifelse(mean_7DayMax<= 6310, "Non-detect",
                                         format(round(mean_7DayMax,0),big.mark=",",scientific = FALSE))) %>% 
     dplyr::rename(Waterbody_GNISID = GNISIDNAME,
+                  `Hydrographic Type` = Hydro_Type,
                   `Average 7 Daily Maximum (cells/mL)` = mean_7DayMax)
 
   dta2.mean.of.daily.max <- dta2 %>% 
