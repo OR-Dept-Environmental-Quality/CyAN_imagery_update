@@ -40,6 +40,7 @@ tbl.mean.of.daily.max <- tbl.data.7days %>%
   dplyr::distinct(GNISIDNAME, .keep_all = TRUE)  
 
 num <- nrow(tbl.mean.of.daily.max[which(tbl.mean.of.daily.max$mean_7DayMax>=100000),])
+#numb <- nrow(tbl.7dmdm[which(!tbl.7dmdm$`7-Day Average Daily Maximum (cells/mL)` == "Non-detect"),])
 
 tbl.7dmdm <- tbl.mean.of.daily.max %>%
   dplyr::mutate(mean_7DayMax = ifelse(mean_7DayMax<= 6310, "Non-detect",
@@ -50,20 +51,15 @@ tbl.7dmdm <- tbl.mean.of.daily.max %>%
 
 gnisidname <- unique(sort(dta2$GNISIDNAME))
 
+caption.or <- paste0("Waterbodies ranked by the 7-Day Average Daily Maximum of cyanobacteria abundance (cells/mL) ",
+                  "that are above the WHO guideline (100,000 cells/mL) for cyanobacteria in recreational freshwater during the 7 days from ", 
+                  as.Date(max(dta2$Date))-7, " to ",max(dta2$Date), 
+                  ". The waterbody hydrographic types and basin names are shown in the table.")
 
-caption_1 <- paste0("Top 10 waterbodies ranked by the 7-Day Average Daily Maximum of cyanobacteria abundance (cells/mL) during the 7 days from ", 
-                    as.Date(max(dta2$Date))-7, " to ",max(dta2$Date), 
-                    ". The basin names are shown in the table.")
-
-caption_2 <- paste0("Waterbodies ranked by the 7-Day Average Daily Maximum of cyanobacteria abundance (cells/mL) ",
+caption.region <- paste0("Waterbodies ranked by the 7-Day Average Daily Maximum of cyanobacteria abundance (cells/mL) ",
                     "that are above the WHO guideline (100,000 cells/mL) for cyanobacteria in recreational freshwater during the 7 days from ", 
                     as.Date(max(dta2$Date))-7, " to ",max(dta2$Date), 
-                    ". The basin names are shown in the table.")
-
-caption_3 <- paste0("Waterbodies ranked by the 7-Day Average Daily Maximum of cyanobacteria abundance (cells/mL) ",
-                    "that are above the WHO guideline (100,000 cells/mL) for cyanobacteria in recreational freshwater during the 7 days from ", 
-                    as.Date(max(dta2$Date))-7, " to ",max(dta2$Date), 
-                    ". The basin names are shown in the table. ",
+                    ". The waterbody hydrographic types and basin names are shown in the table. ",
                     "The waterbodies, which 7-Day Average Daily Maximum of cyanobacteria abundance are less than 6310 cells/mL ",
                     "(the satellite detection threshold value), are not included in the table.")
 
@@ -115,9 +111,8 @@ save(lakes.resolvable,
      num,
      tbl.7dmdm,
      gnisidname,
-     caption_1,
-     caption_2,
-     caption_3,
+     caption.or,
+     caption.region,
      email.address_OR,
      email.address_ER,
      email.address_NWR,

@@ -70,24 +70,8 @@ title: "`r paste0("CyAN Update (2021-04-01 - ", max(dta2$Date), ")")`"
 
 ```{r table, echo=FALSE, results = 'asis'}
 
-if(num>10){
-  
-  knitr::kable(tbl.7dmdm[1:num,], caption = caption_2)
-  
-} else {
-  
-  numb <- nrow(tbl.7dmdm[which(!tbl.7dmdm$`7-Day Average Daily Maximum (cells/mL)` == "Non-detect"),])
-  
-  if(num == numb){
-    
-    knitr::kable(tbl.7dmdm[1:num,], caption = caption_2)
-    
-  } else {
-    
-    knitr::kable(tbl.7dmdm[1:numb,], caption = caption_3)
-  }
-  
-}
+knitr::kable(tbl.7dmdm[1:num,], caption = caption.or)
+
 
 ```
 

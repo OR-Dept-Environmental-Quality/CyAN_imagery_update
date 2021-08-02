@@ -34,6 +34,7 @@ for (r in region) {
     dplyr::distinct(GNISIDNAME, .keep_all = TRUE) 
   
   num <- nrow(tbl.mean.of.daily.max[which(tbl.mean.of.daily.max$mean_7DayMax>=100000),])
+  #numb <- nrow(tbl.7dmdm[which(!tbl.7dmdm$`7-Day Average Daily Maximum (cells/mL)` == "Non-detect"),])
   
   tbl.7dmdm <- tbl.mean.of.daily.max %>%
     dplyr::mutate(mean_7DayMax = ifelse(mean_7DayMax<= 6310, "Non-detect",
@@ -55,9 +56,7 @@ for (r in region) {
        num,
        tbl.7dmdm,
        gnisidname,
-       caption_1,
-       caption_2,
-       caption_3,
+       caption.region,
        email.address_ER,
        email.address_NWR,
        email.address_WR,
