@@ -52,13 +52,15 @@ Below is the update for satellite imagery estimates of cyanobacteria in `r uniqu
 
 Please note that:
 
-*   The 7-Day Average Daily Maximum is used for summarizing the cyanobacterial cell counts.       
+*   The 7-Day Average Daily Maximum is used for summarizing the cyanobacterial abundance.       
 
-*   The table includes all waterbodies with 7-Day Average Daily Maximum of cell counts above WHO thresholds (100,000 cells/mL) in the last 7 days.        
+*   The table includes all waterbodies with 7-Day Average Daily Maximum of cyanobacterial abundance above the World Health Organization (WHO) guideline value (100,000 cells/mL) for moderate probability of adverse health effects in the last 7 days. Potential health risks for the possible exposure through recreational activities, such as contact, ingestion and inhalation, during cyanobacterial abundance above this guideline level include skin irritations and gastrointestinal illness ([WHO 2003][WHO2003]).  
 
-*   The time series plots include all resolvable waterbodies identified from EPA’s CyAN project. The plots report both the daily average and daily maximum cell counts from April 1st through the present.       
+[WHO2003]: https://apps.who.int/iris/bitstream/handle/10665/42591/9241545801.pdf?sequence=1&isAllowed=y
 
-*   All data presented in this report are provisional and subject to change. Estimates of cyanobacteria abundance may be skewed by cloud cover, ice cover, sun glint, water surface roughness, dry lake beds, algal mats and shoreline effects. We suggest examining additional imagery from Sentinel 2 (https://www.sentinel-hub.com/explore/sentinelplayground/) or following up with site visits to confirm on the ground conditions.    
+*   The time series plots include all resolvable waterbodies identified from EPA’s CyAN project. The plots report both the daily average and daily maximum abundance from April 1st through the present.       
+
+*   All data presented in this report are provisional and subject to change. Estimates of cyanobacterial abundance may be skewed by cloud cover, ice cover, sun glint, water surface roughness, dry lake beds, algal mats and shoreline effects. We suggest examining additional imagery from Sentinel 2 (https://www.sentinel-hub.com/explore/sentinelplayground/) or following up with site visits to confirm on the ground conditions.    
 
 Cheers!
 
@@ -82,7 +84,7 @@ knitr::kable(tbl.7dmdm[1:num,], caption = caption.region)
 
 ---------------------------------------------------------------------------------------------------------------------
 
-`r paste0("Figures: Time series plots of daily maximums and daily means of cyanobacteria abundance (cells/mL) of the waterbodies during 2021-04-01 and ", as.Date(max(dta2$Date)), " in the ", r, ".")`
+`r paste0("Figures: Time series plots of daily maximums and daily means of cyanobacterial abundance (cells/mL) of the waterbodies during 2021-04-01 and ", as.Date(max(dta2$Date)), " in the ", r, ". Red dashed line: WHO RUV Guideline - World Health Organization Recreational Use Value Guideline for moderate probability of adverse health effects, which is 100,000 cyanobacterial cells/mL.")`
 
 ```{r ggplot, fig.width=10, fig.height=5, echo=FALSE}
 
@@ -106,7 +108,7 @@ for(i in gnisidname) {
                        breaks = trans_breaks("log10", function(x) 10^x),
                        labels = trans_format("log10", math_format(10^.x))) +
     geom_hline(yintercept=100000,linetype="dashed",color="red",size=1.5) +
-    annotate("text", as.Date(min(dta.plot$Date)), 100000, vjust = 1, hjust = 0,  label = "WHO Guideline") +
+    annotate("text", as.Date(min(dta.plot$Date)), 100000, vjust = 1, hjust = 0,  label = "WHO RUV Guideline") +
     ggtitle(i) +
     theme_bw() +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, size = 10),
