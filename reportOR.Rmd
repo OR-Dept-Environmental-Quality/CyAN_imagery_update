@@ -58,7 +58,10 @@ Please note that:
 
 *   The time series plots include all resolvable waterbodies identified from EPA’s CyAN project. The plots report both the daily average and daily maximum abundance from April 1st through the present.       
 
-*   All data presented in this report are provisional and subject to change. Estimates of cyanobacterial abundance may be skewed by cloud cover, ice cover, sun glint, water surface roughness, dry lake beds, algal mats and shoreline effects. We suggest examining additional imagery from Sentinel 2 (https://www.sentinel-hub.com/explore/sentinelplayground/) or following up with site visits to confirm on the ground conditions.       
+*   All data presented in this report are provisional and subject to change. Estimates of cyanobacterial abundance may be skewed by cloud cover, ice cover, sun glint, water surface roughness, dry lake beds, algal mats and shoreline effects. We suggest examining additional imagery from the [Sentinel 2 website][S2], visiting [OHA's current cyanobacteria advisory website][OHA], or following up with site visits to confirm on the ground conditions.    
+
+[S2]: https://www.sentinel-hub.com/explore/sentinelplayground/
+[OHA]: https://www.oregon.gov/oha/ph/healthyenvironments/recreation/harmfulalgaeblooms/pages/blue-greenalgaeadvisories.aspx
 
 Cheers!
 
