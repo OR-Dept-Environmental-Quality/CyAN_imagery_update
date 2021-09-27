@@ -76,7 +76,8 @@ Brian Fulfrost <bfaconsult@gmail.com>;
 Lundell, Tina M CIV USARMY CENWP (USA) <Tina.M.Lundell@usace.army.mil>;
 Buccola, Norman L (Norm) CIV USARMY CENWP (USA) <Norman.L.Buccola@usace.army.mil>;
 Bellringer, Holly H CIV USARMY CENWP (USA) <Holly.H.Bellringer@usace.army.mil>;
-Anderson, Chauncey W <chauncey@usgs.gov>"
+Anderson, Chauncey W <chauncey@usgs.gov>;
+Randy Turner <randyt@sfei.org>"
 
 email.address_ER <- "BUTCHER Don * DEQ <don.butcher@deq.state.or.us>; 
 DADOLY John * DEQ <john.dadoly@deq.state.or.us>; 
