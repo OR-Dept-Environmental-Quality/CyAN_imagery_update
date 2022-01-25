@@ -1,9 +1,9 @@
 ---
-title: "CyAN Data and Imagery of Cyanobacteria in Oregon Lakes and Reservoirs"
-date: "`r paste0('Report Date: ', Sys.Date())`"
+title: "CyAN Estimates of Cyanobacteria in Oregon Lakes and Reservoirs"
+date: "`r paste0('Report Date: ', format(Sys.Date(),'%B %d, %Y'))`"
 output:
-  word_document: default
   html_document: default
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -43,7 +43,7 @@ text-align: left;
 }
 h4.date { /* Header 4 - and the author and data headers use this too  */
 font-size: 20px;
-text-align: center;
+text-align: left;
 }
 body{
 font-size: 16px;
@@ -52,21 +52,23 @@ font-size: 16px;
 
 <br>
 
-<p style="text-align: center; font-size: 32px;">Update for `r paste0(as.Date(max(dta2$Date))-7," - ", max(dta2$Date))`</p>
+<p style="text-align: left; font-size: 32px;">Update for the period `r paste0(format(as.Date(max(dta2$Date))-7, "%B %d, %Y")," - ", format(max(dta2$Date),'%B %d, %Y'))`</p>
 
 <br>
 
-<p style="text-align: center; font-size: 32px;">Introduction</p>
+<p style="text-align: left; font-size: 32px;">Introduction</p>
 
-This report provides a statewide update for satellite imagery estimates of cyanobacteria in Oregon waterbodies. We update the report weekly during the HABs season from March to October. Please note that:
+This report provides a statewide update for satellite imagery derived estimates of cyanobacteria in Oregon waterbodies. Estimates are provided by [the Cyanobacteria Assessment Network (CyAN) project][CyAN]. This report is updated weekly from March to October. Please note that:
+
+[CyAN]: https://oceancolor.gsfc.nasa.gov/projects/cyan/
 
 *   The 7-Day Average Daily Maximum is used for summarizing the cyanobacterial abundance.       
 
-*   The table includes all waterbodies with 7-Day Average Daily Maximum of cyanobacterial abundance above the World Health Organization (WHO) guideline value (100,000 cells/mL) for moderate probability of adverse health effects in the past 7 days. Potential health risks for the possible exposure through recreational activities, such as contact, ingestion and inhalation, during cyanobacterial abundance above this guideline level include skin irritations and gastrointestinal illness ([WHO 2003][WHO2003]).  
+*   Table 1 displays all waterbodies with 7-Day Average Daily Maximum of cyanobacterial abundance above the World Health Organization (WHO) recreational exposure guideline value of 100,000 cells/mL. Potential human health risks include skin irritations and gastrointestinal illness ([WHO, 2003][WHO2003]).  
 
 [WHO2003]: https://apps.who.int/iris/bitstream/handle/10665/42591/9241545801.pdf?sequence=1&isAllowed=y       
 
-*   The time series plots include all resolvable waterbodies identified from EPA’s CyAN project. The plots report both the daily average and daily maximum abundance from April 1st through the present.       
+*   The time series plots include all resolvable waterbodies identified by the EPA’s CyAN project. The plots report both the daily average and daily maximum abundance from April 1st through the present.       
 
 *   The satellite imageries ...
 
@@ -77,7 +79,7 @@ This report provides a statewide update for satellite imagery estimates of cyano
 
 <br>
 
-<p style="text-align: center; font-size: 32px;">Table</p>
+<p style="text-align: left; font-size: 32px;">Table</p>
 
 ```{r table, echo=FALSE, results = 'asis'}
 
@@ -87,11 +89,11 @@ knitr::kable(tbl.7dmdm[1:num,], caption = caption.or)
 
 <br>
 
-<p style="text-align: center; font-size: 32px;">Time Series Plots and Satellite Imageries</p>
+<p style="text-align: left; font-size: 32px;">Time Series Plots and Satellite Imageries</p>
 
-**Time series plots** of daily maximums and daily means of cyanobacterial abundance (cells/mL) of the waterbodies during 2021-04-01 and `r as.Date(max(dta2$Date))`. Red dashed line: WHO RUV Guideline - World Health Organization Recreational Use Value Guideline for moderate probability of adverse health effects, which is 100,000 cyanobacterial cells/mL.
+**Time series plots** of daily maximums and daily means of cyanobacterial abundance (cells/mL) of the waterbodies during 2021-04-01 and `r format(max(dta2$Date),'%B %d, %Y')`. Red dashed line: WHO RUV Guideline - World Health Organization Recreational Use Value Guideline for moderate probability of adverse health effects, which is 100,000 cyanobacterial cells/mL.
 
-**Satellite imageries** of daily means of cyanobacterial abundance (cells/mL) of the waterbodies during the last 7 days from `r as.Date(max(dta2$Date))-7` to `r as.Date(max(dta2$Date))`.
+**Satellite imageries** of daily means of cyanobacterial abundance (cells/mL) of the waterbodies during the last 7 days from `r format(as.Date(max(dta2$Date))-7, "%B %d, %Y")` to `r format(max(dta2$Date),'%B %d, %Y')`.
 
 
 ```{r ggplot, fig.width=10, fig.height=5, results='asis', cache=FALSE, eval=TRUE, echo=FALSE}
@@ -140,12 +142,12 @@ for(i in gnisidname) {
 <br>
 <br>
 
-<p style="text-align: center; font-size: 30px;">Contact</p>
-<p style="text-align: center; font-size: 16px; line-height: 0.8;">The report is provided by Oregon DEQ Watershed Management.</p>     
-<p style="text-align: center; font-size: 16px; line-height: 0.8;">For more information on this report, please contact</p>       
-<p style="text-align: center; font-size: 16px; line-height: 0.8;">Dan Sobota, dan.sobota@deq.oregon.gov</p>       
-<p style="text-align: center; font-size: 16px; line-height: 0.8;">Erin Costello, erin.costello@deq.oregon.gov</p>
-<p style="text-align: center; font-size: 16px; line-height: 0.8;">Yuan Grund, yuan.grund@deq.oregon.gov</p>
+<p style="text-align: left; font-size: 30px;">Contact</p>
+<p style="text-align: left; font-size: 16px; line-height: 0.8;">The report is provided by Oregon DEQ Watershed Management.</p>     
+<p style="text-align: left; font-size: 16px; line-height: 0.8;">For more information on this report, please contact</p>       
+<p style="text-align: left; font-size: 16px; line-height: 0.8;">Dan Sobota, dan.sobota@deq.oregon.gov</p>       
+<p style="text-align: left; font-size: 16px; line-height: 0.8;">Erin Costello, erin.costello@deq.oregon.gov</p>
+<p style="text-align: left; font-size: 16px; line-height: 0.8;">Yuan Grund, yuan.grund@deq.oregon.gov</p>
 
 <br>
 <br>
