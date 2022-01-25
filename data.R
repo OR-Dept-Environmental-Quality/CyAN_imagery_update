@@ -3,7 +3,7 @@ library(tidyverse)
 lakes.resolvable <- rgdal::readOGR(dsn = "//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/HAB_Shiny_app/data/NHDwaterbody_resolvable_lakes_dissolved_oregon_clean_huc6.shp",
                                    layer = "NHDwaterbody_resolvable_lakes_dissolved_oregon_clean_huc6")
 
-dta2 <- readxl::read_xlsx("//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/HAB_Shiny_app/data/HAB_resolvablelakes_2021.xlsx",
+dta2 <- readxl::read_xlsx("//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/HAB_Shiny_app/data/HAB_resolvablelakes_2022.xlsx",
                           sheet = "HAB_resolvable_lake_data") %>% 
   dplyr::filter(!GNISIDNAME == "Goose Lake_01520146") %>% # located in the WA state
   dplyr::filter(GNISIDNAME %in% unique(sort(lakes.resolvable@data$GNISIDNAME)))

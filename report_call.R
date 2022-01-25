@@ -4,9 +4,12 @@ library(tidyverse)
 
 # OR Report ----
 rmarkdown::render(input="reportOR.Rmd",
-                  output_format = "officedown::rdocx_document",
+                  #output_format = "officedown::rdocx_document",
+                  output_format = "html_document",
                   output_dir = "./Reports/",
-                  output_file= paste0("Satellite imagery of cyanobacteria for Oregon waterbodies_", Sys.Date(),".docx"))
+                  #output_file= paste0("Satellite imagery of cyanobacteria for Oregon waterbodies_", Sys.Date(),".docx")
+                  output_file= paste0("Satellite imagery of cyanobacteria for Oregon waterbodies_", Sys.Date(),".html")
+                  )
 
 # Region Reports ----
 region <- c("Eastern Region","Northwest Region","Western Region")
