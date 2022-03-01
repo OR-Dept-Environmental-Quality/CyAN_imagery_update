@@ -1,0 +1,14 @@
+name: cyan_imagery_update
+title: CyAN_imagery_update
+username: l_ygrund
+account: l_ygrund
+server: rstudioconnect.deq.state.or.us
+hostUrl: https://rstudioconnect.deq.state.or.us/__api__
+appId: 65
+bundleId: 230
+url: https://rstudioconnect.deq.state.or.us/content/6788ec14-d596-42a1-bd3f-2232b5d44309/
+when: 1646100241.82461
+lastSyncTime: 1646100241.82461
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: data.R|README.md
