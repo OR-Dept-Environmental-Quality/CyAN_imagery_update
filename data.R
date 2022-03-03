@@ -70,16 +70,17 @@ pal.huc6 <- leaflet::colorFactor(palette = "Paired", domain = unique(sort(huc6$H
 
 # (4) Map: raster ----
 # Raster color 
-thevalues <- c(0,6310,30000,100000,7000000)
-paletteFunc <- grDevices::colorRampPalette(c('#bdbdbd','#66c2a4','#2ca25f','#006d2c'))
-palette     <- paletteFunc(4)
+thevalues <- c(0,6310,20000,100000,7000000)
+#paletteFunc <- grDevices::colorRampPalette(c('#bdbdbd','#66c2a4','#2ca25f','#006d2c'))
+#palette     <- paletteFunc(4)
+palette <- c('#bdbdbd','#66c2a4','#2ca25f','#006d2c')
 
 pal.map <- leaflet::colorBin(palette = palette,
-                             bins = c(0,6310,30000,100000,7000000),
-                             domain = c(0,6310,30000,100000,7000000),
+                             bins = c(0,6310,20000,100000,7000000),
+                             domain = c(0,6310,20000,100000,7000000),
                              na.color = "transparent")
 # Legend labels
-labels = c("Non-detect","Low: 6,311 - 30,000","High: 30,000 - 100,000","Very High: >100,000")
+labels = c("Non-detect","Low: 6,311 - 20,000","Moderate: 20,000 - 100,000","High: >100,000")
 
 # (5) Thumbnail maps ----
 tag.map.date <- shiny::tags$style(HTML("
@@ -107,7 +108,7 @@ waterbody.list <- sort(unique(lakes.resolvable$GNISIDNAME))
 
 tbl.data.7days <- dta2 %>% 
   dplyr::arrange(GNISIDNAME, desc(Date)) %>% 
-  dplyr::filter(as.Date(Date) <= as.Date(max(dta2$Date)) & as.Date(Date) >= as.Date(max(dta2$Date))-7)
+  dplyr::filter(as.Date(Date) <= as.Date(max(dta2$Date)) & as.Date(Date) >= as.Date(max(dta2$Date))-6)
 
 last7days <- sort(unique(as.Date(tbl.data.7days$Date)))
 
@@ -185,9 +186,10 @@ for(i in sort(unique(map.file.name$File_waterbody))){
   # test: i <- "Odell Lake_01147159"
   
   df.imgs <- map.file.name %>% dplyr::filter(File_waterbody == i)
-  img.files <- c(df.imgs$File_name[1:7],"./Report_Images/legend/legend.jpg")
+  img.files <- c(df.imgs$File_name[2:8],"./Report_Images/legend/legend.jpg")
   imgs <- image_read(img.files)
-  imgs.comb <- image_montage(imgs, tile = '4x2', geometry = "x200+3+5")
+  #imgs.comb <- image_montage(imgs, tile = '3x3', geometry = "x200+3+5")
+  imgs.comb <- image_montage(imgs, tile = '4x2', geometry = "300x200+1+1")
   image_write(imgs.comb, path = paste0("./Report_Images/",i,".png"), format = "png")
   print(paste0("./Report_Images/",i,".png"))
   

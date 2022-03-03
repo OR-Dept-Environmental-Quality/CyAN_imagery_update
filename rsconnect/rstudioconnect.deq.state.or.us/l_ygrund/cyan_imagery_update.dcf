@@ -5,10 +5,10 @@ account: l_ygrund
 server: rstudioconnect.deq.state.or.us
 hostUrl: https://rstudioconnect.deq.state.or.us/__api__
 appId: 65
-bundleId: 230
+bundleId: 234
 url: https://rstudioconnect.deq.state.or.us/content/6788ec14-d596-42a1-bd3f-2232b5d44309/
-when: 1646100241.82461
-lastSyncTime: 1646100241.82461
+when: 1646272738.2131
+lastSyncTime: 1646272738.2131
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: data.R|README.md
+ignoredFiles: data.R|README.md|Images

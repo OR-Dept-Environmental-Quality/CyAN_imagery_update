@@ -28,7 +28,7 @@ shinyApp(
       width = "0px" #---remove sidebar
     ),              #---remove sidebar
     #  minified = TRUE, collapsed = TRUE, width = 400,
-      
+    
     #  sidebarMenu(
     #    menuItem("About", icon = icon("info-circle"),
     #             menuSubItem(h4(HTML("
@@ -140,7 +140,7 @@ shinyApp(
         tags$div(span("Satellite Estimates of Cyanobacteria in Oregon Lakes and Reservoirs",
                       style = "color: black; font-size: 40px")),
         
-        tags$h3("Report Date:",max(dta$Date)),
+        tags$h3("Reporting Period: ",format(as.Date(max(dta2$Date))-6, "%B %d, %Y")," - ",format(max(dta2$Date),'%B %d, %Y'),".")
         
         #tags$div(span(HTML(paste0("Last sourced from the ",
         #                          a("U.S. EPA CyAN Project", 
@@ -150,7 +150,7 @@ shinyApp(
         #              style = "color: black; font-size: 20px"))
         
       ), # Header box END 
-
+      
       # _ 1. Introduction ----
       shinydashboardPlus::box(
         width = 12,
@@ -161,45 +161,39 @@ shinyApp(
         collapsed = FALSE,
         #dropdownMenu = boxDropdown(),
         
-        h4("This report provides a statewide update for satellite imagery derived estimates of cyanobacteria cell counts in Oregon waterbodies. ",
-           "Data of estimates are retrieved from the ", a("Cyanobacteria Assessment Network (CyAN)", href="https://www.epa.gov/water-research/cyanobacteria-assessment-network-cyan"),
-           " project, and grouped into 3 categories to illustrate cyanobacteria abundance (cells/mL): Low: <30,000, High: 30,000-100,000, and ",
-           "Very High: >100,000. The level of Very High refers to the estimates above the World Health Organization (WHO) recreational exposure ",
-           "guideline value of 100,000 cells/mL. Potential human health risks include skin irritations and gastrointestinal illness (",
-           a("WHO, 2003", href="https://apps.who.int/iris/bitstream/handle/10665/42591/9241545801.pdf?sequence=1&isAllowed=y"),"). A total of 49 ",
-           "satellite resolvable waterbodies are included in this report. The report is updated weekly from March to October."),
+        h4("This report provides an update to estimates of cyanobacteria abundance derived from satellite imagery for 49 large Oregon waterbodies. ",
+           "Updates are scheduled to occur weekly from March to October each year. Estimates derive from the ", 
+           a("Cyanobacteria Assessment Network (CyAN)", href="https://www.epa.gov/water-research/cyanobacteria-assessment-network-cyan"),
+           " project. Three levels illustrate cyanobacteria abundance (cells/mL): Low: <20,000, Moderate: 20,000-100,000, and High: >100,000. ",
+           "The levels correspond to the World Health Organization (WHO) exposure guideline values ",
+           "(",a("WHO, 2003", href="https://apps.who.int/iris/bitstream/handle/10665/42591/9241545801.pdf?sequence=1&isAllowed=y"),"). ",
+           "For more information on Harmful Algal Blooms in Oregon, please visit websites from the ",
+           a("Oregon DEQ", href="https://www.oregon.gov/deq/wq/Pages/Harmful-Algal-Blooms.aspx")," and the ",
+           a("Oregon Health Authority", href="https://www.oregon.gov/oha/ph/healthyenvironments/recreation/harmfulalgaeblooms/pages/blue-greenalgaeadvisories.aspx"),"."),
         
-        h4("The report consists of three parts."),
-        h4("Part 1 Introduction provides a general background, outline and limitations of the report."),
-        h4("Part 2 highlights the waterbodies with very high cyanobacteria cell count estimates during the reporting period. The 7-Day Average Daily Maximum (7DADM) is used for summarizing these estimates."),
-        h4("Part 3 provides interactive data visualization for each resolvable waterbody."),
-        
-        h4("All data presented in this report are provisional and subject to change. Estimates of cyanobacterial abundance may be skewed by cloud cover, ",
+        h4("All data presented in this report are provisional and subject to change. Estimates of cyanobacteria abundance may be skewed by cloud cover, ",
            "ice cover, sun glint, water surface roughness, dry lake beds, algal mats and shoreline effects. We suggest examining additional imagery from ",
-           "the ", a("Sentinel 2 website", href="https://www.sentinel-hub.com/explore/sentinelplayground/"),
-           ", visiting ", a("OHA's current cyanobacteria advisory website", href="https://www.oregon.gov/oha/ph/healthyenvironments/recreation/harmfulalgaeblooms/pages/blue-greenalgaeadvisories.aspx"),
-           ", using ", a("EPA’s CyAN app", href="https://www.epa.gov/water-research/cyanobacteria-assessment-network-application-cyan-app"),
-           ", or following up with site visits to confirm on the ground conditions. ")
-        
-        ),
+           a("Sentinel 2", href="https://www.sentinel-hub.com/explore/sentinelplayground/")," and/or following up with local information to confirm on the ground conditions.")
+      ),
       
       # _ 2. Table and Oregon map ----
       shinydashboardPlus::box(
         width = 12,
-        title = "2. Waterbodies with very high cynabacteria estimates (>100,000 cells/mL)",
+        title = "2. Highlighted Waterbodies",
         status = "primary",
         solidHeader = TRUE,
         collapsible = FALSE,
         collapsed = FALSE,
         #dropdownMenu = boxDropdown(),
         
+        tags$h4(p(strong("Waterbodies with high cyanobacteria abundance (>100,000 cells/mL) based on the 7-Day Average Daily Maximum (7DADM)."))),
+        tags$h4(p(strong(paste0("Reporting Period: ",format(as.Date(max(dta2$Date))-6, "%B %d, %Y")," - ",format(max(dta2$Date),'%B %d, %Y'),".")))),
+        
         # ___ Table 7DADM ----
         shinydashboard::box(
           width = 5,
           #title = "Table",
-          solidHeader = FALSE,
-          
-          tags$h4(p(strong((paste0("Waterbodies are ranked by the 7DADM of cyanobacteria abundance (cells/mL) from ",format(as.Date(max(dta2$Date))-7, "%B %d, %Y")," to ",format(max(dta2$Date),'%B %d, %Y'),"."))))),
+          solidHeader = TRUE,
           
           shinycssloaders::withSpinner(DT::dataTableOutput("tbl7dadm"))
           
@@ -209,9 +203,11 @@ shinyApp(
         shinydashboard::box(
           width = 7,
           #title = "ORMap",
-          solidHeader = FALSE,
+          solidHeader = TRUE,
           
-          tags$h4(p(strong("Waterbodies with very high cyanobacteria estimates from ",format(as.Date(max(dta2$Date))-7, "%B %d, %Y")," to ",format(max(dta2$Date),'%B %d, %Y')," are outlined in red. Other resolvable waterbodies are in blue."))),
+          h4("Waterbodies with high cyanobacteria estimates from ",
+             format(as.Date(max(dta2$Date))-6, "%B %d, %Y")," to ",format(max(dta2$Date),'%B %d, %Y'),
+             "are outlined in red. Other resolvable waterbodies are in blue."),
           
           shinycssloaders::withSpinner(leaflet::leafletOutput("map", height = "650px"))
           
@@ -221,15 +217,20 @@ shinyApp(
       # _ 3. Maps and Time series plots ----
       shinydashboardPlus::box(
         width = 12,
-        title = "3. Maps and time series plot of cyanobacteria estimates by waterbody",
+        height = "100%",
+        title = "3. Data Visualization",
         status = "primary",
         solidHeader = TRUE,
         collapsible = FALSE,
         collapsed = FALSE,
         
+        tags$h4(p(strong("Maps and time series plot of cyanobacteria estimates for each of the 49 resolvable waterbodies according to the methods outlined in the ",
+                         a("CyAN Project", href="https://www.epa.gov/water-research/cyanobacteria-assessment-network-cyan"),"."))),
+        
         # ___ 7maps ----
         shinydashboard::box(
           width = 12,
+          height = "100%",
           #title = "map",
           solidHeader = TRUE,
           
@@ -252,8 +253,8 @@ shinyApp(
             # ____ Lake images ----
             tags$br(),
             textOutput("non_select_image"),
-            shiny::imageOutput("lakeImage", width = "100%", height = "100%",inline = TRUE),
-            tags$h5("Source:")
+            shiny::imageOutput("lakeImage", width = "300",height = "100%", inline = TRUE),
+            tags$h5("Lake image will be updated soon.")
             
           ),
           
@@ -263,20 +264,13 @@ shinyApp(
             solidHeader = FALSE,
             
             # ____ 7maps ----
-            #shinydashboard::box(
-            #  width = 12,
-              #title = "maps7",
-            #  solidHeader = TRUE,
-              
-              tags$h4(p(strong(paste0("Satellite estimates of cyanobacterial abundance (cells/mL) of the selected waterbody from ",format(as.Date(max(dta2$Date))-7, "%B %d, %Y")," to ",format(max(dta2$Date),'%B %d, %Y'),".")))),
-              
-              textOutput("non_select"),
-              shiny::imageOutput("maps7")
-              
-            #)
+            tags$h4(p(strong(paste0("Satellite estimates of cyanobacteria abundance from ",format(as.Date(max(dta2$Date))-6, "%B %d, %Y")," to ",format(max(dta2$Date),'%B %d, %Y'),".")))),
             
-            )
-          
+            textOutput("non_select"),
+            uiOutput("no_pixels"),
+            shiny::imageOutput("maps7")
+            
+          )
         ),
         
         # ___ Plot and Table ----
@@ -311,6 +305,8 @@ shinyApp(
                                   startview = "year",
                                   weekstart = 0),
             
+            h5("Data available since June 7, 2016."),
+            
             tags$br(),
             tags$br(),
             
@@ -340,21 +336,31 @@ shinyApp(
             solidHeader = FALSE,
             
             # ____ Time series plot ----
-              tags$h4(p(strong("Time series plot of cyanobacterial abundance (cells/mL) of the selected waterbody. Red dashed line: World Health Organization (WHO) Recreational Use Value (RUV) Guideline for moderate probability of adverse health effects, which is 100,000 cyanobacteria cells/mL."))),
-              
-              tags$br(),
-              
-              plotlyOutput("plot_cell"),
-              
+            tags$h4(p(strong("Time series plot of cyanobacteria abundance (cells/mL) of the selected waterbody."))),
+            
+            tags$br(),
+            
+            plotlyOutput("plot_cell"),
+            
             tags$br(),
             tags$br(),
+            
+            uiOutput("who_line"),
+            
             tags$br(),
             tags$br(),
-
+            
             # ____ Data table ----
+            shinydashboard::box(
+              width = 12,
+              #title = "right",
+              solidHeader = FALSE,
+              
               tags$h4(p(strong(("Time series data of the selected waterbody during the selected date range.")))),
               
               DT::dataTableOutput("table")
+              
+            )
             
           ),
           
@@ -364,12 +370,12 @@ shinyApp(
             #title = "copyright",
             solidHeader = FALSE,
             
-            h4("The report is provided by Oregon DEQ Watershed Management. Copyright (C) 2020-2022, ODEQ."),
+            h4("The report is provided by the Oregon DEQ Watershed Management Section. Copyright (C) 2020-2022, ODEQ."),
             h4("The source code of this report is publicly available at GitHub repository: ", 
                a("Satellite Estimates of Cyanobacteria in Oregon Lakes and Reservoirs",
                  href="https://github.com/OR-Dept-Environmental-Quality/CyAN_imagery_update"),"."),
             h4("For more information on this report, please contact"),
-            h4("Dan Sobota, ", a("dan.sobota@deq.oregon.gov",href="mailto:dan.sobota@deq.oregon.gov")),
+            h4("Daniel Sobota, ", a("daniel.sobota@deq.oregon.gov",href="mailto:dan.sobota@deq.oregon.gov")),
             h4("Erin Costello, ", a("erin.costello@deq.oregon.gov",href="mailto:erin.costello@deq.oregon.gov")),
             h4("Yuan Grund, ", a("yuan.grund@deq.oregon.gov",href="mailto:yuan.grund@deq.oregon.gov"))
             
@@ -378,8 +384,9 @@ shinyApp(
         )
         
       )
-
+      
     )
+    
   ),
   
   server = function(input, output, session) {
@@ -388,7 +395,7 @@ shinyApp(
     # _ Time series plot ----
     pal.plot <- c("orange","blue","green","white","white","white")
     pal.plot <- setNames(pal.plot,unique(sort(dta$`Summary Statistics`)))
-
+    
     yr <- reactive({ 
       
       if(input$ploty == "Current Year: 2022"){"2022"}else{sort(unique(dta$Year))}
@@ -437,13 +444,13 @@ shinyApp(
         plotly::layout(yaxis = list(type = type(),
                                     title = yaxis())) %>% 
         plotly::add_trace(y = 100000, mode = "lines",
-                          line = list(shape = 'spline', color = 'red', width = 3),
-                          name = "WHO Threshold",
-                          legendgroup = "who",
+                          line = list(shape = 'spline', color = '#006d2c', width = 3),
+                          name = "High",
+                          legendgroup = "high",
                           showlegend = FALSE) %>% 
         plotly::layout(annotations = list(x = max(df()$Date),
                                           y = 100000,
-                                          text = "WHO Threshold",
+                                          text = "High (100,000)*",
                                           font = list(size = 12),
                                           xref = "x",
                                           yref = "y",
@@ -451,11 +458,77 @@ shinyApp(
                                           arrowhead = 3,
                                           arrowsize = 1,
                                           ax = -60,
-                                          ay = -20))
+                                          ay = -20)) 
       
     })
     
+    output$who_line <- renderUI(HTML(paste("&nbsp;","&nbsp;","&nbsp;","&nbsp;",
+                                           em("*High (100,000): World Health Organization (WHO) Recreational Use Value (RUV) Guideline for moderate probability of adverse health effects."))))
+    
     # (2) Tables ----
+    # _ 7DADM ----
+    tbl.data.7days <- reactive({
+      
+      dta2 %>% 
+        dplyr::arrange(GNISIDNAME, desc(Date)) %>% 
+        dplyr::filter((as.Date(Date) <= as.Date(max(dta2$Date))) & (as.Date(Date) >= as.Date(max(dta2$Date))-6))
+      
+    })
+    
+    no.data <- reactive({
+      
+      dta1 %>% 
+        dplyr::filter(!is.na(inApp)) %>% 
+        dplyr::filter(!GNIS_Name_ID %in% tbl.data.7days()$GNISIDNAME) %>% 
+        dplyr::mutate(mean_7DayMax = "No Data Available") %>% 
+        dplyr::rename(GNISIDNAME = GNIS_Name_ID) %>% 
+        dplyr::select(GNISIDNAME,mean_7DayMax)
+      
+    })
+    
+    tbl.data <- reactive({
+      
+      tbl.data.7days() %>% 
+        dplyr::group_by(GNISIDNAME) %>% 
+        dplyr::summarise(mean_7DayMax = mean(MAX_cellsml)) %>% 
+        dplyr::ungroup() %>% 
+        #dplyr::left_join(tbl.data.7days(),by="GNISIDNAME") %>% 
+        #dplyr::filter(mean_7DayMax == MAX_cellsml) %>% 
+        dplyr::arrange(desc(mean_7DayMax)) %>% 
+        dplyr::mutate(mean_7DayMax = ifelse(mean_7DayMax<= 6310, "Non-detect",
+                                            format(round(mean_7DayMax,0),big.mark=",",scientific = FALSE))) %>% 
+        rbind(no.data()) %>% 
+        dplyr::left_join(lakes.resolvable, by = "GNISIDNAME") %>% 
+        dplyr::mutate(Basin = ifelse(`HU_6_NAME` == "Willamette",`HU_8_NAME`,`HU_6_NAME`)) %>% 
+        dplyr::select(GNISIDNAME,Basin,mean_7DayMax) %>% 
+        dplyr::distinct(GNISIDNAME, .keep_all = TRUE) %>% 
+        #dplyr::mutate(Date = as.Date(Date,format="%Y-%b-%d")) %>% 
+        dplyr::rename(Waterbody_GNISID = GNISIDNAME,
+                      `7DADM (cells/mL)` = mean_7DayMax)
+    })
+    
+    output$tbl7dadm <- DT::renderDataTable({
+      
+      DT::datatable(
+        data = tbl.data(),
+        style = 'bootstrap',
+        extensions = 'Buttons',
+        options = list(dom = 'frtilpB',
+                       pageLength = 10,
+                       compact = TRUE,
+                       nowrap = TRUE,
+                       scorllX = TRUE,
+                       buttons = list(#'print',
+                         list(extend = 'collection',
+                              buttons = c('csv','excel','pdf'),
+                              text = 'Download')
+                       )),
+        rownames = FALSE,
+        filter = 'bottom'
+      ) #%>% 
+      #DT::formatDate("Date","toLocaleString")
+    }, server = FALSE)
+    
     # _ Data table ----
     df_tbl <- reactive({
       
@@ -472,7 +545,7 @@ shinyApp(
         data = df_tbl(),
         style = 'bootstrap',
         extensions = 'Buttons',
-        options = list(dom = 'Bfrtilp',
+        options = list(dom = 'frtilpB',
                        pageLength = 10,
                        compact = TRUE,
                        nowrap = TRUE,
@@ -488,58 +561,7 @@ shinyApp(
       #DT::formatDate("Date","toLocaleString")
     }, server = FALSE)
     
-    # _ 7DADM ----
-    tbl.data.7days <- reactive({
-      
-      dta2 %>% 
-        dplyr::arrange(GNISIDNAME, desc(Date)) %>% 
-        dplyr::filter((as.Date(Date) <= as.Date(max(dta2$Date))) & (as.Date(Date) >= as.Date(max(dta2$Date))-7))
-      
-    })
-    
-    tbl.data <- reactive({
-      
-      tbl.data.7days() %>% 
-        dplyr::group_by(GNISIDNAME) %>% 
-        dplyr::summarise(mean_7DayMax = mean(MAX_cellsml)) %>% 
-        dplyr::ungroup() %>% 
-        #dplyr::left_join(tbl.data.7days(),by="GNISIDNAME") %>% 
-        #dplyr::filter(mean_7DayMax == MAX_cellsml) %>% 
-        dplyr::arrange(desc(mean_7DayMax)) %>% 
-        dplyr::left_join(lakes.resolvable, by = "GNISIDNAME") %>% 
-        dplyr::mutate(Basin = ifelse(`HU_6_NAME` == "Willamette",`HU_8_NAME`,`HU_6_NAME`)) %>% 
-        dplyr::select(GNISIDNAME,Basin,mean_7DayMax) %>% 
-        dplyr::distinct(GNISIDNAME, .keep_all = TRUE) %>% 
-        dplyr::mutate(mean_7DayMax = ifelse(mean_7DayMax<= 6310, "Non-detect",
-                                            format(round(mean_7DayMax,0),big.mark=",",scientific = FALSE))) %>% 
-        #dplyr::mutate(Date = as.Date(Date,format="%Y-%b-%d")) %>% 
-        dplyr::rename(Waterbody_GNISID = GNISIDNAME,
-                      `7DADM (cells/mL)` = mean_7DayMax)
-    })
-    
-    output$tbl7dadm <- DT::renderDataTable({
-      
-      DT::datatable(
-        data = tbl.data(),
-        style = 'bootstrap',
-        extensions = 'Buttons',
-        options = list(dom = 'Bfrtilp',
-                       pageLength = 10,
-                       compact = TRUE,
-                       nowrap = TRUE,
-                       scorllX = TRUE,
-                       buttons = list(#'print',
-                         list(extend = 'collection',
-                              buttons = c('csv','excel','pdf'),
-                              text = 'Download')
-                       )),
-        rownames = FALSE,
-        filter = 'bottom'
-      ) #%>% 
-      #DT::formatDate("Date","toLocaleString")
-    }, server = FALSE)
-    
-     # (3) Text: Drinking Water Area ----
+    # (3) Text: Drinking Water Area ----
     dw <- reactive({
       
       dta %>% 
@@ -595,21 +617,24 @@ shinyApp(
       
     })
     
-    lakes.resolvable.red <- reactive({
+    lakes.resolvable.7dadm <- reactive({
       
-      lakes.resolvable %>% dplyr::filter(GNISIDNAME %in% map.tbl.data()$`Waterbody_GNISID`)
+      lakes.resolvable %>% 
+        dplyr::mutate(`7dadm` = ifelse(GNISIDNAME %in% map.tbl.data()$`Waterbody_GNISID`,"High (>100,000 cells/mL)","Others (<100,000 cells/mL)"))
       
     })
     
     output$map <- leaflet::renderLeaflet({
+      
+      #Create a palette function, using the selected color
+      palette7dadm <- colorFactor(palette = c('red','blue'), domain = unique(sort(lakes.resolvable.7dadm()$`7dadm`)))
       
       leaflet::leaflet() %>% 
         leaflet::addMapPane("OpenStreetMap", zIndex = -40) %>% 
         leaflet::addMapPane("National Geographic World Map", zIndex = -40) %>%
         leaflet::addMapPane("state.boundary", zIndex = -30) %>%
         leaflet::addMapPane("HUC6",zIndex = -20) %>% 
-        leaflet::addMapPane("lakes.resolvable.red", zIndex = 400) %>%
-        leaflet::addMapPane("lakes.resolvable", zIndex = 500) %>%
+        leaflet::addMapPane("lakes.resolvable.7dadm", zIndex = 400) %>%
         leaflet::addProviderTiles("OpenStreetMap",group = "OpenStreetMap",
                                   options = pathOptions(pane = "OpenStreetMap")) %>% 
         leaflet::addProviderTiles(providers$Esri.NatGeoWorldMap,group = "National Geographic World Map",
@@ -622,30 +647,24 @@ shinyApp(
                             width = 180,
                             height = 200,
                             zoomLevelFixed = 5) %>% 
-        leaflet::addPolygons(data = lakes.resolvable, 
-                             color = "blue",
+        leaflet::addPolygons(data = lakes.resolvable.7dadm(), 
+                             color = ~palette7dadm(lakes.resolvable.7dadm()$`7dadm`),
                              weight = 2,
-                             layer = ~lakes.resolvable$GNISIDNAME,
+                             layer = ~lakes.resolvable.7dadm()$GNISIDNAME,
                              smoothFactor = 0.5,
-                             opacity = 0.5,
+                             opacity = 1,
                              fillColor = "transparent",
                              fillOpacity = 1.0,
-                             label = ~lakes.resolvable$GNIS_Name,
+                             label = ~lakes.resolvable.7dadm()$GNIS_Name,
                              labelOptions = labelOptions(style = list("font-size" = "18px",
                                                                       "color" = "blue")),
-                             options = pathOptions(pane = "lakes.resolvable")) %>% 
-        leaflet::addPolygons(data = lakes.resolvable.red(), 
-                             color = "red",
-                             weight = 2,
-                             layer = ~lakes.resolvable.red()$GNISIDNAME,
-                             smoothFactor = 0.5,
-                             opacity = 0.5,
-                             fillColor = "transparent",
-                             fillOpacity = 1.0,
-                             label = ~lakes.resolvable.red()$GNIS_Name,
-                             labelOptions = labelOptions(style = list("font-size" = "18px",
-                                                                      "color" = "blue")),
-                             options = pathOptions(pane = "lakes.resolvable.red")) %>% 
+                             options = pathOptions(pane = "lakes.resolvable.7dadm")) %>% 
+        #leaflet::addLegend(position = "topright",
+        #                   pal = palette7dadm,
+        #                   values = ~lakes.resolvable.7dadm()$`7dadm`
+        #                   labels = ~lakes.resolvable.7dadm()$`7dadm`,
+        #                   title = "Waterbodies 7DADM",
+        #                   opacity = 1) %>% 
         leaflet::addPolygons(data = huc6, 
                              group = "Basins (HUC6)",
                              color = "grey",
@@ -720,14 +739,18 @@ shinyApp(
         
         output$maps7 <- renderImage({
           
-          list(src = paste0("./Report_Images/",input$waterbody,".png"))
+          list(src = paste0("./Report_Images/",input$waterbody,".png"),
+               width = "100%")
           
         }, deleteFile = FALSE)
+        
+        output$no_pixels <- renderUI(HTML(paste("&nbsp;","&nbsp;","&nbsp;","&nbsp;",
+                                                em("No pixels on the map indicates no data for the lake on that day."))))
         
       }
       
     })
     
-    }
+  }
   
 ) # shinyApp END
