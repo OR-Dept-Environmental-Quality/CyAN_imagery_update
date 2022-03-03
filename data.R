@@ -66,7 +66,7 @@ state.boundary <- sf::st_read(paste0(data.path,"/data/state_boundary_blm.shp")) 
 huc6 <- sf::st_read(dsn = paste0(data.path,"/data/WBD_HU6.shp"), layer = "WBD_HU6") %>% 
   st_transform(crs = 4326)
 
-pal.huc6 <- leaflet::colorFactor(palette = "Paired", domain = unique(sort(huc6$HU_6_NAME)))
+pal.huc6 <- leaflet::colorFactor(palette = c(RColorBrewer::brewer.pal(name="BrBG", n = 9), RColorBrewer::brewer.pal(name="Paired", n = 9)), domain = unique(sort(huc6$HU_6_NAME)))
 
 # (4) Map: raster ----
 # Raster color 
@@ -198,3 +198,4 @@ for(i in sort(unique(map.file.name$File_waterbody))){
 # Save data ----
 #rm(dta1); rm(dta2); rm(dta3)
 save.image(file = "data.RData")
+

@@ -129,6 +129,10 @@ shinyApp(
                          .datepicker {
                          z-index:99999 !important;
                          }
+                         
+                         #caption {
+                         font-size: 18px;
+                         }
                          '))),
       
       # _ Header ----
@@ -205,9 +209,9 @@ shinyApp(
           #title = "ORMap",
           solidHeader = TRUE,
           
-          h4("Waterbodies with high cyanobacteria estimates from ",
-             format(as.Date(max(dta2$Date))-6, "%B %d, %Y")," to ",format(max(dta2$Date),'%B %d, %Y'),
-             "are outlined in red. Other resolvable waterbodies are in blue."),
+          #h4("Waterbodies with high cyanobacteria estimates from ",
+          #   format(as.Date(max(dta2$Date))-6, "%B %d, %Y")," to ",format(max(dta2$Date),'%B %d, %Y'),
+          #   "are outlined in red. Other resolvable waterbodies are in blue."),
           
           shinycssloaders::withSpinner(leaflet::leafletOutput("map", height = "650px"))
           
@@ -338,7 +342,7 @@ shinyApp(
             # ____ Time series plot ----
             tags$h4(p(strong("Time series plot of cyanobacteria abundance (cells/mL) of the selected waterbody."))),
             
-            tags$br(),
+            textOutput("no_plot"),
             
             plotlyOutput("plot_cell"),
             
@@ -357,6 +361,11 @@ shinyApp(
               solidHeader = FALSE,
               
               tags$h4(p(strong(("Time series data of the selected waterbody during the selected date range.")))),
+              
+              textOutput("no_data"),
+              
+              tags$br(),
+              uiOutput("caption"),
               
               DT::dataTableOutput("table")
               
@@ -426,45 +435,63 @@ shinyApp(
       
     })
     
-    output$plot_cell <- renderPlotly({
+    observeEvent(input$waterbody,{
       
-      plotly::plot_ly(data = df(), x = ~as.Date(Date)) %>% 
-        plotly::add_trace(y = ~`Cyanobacteria (cells/mL)`,
-                          split = ~`Summary Statistics`,
-                          type = "scatter",
-                          mode = "lines+markers",
-                          #connectgaps = TRUE,
-                          color = ~`Summary Statistics`,
-                          colors = pal.plot,
-                          marker = list(size = 8),
-                          legendgroup = "sta") %>% 
-        plotly::layout(xaxis = list(title = "Date", range = c(min(df()$Date),max(df()$Date))),
-                       # yaxis = list(title = "Cyanobacteria (cells/mL)"),
-                       title = as.character(unique(df()$GNISIDNAME))) %>% 
-        plotly::layout(yaxis = list(type = type(),
-                                    title = yaxis())) %>% 
-        plotly::add_trace(y = 100000, mode = "lines",
-                          line = list(shape = 'spline', color = '#006d2c', width = 3),
-                          name = "High",
-                          legendgroup = "high",
-                          showlegend = FALSE) %>% 
-        plotly::layout(annotations = list(x = max(df()$Date),
-                                          y = 100000,
-                                          text = "High (100,000)*",
-                                          font = list(size = 12),
-                                          xref = "x",
-                                          yref = "y",
-                                          showarrow = TRUE,
-                                          arrowhead = 3,
-                                          arrowsize = 1,
-                                          ax = -60,
-                                          ay = -20)) 
+      if(input$waterbody == c("Oregon")) {
+        
+        output$no_plot <- renderText({ 
+          
+          "Select a waterbody to show the plot."
+          
+        })
+        
+      } else {
+        
+        output$no_plot <- renderText({})
+        
+        output$plot_cell <- renderPlotly({
+          
+          plotly::plot_ly(data = df(), x = ~as.Date(Date)) %>% 
+            plotly::add_trace(y = ~`Cyanobacteria (cells/mL)`,
+                              split = ~`Summary Statistics`,
+                              type = "scatter",
+                              mode = "lines+markers",
+                              #connectgaps = TRUE,
+                              color = ~`Summary Statistics`,
+                              colors = pal.plot,
+                              marker = list(size = 8),
+                              legendgroup = "sta") %>% 
+            plotly::layout(xaxis = list(title = "Date", range = c(min(df()$Date),max(df()$Date))),
+                           # yaxis = list(title = "Cyanobacteria (cells/mL)"),
+                           title = as.character(unique(df()$GNISIDNAME))) %>% 
+            plotly::layout(yaxis = list(type = type(),
+                                        title = yaxis())) %>% 
+            plotly::add_trace(y = 100000, mode = "lines",
+                              line = list(shape = 'spline', color = '#006d2c', width = 3),
+                              name = "High",
+                              legendgroup = "high",
+                              showlegend = FALSE) %>% 
+            plotly::layout(annotations = list(x = max(df()$Date),
+                                              y = 100000,
+                                              text = "High (100,000)*",
+                                              font = list(size = 12),
+                                              xref = "x",
+                                              yref = "y",
+                                              showarrow = TRUE,
+                                              arrowhead = 3,
+                                              arrowsize = 1,
+                                              ax = -60,
+                                              ay = -20)) 
+          
+        })
+        
+        output$who_line <- renderUI(HTML(paste("&nbsp;","&nbsp;","&nbsp;","&nbsp;",
+                                               em("*High (100,000): World Health Organization (WHO) Recreational Use Value (RUV) Guideline for moderate probability of adverse health effects."))))
+        
+      }
       
     })
-    
-    output$who_line <- renderUI(HTML(paste("&nbsp;","&nbsp;","&nbsp;","&nbsp;",
-                                           em("*High (100,000): World Health Organization (WHO) Recreational Use Value (RUV) Guideline for moderate probability of adverse health effects."))))
-    
+
     # (2) Tables ----
     # _ 7DADM ----
     tbl.data.7days <- reactive({
@@ -539,28 +566,54 @@ shinyApp(
         dplyr::rename(Waterbody_GNISID = GNISIDNAME)
     })
     
-    output$table <- DT::renderDataTable({
+    observeEvent(input$waterbody,{
       
-      DT::datatable(
-        data = df_tbl(),
-        style = 'bootstrap',
-        extensions = 'Buttons',
-        options = list(dom = 'frtilpB',
-                       pageLength = 10,
-                       compact = TRUE,
-                       nowrap = TRUE,
-                       scorllX = TRUE,
-                       buttons = list(#'print',
-                         list(extend = 'collection',
-                              buttons = c('csv','excel','pdf'),
-                              text = 'Download')
-                       )),
-        rownames = FALSE,
-        filter = 'bottom'
-      ) #%>% 
-      #DT::formatDate("Date","toLocaleString")
-    }, server = FALSE)
-    
+      if(input$waterbody == c("Oregon")) {
+        
+        output$no_data <- renderText({ 
+          
+          "Select a waterbody to show the data table."
+          
+        })
+
+      } else {
+        
+        output$no_data <- renderText({})
+        
+        output$caption <- renderUI(HTML(unique((paste0(#"&nbsp;","&nbsp;","&nbsp;","&nbsp;",
+                                                      df_tbl()$Waterbody_GNISID,", ",
+                                                      format(as.Date(min(df_tbl()$Date)),"%B %d, %Y")," - ",
+                                                      format(as.Date(max(df_tbl()$Date)),"%B %d, %Y"))))))
+        
+        output$table <- DT::renderDataTable({
+          
+          DT::datatable(
+            data = df_tbl(),
+            #caption = unique(paste0(df_tbl()$Waterbody_GNISID,", ",
+            #                        format(as.Date(min(df_tbl()$Date)),"%B %d, %Y")," - ",
+            #                        format(as.Date(max(df_tbl()$Date)),"%B %d, %Y"))),
+            style = 'bootstrap',
+            extensions = 'Buttons',
+            options = list(dom = 'frtilpB',
+                           pageLength = 10,
+                           compact = TRUE,
+                           nowrap = TRUE,
+                           scorllX = TRUE,
+                           buttons = list(#'print',
+                             list(extend = 'collection',
+                                  buttons = c('csv','excel','pdf'),
+                                  text = 'Download')
+                           )),
+            rownames = FALSE,
+            filter = 'bottom'
+          ) #%>% 
+          #DT::formatDate("Date","toLocaleString")
+        }, server = FALSE)
+        
+      }
+      
+    })
+   
     # (3) Text: Drinking Water Area ----
     dw <- reactive({
       
@@ -612,6 +665,7 @@ shinyApp(
     map.tbl.data <- reactive({
       
       tbl.data() %>% 
+        dplyr::filter(!`7DADM (cells/mL)` %in% c("Non-detect","No Data Available")) %>% 
         dplyr::mutate(`7dadm` = gsub(",","",`7DADM (cells/mL)`)) %>% 
         dplyr::filter(as.numeric(`7dadm`) > 100000)
       
@@ -620,14 +674,15 @@ shinyApp(
     lakes.resolvable.7dadm <- reactive({
       
       lakes.resolvable %>% 
-        dplyr::mutate(`7dadm` = ifelse(GNISIDNAME %in% map.tbl.data()$`Waterbody_GNISID`,"High (>100,000 cells/mL)","Others (<100,000 cells/mL)"))
+        dplyr::mutate(`7dadm` = ifelse(GNISIDNAME %in% map.tbl.data()$`Waterbody_GNISID`,"High (>100,000)","Others (<100,000)"))
       
     })
     
     output$map <- leaflet::renderLeaflet({
       
       #Create a palette function, using the selected color
-      palette7dadm <- colorFactor(palette = c('red','blue'), domain = unique(sort(lakes.resolvable.7dadm()$`7dadm`)))
+      palette7dadm <- leaflet::colorFactor(palette = c('red','blue'), 
+                                           domain = unique(sort(lakes.resolvable.7dadm()$`7dadm`)))
       
       leaflet::leaflet() %>% 
         leaflet::addMapPane("OpenStreetMap", zIndex = -40) %>% 
@@ -659,12 +714,10 @@ shinyApp(
                              labelOptions = labelOptions(style = list("font-size" = "18px",
                                                                       "color" = "blue")),
                              options = pathOptions(pane = "lakes.resolvable.7dadm")) %>% 
-        #leaflet::addLegend(position = "topright",
-        #                   pal = palette7dadm,
-        #                   values = ~lakes.resolvable.7dadm()$`7dadm`
-        #                   labels = ~lakes.resolvable.7dadm()$`7dadm`,
-        #                   title = "Waterbodies 7DADM",
-        #                   opacity = 1) %>% 
+        leaflet::addLegend(pal = palette7dadm, 
+                           values = lakes.resolvable.7dadm()$`7dadm`, 
+                           title = "Watebody 7DADM:",
+                           position = "topright") %>% 
         leaflet::addPolygons(data = huc6, 
                              group = "Basins (HUC6)",
                              color = "grey",
@@ -732,6 +785,7 @@ shinyApp(
           "Select a waterbody to show the maps."
           
         })
+       
         
       } else {
         
