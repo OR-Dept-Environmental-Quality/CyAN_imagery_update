@@ -491,53 +491,13 @@ shinyApp(
       }
       
     })
-
+    
     # (2) Tables ----
     # _ 7DADM ----
-    tbl.data.7days <- reactive({
-      
-      dta2 %>% 
-        dplyr::arrange(GNISIDNAME, desc(Date)) %>% 
-        dplyr::filter((as.Date(Date) <= as.Date(max(dta2$Date))) & (as.Date(Date) >= as.Date(max(dta2$Date))-6))
-      
-    })
-    
-    no.data <- reactive({
-      
-      dta1 %>% 
-        dplyr::filter(!is.na(inApp)) %>% 
-        dplyr::filter(!GNIS_Name_ID %in% tbl.data.7days()$GNISIDNAME) %>% 
-        dplyr::mutate(mean_7DayMax = "No Data Available") %>% 
-        dplyr::rename(GNISIDNAME = GNIS_Name_ID) %>% 
-        dplyr::select(GNISIDNAME,mean_7DayMax)
-      
-    })
-    
-    tbl.data <- reactive({
-      
-      tbl.data.7days() %>% 
-        dplyr::group_by(GNISIDNAME) %>% 
-        dplyr::summarise(mean_7DayMax = mean(MAX_cellsml)) %>% 
-        dplyr::ungroup() %>% 
-        #dplyr::left_join(tbl.data.7days(),by="GNISIDNAME") %>% 
-        #dplyr::filter(mean_7DayMax == MAX_cellsml) %>% 
-        dplyr::arrange(desc(mean_7DayMax)) %>% 
-        dplyr::mutate(mean_7DayMax = ifelse(mean_7DayMax<= 6310, "Non-detect",
-                                            format(round(mean_7DayMax,0),big.mark=",",scientific = FALSE))) %>% 
-        rbind(no.data()) %>% 
-        dplyr::left_join(lakes.resolvable, by = "GNISIDNAME") %>% 
-        dplyr::mutate(Basin = ifelse(`HU_6_NAME` == "Willamette",`HU_8_NAME`,`HU_6_NAME`)) %>% 
-        dplyr::select(GNISIDNAME,Basin,mean_7DayMax) %>% 
-        dplyr::distinct(GNISIDNAME, .keep_all = TRUE) %>% 
-        #dplyr::mutate(Date = as.Date(Date,format="%Y-%b-%d")) %>% 
-        dplyr::rename(Waterbody_GNISID = GNISIDNAME,
-                      `7DADM (cells/mL)` = mean_7DayMax)
-    })
-    
     output$tbl7dadm <- DT::renderDataTable({
       
       DT::datatable(
-        data = tbl.data(),
+        data = tbl.data,
         style = 'bootstrap',
         extensions = 'Buttons',
         options = list(dom = 'frtilpB',
@@ -575,15 +535,15 @@ shinyApp(
           "Select a waterbody to show the data table."
           
         })
-
+        
       } else {
         
         output$no_data <- renderText({})
         
         output$caption <- renderUI(HTML(unique((paste0(#"&nbsp;","&nbsp;","&nbsp;","&nbsp;",
-                                                      df_tbl()$Waterbody_GNISID,", ",
-                                                      format(as.Date(min(df_tbl()$Date)),"%B %d, %Y")," - ",
-                                                      format(as.Date(max(df_tbl()$Date)),"%B %d, %Y"))))))
+          df_tbl()$Waterbody_GNISID,", ",
+          format(as.Date(min(df_tbl()$Date)),"%B %d, %Y")," - ",
+          format(as.Date(max(df_tbl()$Date)),"%B %d, %Y"))))))
         
         output$table <- DT::renderDataTable({
           
@@ -613,7 +573,7 @@ shinyApp(
       }
       
     })
-   
+    
     # (3) Text: Drinking Water Area ----
     dw <- reactive({
       
@@ -661,28 +621,11 @@ shinyApp(
     
     # (5) Maps ----
     # _ initial map ----
-    
-    map.tbl.data <- reactive({
-      
-      tbl.data() %>% 
-        dplyr::filter(!`7DADM (cells/mL)` %in% c("Non-detect","No Data Available")) %>% 
-        dplyr::mutate(`7dadm` = gsub(",","",`7DADM (cells/mL)`)) %>% 
-        dplyr::filter(as.numeric(`7dadm`) > 100000)
-      
-    })
-    
-    lakes.resolvable.7dadm <- reactive({
-      
-      lakes.resolvable %>% 
-        dplyr::mutate(`7dadm` = ifelse(GNISIDNAME %in% map.tbl.data()$`Waterbody_GNISID`,"High (>100,000)","Others (<100,000)"))
-      
-    })
-    
     output$map <- leaflet::renderLeaflet({
       
       #Create a palette function, using the selected color
       palette7dadm <- leaflet::colorFactor(palette = c('red','blue'), 
-                                           domain = unique(sort(lakes.resolvable.7dadm()$`7dadm`)))
+                                           domain = unique(sort(lakes.resolvable.7dadm$`7dadm`)))
       
       leaflet::leaflet() %>% 
         leaflet::addMapPane("OpenStreetMap", zIndex = -40) %>% 
@@ -702,20 +645,20 @@ shinyApp(
                             width = 180,
                             height = 200,
                             zoomLevelFixed = 5) %>% 
-        leaflet::addPolygons(data = lakes.resolvable.7dadm(), 
-                             color = ~palette7dadm(lakes.resolvable.7dadm()$`7dadm`),
+        leaflet::addPolygons(data = lakes.resolvable.7dadm, 
+                             color = ~palette7dadm(lakes.resolvable.7dadm$`7dadm`),
                              weight = 2,
-                             layer = ~lakes.resolvable.7dadm()$GNISIDNAME,
+                             layer = ~lakes.resolvable.7dadm$GNISIDNAME,
                              smoothFactor = 0.5,
                              opacity = 1,
                              fillColor = "transparent",
                              fillOpacity = 1.0,
-                             label = ~lakes.resolvable.7dadm()$GNIS_Name,
+                             label = ~lakes.resolvable.7dadm$GNIS_Name,
                              labelOptions = labelOptions(style = list("font-size" = "18px",
                                                                       "color" = "blue")),
                              options = pathOptions(pane = "lakes.resolvable.7dadm")) %>% 
         leaflet::addLegend(pal = palette7dadm, 
-                           values = lakes.resolvable.7dadm()$`7dadm`, 
+                           values = lakes.resolvable.7dadm$`7dadm`, 
                            title = "Watebody 7DADM:",
                            position = "topright") %>% 
         leaflet::addPolygons(data = huc6, 
@@ -785,7 +728,7 @@ shinyApp(
           "Select a waterbody to show the maps."
           
         })
-       
+        
         
       } else {
         

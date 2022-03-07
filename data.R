@@ -10,6 +10,21 @@ library(rasterVis)
 library(zoo)
 library(shiny)
 
+# ---
+pause = function()
+{
+  if (interactive())
+  {
+    invisible(readline(prompt = "Press <Enter> to generate thumbnail maps, which will take about 2 hours; Or press <Esc> to stop."))
+  }
+  else
+  {
+    cat("Press <Enter> to generate thumbnail maps, which will take about 2 hours; Or press <Esc> to stop.")
+    invisible(readLines(file("stdin"), 1))
+  }
+}
+#---
+
 # Get update of NASA data----
 # Need to have ArcPro on your machine; modify path in the script to point to the correct version of python
 # source("Update_NASA_imagery.R")
@@ -17,7 +32,7 @@ library(shiny)
 # Project data folder @ sharedrive:
 data.path <- "//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/HAB_Shiny_app"
 
-# (1) Data Table ----
+# (1) Timeseries Data Table ----
 dta1 <- readxl::read_xlsx(paste0(data.path,"./data/Resolvable_Lakes.xlsx"), sheet = "cyan_resolvable_lakes")
 
 dta2 <- readxl::read_xlsx(paste0(data.path,"./data/HAB_resolvablelakes_2022.xlsx"), sheet = "HAB_resolvable_lake_data") %>% 
@@ -82,7 +97,50 @@ pal.map <- leaflet::colorBin(palette = palette,
 # Legend labels
 labels = c("Non-detect","Low: 6,311 - 20,000","Moderate: 20,000 - 100,000","High: >100,000")
 
-# (5) Thumbnail maps ----
+# (5) 7DADM Table  ----
+tbl.data.7days <- dta2 %>% 
+  dplyr::arrange(GNISIDNAME, desc(Date)) %>% 
+  dplyr::filter((as.Date(Date) <= as.Date(max(dta2$Date))) & (as.Date(Date) >= as.Date(max(dta2$Date))-6))
+
+no.data <- dta1 %>% 
+  dplyr::filter(!is.na(inApp)) %>% 
+  dplyr::filter(!GNIS_Name_ID %in% tbl.data.7days$GNISIDNAME) %>% 
+  dplyr::mutate(mean_7DayMax = "No Data Available") %>% 
+  dplyr::rename(GNISIDNAME = GNIS_Name_ID) %>% 
+  dplyr::select(GNISIDNAME,mean_7DayMax)
+
+tbl.data <- tbl.data.7days %>% 
+  dplyr::group_by(GNISIDNAME) %>% 
+  dplyr::summarise(mean_7DayMax = mean(MAX_cellsml)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::arrange(desc(mean_7DayMax)) %>% 
+  dplyr::mutate(mean_7DayMax = ifelse(mean_7DayMax<= 6310, "Non-detect",
+                                      format(round(mean_7DayMax,0),big.mark=",",scientific = FALSE))) %>% 
+  rbind(no.data) %>% 
+  dplyr::left_join(lakes.resolvable, by = "GNISIDNAME") %>% 
+  dplyr::mutate(Basin = ifelse(`HU_6_NAME` == "Willamette",`HU_8_NAME`,`HU_6_NAME`)) %>% 
+  dplyr::select(GNISIDNAME,Basin,mean_7DayMax) %>% 
+  dplyr::distinct(GNISIDNAME, .keep_all = TRUE) %>% 
+  #dplyr::mutate(Date = as.Date(Date,format="%Y-%b-%d")) %>% 
+  dplyr::rename(Waterbody_GNISID = GNISIDNAME,
+                `7DADM (cells/mL)` = mean_7DayMax)
+
+# (6) 7DADM Map  ----
+map.tbl.data <- tbl.data %>% 
+  dplyr::filter(!`7DADM (cells/mL)` %in% c("Non-detect","No Data Available")) %>% 
+  dplyr::mutate(`7dadm` = gsub(",","",`7DADM (cells/mL)`)) %>% 
+  dplyr::filter(as.numeric(`7dadm`) > 100000)
+
+lakes.resolvable.7dadm <- lakes.resolvable %>% 
+  dplyr::mutate(`7dadm` = ifelse(GNISIDNAME %in% map.tbl.data$`Waterbody_GNISID`,"High (>100,000)","Others (<100,000)"))
+
+# Save data ----
+#rm(dta1); rm(dta2); rm(dta3)
+save.image(file = "data.RData")
+
+pause()
+
+# (7) Thumbnail maps ----
 tag.map.date <- shiny::tags$style(HTML("
   .leaflet-control.map-date { 
     transform: translate(-50%,20%);
@@ -104,12 +162,7 @@ tag.map.date <- shiny::tags$style(HTML("
 waterbody.list <- sort(unique(lakes.resolvable$GNISIDNAME))
 
 # Dates:
-# require: fulldays; lookup.date
-
-tbl.data.7days <- dta2 %>% 
-  dplyr::arrange(GNISIDNAME, desc(Date)) %>% 
-  dplyr::filter(as.Date(Date) <= as.Date(max(dta2$Date)) & as.Date(Date) >= as.Date(max(dta2$Date))-6)
-
+# require: fulldays; lookup.date; tbl.data.7days
 last7days <- sort(unique(as.Date(tbl.data.7days$Date)))
 
 map.file.name <- data.frame(File_waterbody = character(),
@@ -198,4 +251,3 @@ for(i in sort(unique(map.file.name$File_waterbody))){
 # Save data ----
 #rm(dta1); rm(dta2); rm(dta3)
 save.image(file = "data.RData")
-
