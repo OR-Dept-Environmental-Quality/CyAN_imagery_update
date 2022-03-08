@@ -473,7 +473,7 @@ shinyApp(
                               showlegend = FALSE) %>% 
             plotly::layout(annotations = list(x = max(df()$Date),
                                               y = 100000,
-                                              text = "High (100,000)*",
+                                              text = "High (100,000 cells/mL)*",
                                               font = list(size = 12),
                                               xref = "x",
                                               yref = "y",
@@ -486,7 +486,7 @@ shinyApp(
         })
         
         output$who_line <- renderUI(HTML(paste("&nbsp;","&nbsp;","&nbsp;","&nbsp;",
-                                               em("*High (100,000): World Health Organization (WHO) Recreational Use Value (RUV) Guideline for moderate probability of adverse health effects."))))
+                                               em("*High (100,000 cells/mL): World Health Organization (WHO) Recreational Use Value (RUV) Guideline for moderate probability of adverse health effects."))))
         
       }
       
@@ -659,7 +659,7 @@ shinyApp(
                              options = pathOptions(pane = "lakes.resolvable.7dadm")) %>% 
         leaflet::addLegend(pal = palette7dadm, 
                            values = lakes.resolvable.7dadm$`7dadm`, 
-                           title = "Watebody 7DADM:",
+                           title = "Cyanobacteria Abundance 7DADM:",
                            position = "topright") %>% 
         leaflet::addPolygons(data = huc6, 
                              group = "Basins (HUC6)",

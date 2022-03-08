@@ -132,7 +132,7 @@ map.tbl.data <- tbl.data %>%
   dplyr::filter(as.numeric(`7dadm`) > 100000)
 
 lakes.resolvable.7dadm <- lakes.resolvable %>% 
-  dplyr::mutate(`7dadm` = ifelse(GNISIDNAME %in% map.tbl.data$`Waterbody_GNISID`,"High (>100,000)","Others (<100,000)"))
+  dplyr::mutate(`7dadm` = ifelse(GNISIDNAME %in% map.tbl.data$`Waterbody_GNISID`,"High (>100,000 cells/mL)","Others (<100,000 cells/mL)"))
 
 # Save data ----
 #rm(dta1); rm(dta2); rm(dta3)
@@ -168,6 +168,7 @@ last7days <- sort(unique(as.Date(tbl.data.7days$Date)))
 map.file.name <- data.frame(File_waterbody = character(),
                             File_name = character())
 
+# _ images ----
 # This for loop will take more than 2 hours to run.
 for (x in 1:length(waterbody.list)){
   
@@ -232,6 +233,7 @@ for (x in 1:length(waterbody.list)){
   
 }
 
+# _ report images ----
 library(magick)
 
 for(i in sort(unique(map.file.name$File_waterbody))){
@@ -239,11 +241,11 @@ for(i in sort(unique(map.file.name$File_waterbody))){
   # test: i <- "Odell Lake_01147159"
   
   df.imgs <- map.file.name %>% dplyr::filter(File_waterbody == i)
-  img.files <- c(df.imgs$File_name[2:8],"./Report_Images/legend/legend.jpg")
-  imgs <- image_read(img.files)
+  img.files <- c(df.imgs$File_name[1:7],"./Report_Images/legend/legend.jpg")
+  imgs <- magick::image_read(img.files)
   #imgs.comb <- image_montage(imgs, tile = '3x3', geometry = "x200+3+5")
-  imgs.comb <- image_montage(imgs, tile = '4x2', geometry = "300x200+1+1")
-  image_write(imgs.comb, path = paste0("./Report_Images/",i,".png"), format = "png")
+  imgs.comb <- magick::image_montage(imgs, tile = '4x2', geometry = "300x200+1+1")
+  magick::image_write(imgs.comb, path = paste0("./Report_Images/",i,".png"), format = "png")
   print(paste0("./Report_Images/",i,".png"))
   
 }
