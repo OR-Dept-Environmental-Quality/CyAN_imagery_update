@@ -122,17 +122,29 @@ tbl.data <- tbl.data.7days %>%
   dplyr::select(GNISIDNAME,Basin,mean_7DayMax) %>% 
   dplyr::distinct(GNISIDNAME, .keep_all = TRUE) %>% 
   #dplyr::mutate(Date = as.Date(Date,format="%Y-%b-%d")) %>% 
-  dplyr::rename(Waterbody_GNISID = GNISIDNAME,
+  dplyr::rename(`Waterbody_GNISID*` = GNISIDNAME,
                 `7DADM (cells/mL)` = mean_7DayMax)
 
-# (6) 7DADM Map  ----
 map.tbl.data <- tbl.data %>% 
   dplyr::filter(!`7DADM (cells/mL)` %in% c("Non-detect","No Data Available")) %>% 
   dplyr::mutate(`7dadm` = gsub(",","",`7DADM (cells/mL)`)) %>% 
-  dplyr::filter(as.numeric(`7dadm`) > 100000)
+  dplyr::filter(as.numeric(`7dadm`) > 100000) %>% 
+  dplyr::select(-`7dadm`)
 
+# (6) 7DADM Map  ----
 lakes.resolvable.7dadm <- lakes.resolvable %>% 
-  dplyr::mutate(`7dadm` = ifelse(GNISIDNAME %in% map.tbl.data$`Waterbody_GNISID`,"High (>100,000 cells/mL)","Others (<100,000 cells/mL)"))
+  dplyr::mutate(`7dadm` = ifelse(GNISIDNAME %in% map.tbl.data$`Waterbody_GNISID*`,"Waterbody with high cyanobacteria abundance","Others")) %>% 
+  dplyr::filter(!`7dadm` == "Others")
+
+#Create a palette function, using the selected color
+#palette7dadm <- leaflet::colorFactor(palette = c('red','blue'), 
+#                                     domain = unique(sort(lakes.resolvable.7dadm$`7dadm`)))
+
+palette7dadm <- leaflet::colorFactor(palette = c('#006d2c'), 
+                                     domain = unique(sort(lakes.resolvable.7dadm$`7dadm`)))
+
+palette7dadm_lg <- leaflet::colorFactor(palette = c('#00441b'), 
+                                     domain = unique(sort(lakes.resolvable.7dadm$`7dadm`)))
 
 # Save data ----
 #rm(dta1); rm(dta2); rm(dta3)
@@ -219,9 +231,9 @@ for (x in 1:length(waterbody.list)){
                                                                     "color" = "blue"))) %>% 
       leaflet::fitBounds(lng1=bounds[[1]], lat1=bounds[[2]], lng2=bounds[[3]], lat2=bounds[[4]])
     
-    mapview::mapshot(map, file = paste0("./Images/",waterbody.list[x],"-",last7days[y],".jpg"))
+    mapview::mapshot(map, file = paste0("./Images/",waterbody.list[x],"-",last7days[y],".png"))
     
-    map.file.name.y <- paste0("./Images/",waterbody.list[x],"-",last7days[y],".jpg")
+    map.file.name.y <- paste0("./Images/",waterbody.list[x],"-",last7days[y],".pgn")
     
     map.file.name.x <- map.file.name.x %>% 
       dplyr::add_row(File_waterbody = waterbody.list[x],
@@ -229,19 +241,24 @@ for (x in 1:length(waterbody.list)){
     
   }
   
+  
   map.file.name <- rbind(map.file.name,map.file.name.x)
   
 }
 
+write.csv(map.file.name,"map_file_name.csv")
+
 # _ report images ----
 library(magick)
+
+map.file.name <- read.csv("map_file_name.csv")
 
 for(i in sort(unique(map.file.name$File_waterbody))){
   
   # test: i <- "Odell Lake_01147159"
   
   df.imgs <- map.file.name %>% dplyr::filter(File_waterbody == i)
-  img.files <- c(df.imgs$File_name[1:7],"./Report_Images/legend/legend.jpg")
+  img.files <- c(df.imgs$File_name[1:7],"./Report_Images/legend/legend.png")
   imgs <- magick::image_read(img.files)
   #imgs.comb <- image_montage(imgs, tile = '3x3', geometry = "x200+3+5")
   imgs.comb <- magick::image_montage(imgs, tile = '4x2', geometry = "300x200+1+1")

@@ -9,6 +9,7 @@ library(shinycssloaders)
 library(raster)
 library(leaflet)
 library(leaflet.extras)
+library(leaflegend)
 library(scales)
 library(plotly)
 library(DT)
@@ -144,7 +145,7 @@ shinyApp(
         tags$div(span("Satellite Estimates of Cyanobacteria in Oregon Lakes and Reservoirs",
                       style = "color: black; font-size: 40px")),
         
-        tags$h3("Reporting Period: ",format(as.Date(max(dta2$Date))-6, "%B %d, %Y")," - ",format(max(dta2$Date),'%B %d, %Y'),".")
+        tags$h3("Reporting Period: ",format(as.Date(max(dta2$Date))-6, "%B %d, %Y")," - ",format(max(dta2$Date),'%B %d, %Y'))
         
         #tags$div(span(HTML(paste0("Last sourced from the ",
         #                          a("U.S. EPA CyAN Project", 
@@ -158,7 +159,7 @@ shinyApp(
       # _ 1. Introduction ----
       shinydashboardPlus::box(
         width = 12,
-        title = "1. Introduction",
+        title = "Introduction",
         status = "primary",
         solidHeader = TRUE,
         collapsible = FALSE,
@@ -167,23 +168,30 @@ shinyApp(
         
         h4("This report provides an update to estimates of cyanobacteria abundance derived from satellite imagery for 49 large Oregon waterbodies. ",
            "Updates are scheduled to occur weekly from March to October each year. Estimates derive from the ", 
-           a("Cyanobacteria Assessment Network (CyAN)", href="https://www.epa.gov/water-research/cyanobacteria-assessment-network-cyan"),
+           a("Cyanobacteria Assessment Network (CyAN)", href="https://www.epa.gov/water-research/cyanobacteria-assessment-network-cyan",target="_blank"),
            " project. Three levels illustrate cyanobacteria abundance (cells/mL): Low: <20,000, Moderate: 20,000-100,000, and High: >100,000. ",
            "The levels correspond to the World Health Organization (WHO) exposure guideline values ",
-           "(",a("WHO, 2003", href="https://apps.who.int/iris/bitstream/handle/10665/42591/9241545801.pdf?sequence=1&isAllowed=y"),"). ",
+           "(",a("WHO, 2003", href="https://apps.who.int/iris/bitstream/handle/10665/42591/9241545801.pdf?sequence=1&isAllowed=y",.noWS = "outside",target="_blank"),"). ",
            "For more information on Harmful Algal Blooms in Oregon, please visit websites from the ",
-           a("Oregon DEQ", href="https://www.oregon.gov/deq/wq/Pages/Harmful-Algal-Blooms.aspx")," and the ",
-           a("Oregon Health Authority", href="https://www.oregon.gov/oha/ph/healthyenvironments/recreation/harmfulalgaeblooms/pages/blue-greenalgaeadvisories.aspx"),"."),
+           a("Oregon DEQ", href="https://www.oregon.gov/deq/wq/Pages/Harmful-Algal-Blooms.aspx",target="_blank")," and the ",
+           a("Oregon Health Authority", href="https://www.oregon.gov/oha/ph/healthyenvironments/recreation/harmfulalgaeblooms/pages/blue-greenalgaeadvisories.aspx",.noWS = "outside",target="_blank"),".",
+           .noWS = c("after-begin", "before-end")),
         
-        h4("All data presented in this report are provisional and subject to change. Estimates of cyanobacteria abundance may be skewed by cloud cover, ",
-           "ice cover, sun glint, water surface roughness, dry lake beds, algal mats and shoreline effects. We suggest examining additional imagery from ",
-           a("Sentinel 2", href="https://www.sentinel-hub.com/explore/sentinelplayground/")," and/or following up with local information to confirm on the ground conditions.")
-      ),
+        h4("All data presented in this report are provisional and subject to change. Estimates of cyanobacteria from satellite imagery do not ",
+           "imply the presence of cyanotoxins or other water quality impairments and do not have regulatory implications. ",
+           "Additional assessments with imagery from the",
+           a("Sentinel 2", href="https://www.sentinel-hub.com/explore/sentinelplayground/",target="_blank"),
+           "Satellites, local visual assessment, and/or water quality sampling are needed to provide additional information on potential human health ",
+           "and environmental effects of cyanobacteria. Please note that estimates of cyanobacteria abundance presented in this report may be skewed ",
+           "by cloud cover, ice cover, sun glint, water surface roughness, dry lake beds, algal mats, and shoreline effects.",
+           .noWS = c("after-begin", "before-end"))
+        
+        ),
       
       # _ 2. Table and Oregon map ----
       shinydashboardPlus::box(
         width = 12,
-        title = "2. Highlighted Waterbodies",
+        title = "Highlighted Waterbodies",
         status = "primary",
         solidHeader = TRUE,
         collapsible = FALSE,
@@ -191,7 +199,7 @@ shinyApp(
         #dropdownMenu = boxDropdown(),
         
         tags$h4(p(strong("Waterbodies with high cyanobacteria abundance (>100,000 cells/mL) based on the 7-Day Average Daily Maximum (7DADM)."))),
-        tags$h4(p(strong(paste0("Reporting Period: ",format(as.Date(max(dta2$Date))-6, "%B %d, %Y")," - ",format(max(dta2$Date),'%B %d, %Y'),".")))),
+        tags$h4(p(strong(paste0("Reporting Period: ",format(as.Date(max(dta2$Date))-6, "%B %d, %Y")," - ",format(max(dta2$Date),'%B %d, %Y'))))),
         
         # ___ Table 7DADM ----
         shinydashboard::box(
@@ -199,7 +207,13 @@ shinyApp(
           #title = "Table",
           solidHeader = TRUE,
           
-          shinycssloaders::withSpinner(DT::dataTableOutput("tbl7dadm"))
+          shinycssloaders::withSpinner(DT::dataTableOutput("tbl7dadm")),
+          tags$br(),
+          tags$em("*GNISID: ",a("USGS Geographic Names Information System Identifier", 
+                                href="https://www.usgs.gov/faqs/what-geographic-names-information-system-gnis",
+                                .noWS = "outside",
+                                target="_blank"),
+                  .noWS = c("after-begin", "before-end"))
           
         ),
         
@@ -213,7 +227,7 @@ shinyApp(
           #   format(as.Date(max(dta2$Date))-6, "%B %d, %Y")," to ",format(max(dta2$Date),'%B %d, %Y'),
           #   "are outlined in red. Other resolvable waterbodies are in blue."),
           
-          shinycssloaders::withSpinner(leaflet::leafletOutput("map", height = "650px"))
+          shinycssloaders::withSpinner(leaflet::leafletOutput("map", height = "680px"))
           
         )
       ),
@@ -222,14 +236,14 @@ shinyApp(
       shinydashboardPlus::box(
         width = 12,
         height = "100%",
-        title = "3. Data Visualization",
+        title = "Data Visualization",
         status = "primary",
         solidHeader = TRUE,
         collapsible = FALSE,
         collapsed = FALSE,
         
         tags$h4(p(strong("Maps and time series plot of cyanobacteria estimates for each of the 49 resolvable waterbodies according to the methods outlined in the ",
-                         a("CyAN Project", href="https://www.epa.gov/water-research/cyanobacteria-assessment-network-cyan"),"."))),
+                         a("CyAN Project", href="https://www.epa.gov/water-research/cyanobacteria-assessment-network-cyan",.noWS = "outside",target="_blank"),".",.noWS = c("after-begin", "before-end")))),
         
         # ___ 7maps ----
         shinydashboard::box(
@@ -382,11 +396,12 @@ shinyApp(
             h4("The report is provided by the Oregon DEQ Watershed Management Section. Copyright (C) 2020-2022, ODEQ."),
             h4("The source code of this report is publicly available at GitHub repository: ", 
                a("Satellite Estimates of Cyanobacteria in Oregon Lakes and Reservoirs",
-                 href="https://github.com/OR-Dept-Environmental-Quality/CyAN_imagery_update"),"."),
+                 href="https://github.com/OR-Dept-Environmental-Quality/CyAN_imagery_update",.noWS = "outside",target="_blank"),".",
+               .noWS = c("after-begin", "before-end")),
             h4("For more information on this report, please contact"),
-            h4("Daniel Sobota, ", a("daniel.sobota@deq.oregon.gov",href="mailto:dan.sobota@deq.oregon.gov")),
-            h4("Erin Costello, ", a("erin.costello@deq.oregon.gov",href="mailto:erin.costello@deq.oregon.gov")),
-            h4("Yuan Grund, ", a("yuan.grund@deq.oregon.gov",href="mailto:yuan.grund@deq.oregon.gov"))
+            h4("Daniel Sobota, ", a("daniel.sobota@deq.oregon.gov",href="mailto:dan.sobota@deq.oregon.gov",target="_blank")),
+            h4("Erin Costello, ", a("erin.costello@deq.oregon.gov",href="mailto:erin.costello@deq.oregon.gov",target="_blank")),
+            h4("Yuan Grund, ", a("yuan.grund@deq.oregon.gov",href="mailto:yuan.grund@deq.oregon.gov",target="_blank"))
             
           )
           
@@ -497,7 +512,7 @@ shinyApp(
     output$tbl7dadm <- DT::renderDataTable({
       
       DT::datatable(
-        data = tbl.data,
+        data = map.tbl.data,
         style = 'bootstrap',
         extensions = 'Buttons',
         options = list(dom = 'frtilpB',
@@ -623,10 +638,6 @@ shinyApp(
     # _ initial map ----
     output$map <- leaflet::renderLeaflet({
       
-      #Create a palette function, using the selected color
-      palette7dadm <- leaflet::colorFactor(palette = c('red','blue'), 
-                                           domain = unique(sort(lakes.resolvable.7dadm$`7dadm`)))
-      
       leaflet::leaflet() %>% 
         leaflet::addMapPane("OpenStreetMap", zIndex = -40) %>% 
         leaflet::addMapPane("National Geographic World Map", zIndex = -40) %>%
@@ -652,15 +663,18 @@ shinyApp(
                              smoothFactor = 0.5,
                              opacity = 1,
                              fillColor = "transparent",
-                             fillOpacity = 1.0,
+                             fillOpacity = 0,
                              label = ~lakes.resolvable.7dadm$GNIS_Name,
                              labelOptions = labelOptions(style = list("font-size" = "18px",
                                                                       "color" = "blue")),
                              options = pathOptions(pane = "lakes.resolvable.7dadm")) %>% 
-        leaflet::addLegend(pal = palette7dadm, 
-                           values = lakes.resolvable.7dadm$`7dadm`, 
-                           title = "Cyanobacteria Abundance 7DADM:",
-                           position = "topright") %>% 
+        leaflegend::addLegendFactor(pal = palette7dadm_lg, 
+                                    values = lakes.resolvable.7dadm$`7dadm`,
+                                    #title = "Cyanobacteria Abundance 7DADM:",
+                                    shape = "rect",
+                                    opacity = 1,
+                                    fillOpacity = 0,
+                                    position = "topright") %>% 
         leaflet::addPolygons(data = huc6, 
                              group = "Basins (HUC6)",
                              color = "grey",
