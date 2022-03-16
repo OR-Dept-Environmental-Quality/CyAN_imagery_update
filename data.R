@@ -144,7 +144,7 @@ palette7dadm <- leaflet::colorFactor(palette = c('#006d2c'),
                                      domain = unique(sort(lakes.resolvable.7dadm$`7dadm`)))
 
 palette7dadm_lg <- leaflet::colorFactor(palette = c('#00441b'), 
-                                     domain = unique(sort(lakes.resolvable.7dadm$`7dadm`)))
+                                        domain = unique(sort(lakes.resolvable.7dadm$`7dadm`)))
 
 # Save data ----
 #rm(dta1); rm(dta2); rm(dta3)
@@ -175,7 +175,10 @@ waterbody.list <- sort(unique(lakes.resolvable$GNISIDNAME))
 
 # Dates:
 # require: fulldays; lookup.date; tbl.data.7days
-last7days <- sort(unique(as.Date(tbl.data.7days$Date)))
+last7days <- lookup.date %>% 
+  dplyr::filter(Date %in% as.Date(c((today()-7):(today()-1)))) %>% 
+  dplyr::arrange(Day.fulldays) %>% 
+  dplyr::pull(Date)
 
 map.file.name <- data.frame(File_waterbody = character(),
                             File_name = character())
@@ -185,7 +188,7 @@ map.file.name <- data.frame(File_waterbody = character(),
 for (x in 1:length(waterbody.list)){
   
   # test: x <- 1
-  # test: y <- 3
+  # test: y <- 5
   
   print(waterbody.list[x])
   
@@ -204,11 +207,11 @@ for (x in 1:length(waterbody.list)){
     
     df.map.date <- lookup.date %>% 
       dplyr::filter(Date %in% as.Date(last7days[y])) %>% 
-      dplyr::mutate(Day.dta = ifelse(Day.dta < 10, paste0("00",as.character(Day.dta)),
-                                     ifelse((Day.dta >= 10 & Day.dta < 100), paste0("0",as.character(Day.dta)), Day.dta))) %>% 
-      dplyr::mutate(map_day = paste0(Year.dta,Day.dta))
+      dplyr::mutate(Day.dta = ifelse(Day.fulldays < 10, paste0("00",as.character(Day.fulldays)),
+                                     ifelse((Day.fulldays >= 10 & Day.fulldays < 100), paste0("0",as.character(Day.fulldays)), Day.fulldays))) %>% 
+      dplyr::mutate(map_day = paste0(Year.fulldays,Day.dta))
     
-    tif.dir <- paste0("//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/HAB_Shiny_app/data/", df.map.date$Year.dta, "/")
+    tif.dir <- paste0("//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/HAB_Shiny_app/data/", df.map.date$Year.fulldays, "/")
     file.name <- paste0(df.map.date$map_day,".tif")
     
     rst <- raster::raster(paste0(tif.dir,file.name))
@@ -233,7 +236,7 @@ for (x in 1:length(waterbody.list)){
     
     mapview::mapshot(map, file = paste0("./Images/",waterbody.list[x],"-",last7days[y],".png"))
     
-    map.file.name.y <- paste0("./Images/",waterbody.list[x],"-",last7days[y],".pgn")
+    map.file.name.y <- paste0("./Images/",waterbody.list[x],"-",last7days[y],".png")
     
     map.file.name.x <- map.file.name.x %>% 
       dplyr::add_row(File_waterbody = waterbody.list[x],

@@ -30,33 +30,33 @@ shinyApp(
     ),              #---remove sidebar
     #  minified = TRUE, collapsed = TRUE, width = 400,
     
-    #  sidebarMenu(
-    #    menuItem("About", icon = icon("info-circle"),
-    #             menuSubItem(h4(HTML("
-    #             This web application provides an interactive<br/>
-    #             map to view satellite derived data on<br/>
-    #             cyanobacteria harmful algal blooms in<br/>
-    #             freshwater ecosystems of Oregon. Satellite<br/>
-    #             data come from the US EPA CyAN project<br/>
-    #             and are updated on a regular basis.<br/>
-    #             <br/>
-    #             Copyright (C) 2020-2021, ODEQ.")))),
-    #    menuItem("User Guide",  icon = icon("cog"), href="userGuide.html"),
-    #    menuItem("Contact", icon = icon("envelope"),
-    #             menuSubItem(h5(HTML("
-    #             For more information on the Oregon HABs Map<br/>
-    #             Application Project, please contact<br/>
-    #             <br/>
-    #             Dan Sobota, Water Quality Analyst (Lead) <br/>
-    #             Daniel.Sobota@deq.state.or.us<br/>
-    #             <br/>
-    #             Erin Costello, Water Quality Analyst<br/>
-    #             Erin.Costello@deq.state.or.us<br/>
-    #             <br/>
-    #             Yuan Grund, Water Quality Analyst<br/>
-    #             Yuan.Grund@deq.state.or.us"))))
-    #  ) # sidebarMenu END
-    #), # dashboardSidebar END
+    #   sidebarMenu(
+    #     menuItem("About", icon = icon("info-circle"),
+    #              menuSubItem(h4(HTML("
+    #                This web application provides an interactive<br/>
+    #                map to view satellite derived data on<br/>
+    #                cyanobacteria harmful algal blooms in<br/>
+    #                freshwater ecosystems of Oregon. Satellite<br/>
+    #                data come from the US EPA CyAN project<br/>
+    #                and are updated on a regular basis.<br/>
+    #                <br/>
+    #                Copyright (C) 2020-2021, ODEQ.")))),
+    #     menuItem("User Guide",  icon = icon("cog"), href="userGuide.html"),
+    #     menuItem("Contact", icon = icon("envelope"),
+    #              menuSubItem(h5(HTML("
+    #                For more information on the Oregon HABs Map<br/>
+    #                Application Project, please contact<br/>
+    #                <br/>
+    #                Dan Sobota, Water Quality Analyst (Lead) <br/>
+    #                Daniel.Sobota@deq.state.or.us<br/>
+    #                <br/>
+    #                Erin Costello, Water Quality Analyst<br/>
+    #                Erin.Costello@deq.state.or.us<br/>
+    #                <br/>
+    #                Yuan Grund, Water Quality Analyst<br/>
+    #                Yuan.Grund@deq.state.or.us"))))
+    #   ) # sidebarMenu END
+    # ), # dashboardSidebar END
     
     # Body ----
     body = shinydashboard::dashboardBody(
@@ -134,6 +134,10 @@ shinyApp(
                          #caption {
                          font-size: 18px;
                          }
+                         
+                         a {
+                         color: #0000FF;
+                         }
                          '))),
       
       # _ Header ----
@@ -145,14 +149,21 @@ shinyApp(
         tags$div(span("Satellite Estimates of Cyanobacteria in Oregon Lakes and Reservoirs",
                       style = "color: black; font-size: 40px")),
         
-        tags$h3("Reporting Period: ",format(as.Date(max(dta2$Date))-6, "%B %d, %Y")," - ",format(max(dta2$Date),'%B %d, %Y'))
+        tags$h3("Reporting Period: ",
+                ifelse(month(as.Date(max(dta2$Date))-6) %in% c(8,9,10,11,12,1,2), 
+                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%b. %d, %Y')), 
+                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%B %d, %Y'))),
+                " - ",
+                ifelse(month(as.Date(max(dta2$Date))) %in% c(8,9,10,11,12,1,2), 
+                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%b. %d, %Y')), 
+                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%B %d, %Y'))))
         
-        #tags$div(span(HTML(paste0("Last sourced from the ",
-        #                          a("U.S. EPA CyAN Project", 
-        #                            href="https://www.epa.gov/water-research/cyanobacteria-assessment-network-cyan"),
-        #                          " on: ",
-        #                          max(dta$Date))),
-        #              style = "color: black; font-size: 20px"))
+        # tags$div(span(HTML(paste0("Last sourced from the ",
+        #                           a("U.S. EPA CyAN Project", 
+        #                             href="https://www.epa.gov/water-research/cyanobacteria-assessment-network-cyan"),
+        #                           " on: ",
+        #                           max(dta$Date))),
+        #               style = "color: black; font-size: 20px"))
         
       ), # Header box END 
       
@@ -186,7 +197,7 @@ shinyApp(
            "by cloud cover, ice cover, sun glint, water surface roughness, dry lake beds, algal mats, and shoreline effects.",
            .noWS = c("after-begin", "before-end"))
         
-        ),
+      ),
       
       # _ 2. Table and Oregon map ----
       shinydashboardPlus::box(
@@ -199,7 +210,15 @@ shinyApp(
         #dropdownMenu = boxDropdown(),
         
         tags$h4(p(strong("Waterbodies with high cyanobacteria abundance (>100,000 cells/mL) based on the 7-Day Average Daily Maximum (7DADM)."))),
-        tags$h4(p(strong(paste0("Reporting Period: ",format(as.Date(max(dta2$Date))-6, "%B %d, %Y")," - ",format(max(dta2$Date),'%B %d, %Y'))))),
+        tags$h4(p(strong(paste0("Reporting Period: ",
+                                ifelse(month(as.Date(max(dta2$Date))-6) %in% c(8,9,10,11,12,1,2), 
+                                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%b. %d, %Y')), 
+                                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%B %d, %Y'))),
+                                " - ",
+                                ifelse(month(as.Date(max(dta2$Date))) %in% c(8,9,10,11,12,1,2), 
+                                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%b. %d, %Y')), 
+                                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%B %d, %Y')))
+        )))),
         
         # ___ Table 7DADM ----
         shinydashboard::box(
@@ -223,9 +242,9 @@ shinyApp(
           #title = "ORMap",
           solidHeader = TRUE,
           
-          #h4("Waterbodies with high cyanobacteria estimates from ",
-          #   format(as.Date(max(dta2$Date))-6, "%B %d, %Y")," to ",format(max(dta2$Date),'%B %d, %Y'),
-          #   "are outlined in red. Other resolvable waterbodies are in blue."),
+          # h4("Waterbodies with high cyanobacteria estimates from ",
+          #    format(as.Date(max(dta2$Date))-6, "%B %d, %Y")," to ",format(max(dta2$Date),'%B %d, %Y'),
+          #    "are outlined in red. Other resolvable waterbodies are in blue."),
           
           shinycssloaders::withSpinner(leaflet::leafletOutput("map", height = "680px"))
           
@@ -266,13 +285,13 @@ shinyApp(
                                       ),
                                       multiple = FALSE),
             # ____ Drinking water area ----
-            shiny::textOutput("dw"),
+            shiny::textOutput("dw")#,
             
             # ____ Lake images ----
-            tags$br(),
-            textOutput("non_select_image"),
-            shiny::imageOutput("lakeImage", width = "300",height = "100%", inline = TRUE),
-            tags$h5("Lake image will be updated soon.")
+            # tags$br(),
+            # textOutput("non_select_image"),
+            # shiny::imageOutput("lakeImage", width = "300",height = "100%", inline = TRUE),
+            # tags$h5("Lake image will be updated soon.")
             
           ),
           
@@ -282,7 +301,15 @@ shinyApp(
             solidHeader = FALSE,
             
             # ____ 7maps ----
-            tags$h4(p(strong(paste0("Satellite estimates of cyanobacteria abundance from ",format(as.Date(max(dta2$Date))-6, "%B %d, %Y")," to ",format(max(dta2$Date),'%B %d, %Y'),".")))),
+            tags$h4(p(strong(paste0("Satellite estimates of cyanobacteria abundance from ",
+                                    ifelse(month(as.Date(max(dta2$Date))-6) %in% c(8,9,10,11,12,1,2), 
+                                           gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%b. %d, %Y')), 
+                                           gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%B %d, %Y'))),
+                                    " - ",
+                                    ifelse(month(as.Date(max(dta2$Date))) %in% c(8,9,10,11,12,1,2), 
+                                           gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%b. %d, %Y')), 
+                                           gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%B %d, %Y'))),
+                                    ".")))),
             
             textOutput("non_select"),
             uiOutput("no_pixels"),
@@ -323,7 +350,7 @@ shinyApp(
                                   startview = "year",
                                   weekstart = 0),
             
-            h5("Data available since June 7, 2016."),
+            uiOutput("dataDate"),
             
             tags$br(),
             tags$br(),
@@ -393,7 +420,7 @@ shinyApp(
             #title = "copyright",
             solidHeader = FALSE,
             
-            h4("The report is provided by the Oregon DEQ Watershed Management Section. Copyright (C) 2020-2022, ODEQ."),
+            h4("The report is provided by the Oregon DEQ Watershed Management Section. Copyright (C) 2020-2022, Oregon DEQ."),
             h4("The source code of this report is publicly available at GitHub repository: ", 
                a("Satellite Estimates of Cyanobacteria in Oregon Lakes and Reservoirs",
                  href="https://github.com/OR-Dept-Environmental-Quality/CyAN_imagery_update",.noWS = "outside",target="_blank"),".",
@@ -557,16 +584,22 @@ shinyApp(
         
         output$caption <- renderUI(HTML(unique((paste0(#"&nbsp;","&nbsp;","&nbsp;","&nbsp;",
           df_tbl()$Waterbody_GNISID,", ",
-          format(as.Date(min(df_tbl()$Date)),"%B %d, %Y")," - ",
-          format(as.Date(max(df_tbl()$Date)),"%B %d, %Y"))))))
+          ifelse(month(as.Date(max(df_tbl()$Date))-6) %in% c(8,9,10,11,12,1,2), 
+                 gsub("(\\D)0", "\\1", format(as.Date(max(df_tbl()$Date))-6,'%b. %d, %Y')), 
+                 gsub("(\\D)0", "\\1", format(as.Date(max(df_tbl()$Date))-6,'%B %d, %Y'))),
+          " - ",
+          ifelse(month(as.Date(max(df_tbl()$Date))) %in% c(8,9,10,11,12,1,2), 
+                 gsub("(\\D)0", "\\1", format(as.Date(max(df_tbl()$Date)),'%b. %d, %Y')), 
+                 gsub("(\\D)0", "\\1", format(as.Date(max(df_tbl()$Date)),'%B %d, %Y')))
+        )))))
         
         output$table <- DT::renderDataTable({
           
           DT::datatable(
             data = df_tbl(),
-            #caption = unique(paste0(df_tbl()$Waterbody_GNISID,", ",
-            #                        format(as.Date(min(df_tbl()$Date)),"%B %d, %Y")," - ",
-            #                        format(as.Date(max(df_tbl()$Date)),"%B %d, %Y"))),
+            # caption = unique(paste0(df_tbl()$Waterbody_GNISID,", ",
+            #                         format(as.Date(min(df_tbl()$Date)),"%B %d, %Y")," - ",
+            #                         format(as.Date(max(df_tbl()$Date)),"%B %d, %Y"))),
             style = 'bootstrap',
             extensions = 'Buttons',
             options = list(dom = 'frtilpB',
@@ -589,7 +622,8 @@ shinyApp(
       
     })
     
-    # (3) Text: Drinking Water Area ----
+    # (3) Texts ----
+    # _ Drinking Water Area ----
     dw <- reactive({
       
       dta %>% 
@@ -607,32 +641,57 @@ shinyApp(
       }
     })
     
-    # (4) Image: Lake images ----
+    # _ Data Date ----
+    dd <- reactive({
+      
+      dta %>% dplyr::filter(GNISIDNAME %in% input$waterbody) 
+      
+    })
+    
     observeEvent(input$waterbody,{
       
-      if(input$waterbody == c("Oregon")) {
+      if(input$waterbody == c("Oregon")) {} 
+      else {
         
-        output$non_select_image <- renderText({ 
+        output$dataDate <- renderUI(HTML(paste0(
+          "Data for ",input$waterbody," is available since ",
+          ifelse(month(as.Date(min(dd()$Date))) %in% c(8,9,10,11,12,1,2), 
+                 gsub("(\\D)0", "\\1", format(as.Date(min(dd()$Date)),'%b. %d, %Y')), 
+                 gsub("(\\D)0", "\\1", format(as.Date(min(dd()$Date)),'%B %d, %Y'))),
+          "."
           
-          "Select a waterbody to show the lake image."
-          
-        })
-        
-      } else {
-        
-        output$non_select_image <- renderText({})
-        
-        output$lakeImage <- renderImage({
-          
-          list(src = paste0("./Lake_Images/",input$waterbody,".jpg"),
-               width = 400,
-               height = 300)
-          
-        }, deleteFile = FALSE)
+        )))
         
       }
       
     })
+    
+    # (4) Image: Lake images ----
+    # observeEvent(input$waterbody,{
+    #   
+    #   if(input$waterbody == c("Oregon")) {
+    #     
+    #     output$non_select_image <- renderText({ 
+    #       
+    #       "Select a waterbody to show the lake image."
+    #       
+    #     })
+    #     
+    #   } else {
+    #     
+    #     output$non_select_image <- renderText({})
+    #     
+    #     output$lakeImage <- renderImage({
+    #       
+    #       list(src = paste0("./Lake_Images/",input$waterbody,".jpg"),
+    #            width = 400,
+    #            height = 300)
+    #       
+    #     }, deleteFile = FALSE)
+    #     
+    #   }
+    #   
+    # })
     
     # (5) Maps ----
     # _ initial map ----
@@ -667,7 +726,8 @@ shinyApp(
                              label = ~lakes.resolvable.7dadm$GNIS_Name,
                              labelOptions = labelOptions(style = list("font-size" = "18px",
                                                                       "color" = "blue")),
-                             options = pathOptions(pane = "lakes.resolvable.7dadm")) %>% 
+                             options = pathOptions(pane = "lakes.resolvable.7dadm"),
+                             group = "lakes.resolvable.7dadm") %>% 
         leaflegend::addLegendFactor(pal = palette7dadm_lg, 
                                     values = lakes.resolvable.7dadm$`7dadm`,
                                     #title = "Cyanobacteria Abundance 7DADM:",
@@ -695,6 +755,11 @@ shinyApp(
                              fillColor = "transparent",
                              fillOpacity = 1.0,
                              options = pathOptions(pane = "state.boundary")) %>% 
+        # Tool ----
+      leaflet.extras::addSearchFeatures(targetGroups = "lakes.resolvable.7dadm",
+                                        options = leaflet.extras::searchFeaturesOptions(openPopup = TRUE, 
+                                                                                        zoom = 8,
+                                                                                        textPlaceholder = "Search a waterbody...")) %>% 
         #leaflet::addRasterImage(rst, colors = pal.map, opacity = 1) %>% 
         leaflet::addLayersControl(baseGroups = c("OpenStreetMap","National Geographic World Map"),
                                   overlayGroups = c("Basins (HUC6)"),
