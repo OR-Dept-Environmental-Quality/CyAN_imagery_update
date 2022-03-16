@@ -4,8 +4,8 @@ This report provides an update to estimates of cyanobacteria abundance derived f
 
 
 
-# License
-## GNU General Public License v3 (GPLv3)
+## License
+GNU General Public License v3 (GPLv3)
 
 The report is provided by the Oregon DEQ Watershed Management Section. Copyright (C) 2020-2022, Oregon DEQ.
 
