@@ -70,8 +70,8 @@ missing.dates <- lookup.date %>%
   dplyr::filter(is.na(Day.dta))
 
 # (3) Map: shapefiles ----
-lakes.resolvable <- sf::st_read(dsn = paste0(data.path,"/data/updatedValidLakes_CyAN_OR.shp"),
-                                layer = "updatedValidLakes_CyAN_OR") %>% 
+lakes.resolvable <- sf::st_read(dsn = paste0(data.path,"/data/updatedValidLakes_CyAN_OR_53.shp"),
+                                layer = "updatedValidLakes_CyAN_OR_53") %>% 
   st_transform(crs = 4326) %>% 
   dplyr::filter(GNISIDNAME %in% dta1$inApp) # filter out saline lakes
 
@@ -111,12 +111,13 @@ no.data <- dta1 %>%
 
 tbl.data <- tbl.data.7days %>% 
   dplyr::group_by(GNISIDNAME) %>% 
-  dplyr::summarise(mean_7DayMax = mean(MAX_cellsml)) %>% 
+  dplyr::summarise(mean_7DayMax = mean(MAX_cellsml)) %>%    # 7 day average daily maximum
+  #dplyr::summarise(`7DMC` = max(MAX_cellsml)) %>%          # 7 day maximum composite
   dplyr::ungroup() %>% 
   dplyr::arrange(desc(mean_7DayMax)) %>% 
   dplyr::mutate(mean_7DayMax = ifelse(mean_7DayMax<= 6310, "Non-detect",
                                       format(round(mean_7DayMax,0),big.mark=",",scientific = FALSE))) %>% 
-  rbind(no.data) %>% 
+  #rbind(no.data) %>% 
   dplyr::left_join(lakes.resolvable, by = "GNISIDNAME") %>% 
   dplyr::mutate(Basin = ifelse(`HU_6_NAME` == "Willamette",`HU_8_NAME`,`HU_6_NAME`)) %>% 
   dplyr::select(GNISIDNAME,Basin,mean_7DayMax) %>% 
