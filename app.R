@@ -209,7 +209,7 @@ shinyApp(
         collapsed = FALSE,
         #dropdownMenu = boxDropdown(),
         
-        tags$h4(p(strong("Waterbodies with high cyanobacteria abundance (>100,000 cells/mL) based on the 7-Day Average Daily Maximum (7DADM)."))),
+        tags$h4(p(strong("Waterbodies with high cyanobacteria abundance (>100,000 cells/mL) based on the average of daily maximum estimates during the 7-day reporting period (7DADM)."))),
         tags$h4(p(strong(paste0("Reporting Period: ",
                                 ifelse(month(as.Date(max(dta2$Date))-6) %in% c(8,9,10,11,12,1,2), 
                                        gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%b. %d, %Y')), 
@@ -305,7 +305,7 @@ shinyApp(
                                     ifelse(month(as.Date(max(dta2$Date))-6) %in% c(8,9,10,11,12,1,2), 
                                            gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%b. %d, %Y')), 
                                            gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%B %d, %Y'))),
-                                    " - ",
+                                    " to ",
                                     ifelse(month(as.Date(max(dta2$Date))) %in% c(8,9,10,11,12,1,2), 
                                            gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%b. %d, %Y')), 
                                            gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%B %d, %Y'))),
@@ -362,7 +362,7 @@ shinyApp(
               choices = c("Maximum" = "Maximum",
                           "Mean" = "Mean",
                           "Minimum" = "Minimum"),
-              selected = "Mean"),
+              selected = c("Maximum","Mean")),
             
             tags$br(),
             tags$br(),
@@ -503,19 +503,20 @@ shinyApp(
                               colors = pal.plot,
                               marker = list(size = 8),
                               legendgroup = "sta") %>% 
-            plotly::layout(xaxis = list(title = "Date", range = c(min(df()$Date),max(df()$Date))),
+            plotly::layout(xaxis = list(title = "Date", range = c(min(df()$Date),max(dta$Date)+1)),
                            # yaxis = list(title = "Cyanobacteria (cells/mL)"),
                            title = as.character(unique(df()$GNISIDNAME))) %>% 
             plotly::layout(yaxis = list(type = type(),
                                         title = yaxis())) %>% 
             plotly::add_trace(y = 100000, mode = "lines",
+                              x = ~as.Date(dta$Date),
                               line = list(shape = 'spline', color = '#006d2c', width = 3),
                               name = "High",
                               legendgroup = "high",
                               showlegend = FALSE) %>% 
-            plotly::layout(annotations = list(x = max(df()$Date),
+            plotly::layout(annotations = list(x = max(dta$Date),
                                               y = 100000,
-                                              text = "High (100,000 cells/mL)*",
+                                              text = "High (100,000 cells/mL)**",
                                               font = list(size = 12),
                                               xref = "x",
                                               yref = "y",
@@ -523,12 +524,37 @@ shinyApp(
                                               arrowhead = 3,
                                               arrowsize = 1,
                                               ax = -60,
-                                              ay = -20)) 
+                                              ay = -20)) %>%
+            plotly::layout(shapes = list(list(type = "rect", 
+                                              text = 'Report', 
+                                              fillcolor = "green", 
+                                              line = list(color = "green"),
+                                              opacity = 0.2, 
+                                              y0 = 0.5, 
+                                              y1 = max(df()$`Cyanobacteria (cells/mL)`) + 50000, 
+                                              x0 = as.Date(max(dta2$Date))-6, 
+                                              x1 = as.Date(max(dta2$Date))))) %>% 
+            plotly::add_text(showlegend = FALSE, 
+                             x = c(as.Date(max(dta2$Date))-3), 
+                             y = c(max(df()$`Cyanobacteria (cells/mL)`) + 30000),
+                             text = c("RP*"),
+                             textfont = list(size=12))
           
         })
         
         output$who_line <- renderUI(HTML(paste("&nbsp;","&nbsp;","&nbsp;","&nbsp;",
-                                               em("*High (100,000 cells/mL): World Health Organization (WHO) Recreational Use Value (RUV) Guideline for moderate probability of adverse health effects."))))
+                                               em(paste0("*RP: Reporting period from ",
+                                                         ifelse(month(as.Date(max(dta2$Date))-6) %in% c(8,9,10,11,12,1,2), 
+                                                                gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%b. %d, %Y')), 
+                                                                gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%B %d, %Y'))),
+                                                         " to ",
+                                                         ifelse(month(as.Date(max(dta2$Date))) %in% c(8,9,10,11,12,1,2), 
+                                                                gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%b. %d, %Y')), 
+                                                                gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%B %d, %Y'))),
+                                                         ".")),
+                                               "<br/>",
+                                               "&nbsp;","&nbsp;","&nbsp;","&nbsp;",
+                                               em("**High (100,000 cells/mL): World Health Organization (WHO) Recreational Use Value (RUV) Guideline for moderate probability of adverse health effects."))))
         
       }
       
@@ -547,6 +573,13 @@ shinyApp(
                        compact = TRUE,
                        nowrap = TRUE,
                        scorllX = TRUE,
+                       scorllY = TRUE,
+                       autoWidth = TRUE,
+                       columnDefs = list(list(targets = 0:3, className = "dt-left"),
+                                         list(targets = (0), width = "50%"),
+                                         list(targets = (1), width = "50%"),
+                                         list(targets = (2), width = "10%"),
+                                         list(targets = (3), width = "10%")),
                        buttons = list(#'print',
                          list(extend = 'collection',
                               buttons = c('csv','excel','pdf'),

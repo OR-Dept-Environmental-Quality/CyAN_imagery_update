@@ -111,7 +111,9 @@ no.data <- dta1 %>%
 
 tbl.data <- tbl.data.7days %>% 
   dplyr::group_by(GNISIDNAME) %>% 
-  dplyr::summarise(mean_7DayMax = mean(MAX_cellsml)) %>%    # 7 day average daily maximum
+  dplyr::summarise(mean_7DayMax = mean(MAX_cellsml),
+                   n=n()) %>%    # 7 day average daily maximum
+  #dplyr::summarise(mean_7DayMax = exp(mean(log(MAX_cellsml)))) %>% # geomean
   #dplyr::summarise(`7DMC` = max(MAX_cellsml)) %>%          # 7 day maximum composite
   dplyr::ungroup() %>% 
   dplyr::arrange(desc(mean_7DayMax)) %>% 
@@ -120,11 +122,12 @@ tbl.data <- tbl.data.7days %>%
   #rbind(no.data) %>% 
   dplyr::left_join(lakes.resolvable, by = "GNISIDNAME") %>% 
   dplyr::mutate(Basin = ifelse(`HU_6_NAME` == "Willamette",`HU_8_NAME`,`HU_6_NAME`)) %>% 
-  dplyr::select(GNISIDNAME,Basin,mean_7DayMax) %>% 
+  dplyr::select(GNISIDNAME,Basin,mean_7DayMax,n) %>% 
   dplyr::distinct(GNISIDNAME, .keep_all = TRUE) %>% 
   #dplyr::mutate(Date = as.Date(Date,format="%Y-%b-%d")) %>% 
   dplyr::rename(`Waterbody_GNISID*` = GNISIDNAME,
-                `7DADM (cells/mL)` = mean_7DayMax)
+                `7DADM (cells/mL)` = mean_7DayMax,
+                `Days of Data` = n)
 
 map.tbl.data <- tbl.data %>% 
   dplyr::filter(!`7DADM (cells/mL)` %in% c("Non-detect","No Data Available")) %>% 
