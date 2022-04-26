@@ -190,6 +190,9 @@ shinyApp(
         
         h4("All data presented in this report are provisional and subject to change. Estimates of cyanobacteria from satellite imagery do not ",
            "imply the presence of cyanotoxins or other water quality impairments and do not have regulatory implications. ",
+           "Visit ",
+           a("Oregon Health Authority", href="https://www.oregon.gov/oha/ph/healthyenvironments/recreation/harmfulalgaeblooms/pages/blue-greenalgaeadvisories.aspx",.noWS = "outside",target="_blank"),
+           " to learn cyanobacteria advisories. ",
            "Additional assessments with imagery from the",
            a("Sentinel 2", href="https://www.sentinel-hub.com/explore/sentinelplayground/",target="_blank"),
            "Satellites, local visual assessment, and/or water quality sampling are needed to provide additional information on potential human health ",
@@ -197,7 +200,7 @@ shinyApp(
            "by cloud cover, ice cover, sun glint, water surface roughness, dry lake beds, algal mats, and shoreline effects.",
            .noWS = c("after-begin", "before-end"))
         
-      ),
+      ), 
       
       # _ 2. Table and Oregon map ----
       shinydashboardPlus::box(
@@ -788,7 +791,7 @@ shinyApp(
                              fillColor = "transparent",
                              fillOpacity = 1.0,
                              options = pathOptions(pane = "state.boundary")) %>% 
-        # Tool ----
+        # _ Tools ----
       leaflet.extras::addSearchFeatures(targetGroups = "lakes.resolvable.7dadm",
                                         options = leaflet.extras::searchFeaturesOptions(openPopup = TRUE, 
                                                                                         zoom = 8,
@@ -801,7 +804,7 @@ shinyApp(
         leaflet::hideGroup(c("Basins (HUC6)"))
       
     })
-    
+
     # _ map reactive @ waterbody picker ----
     observeEvent(input$waterbody,{
       
@@ -840,6 +843,8 @@ shinyApp(
           "Select a waterbody to show the maps."
           
         })
+        
+        output$no_pixels <- renderUI(HTML(paste("")))
         
         
       } else {
