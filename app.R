@@ -147,7 +147,7 @@ shinyApp(
         
         tags$img(src = "DEQ-logo-color-horizontal370x73.png"),
         tags$div(span("Satellite Estimates of Cyanobacteria in Oregon Lakes and Reservoirs",
-                      style = "color: black; font-size: 40px")),
+                      style = "color: black; font-size: 40px; font-weight:bold")),
         
         tags$h3("Reporting Period: ",
                 ifelse(month(as.Date(max(dta2$Date))-6) %in% c(8,9,10,11,12,1,2), 
@@ -190,9 +190,9 @@ shinyApp(
         
         h4("All data presented in this report are provisional and subject to change. Estimates of cyanobacteria from satellite imagery do not ",
            "imply the presence of cyanotoxins or other water quality impairments and do not have regulatory implications. ",
-           "Visit ",
-           a("Oregon Health Authority", href="https://www.oregon.gov/oha/ph/healthyenvironments/recreation/harmfulalgaeblooms/pages/blue-greenalgaeadvisories.aspx",.noWS = "outside",target="_blank"),
-           " to learn cyanobacteria advisories. ",
+           tags$b("Visit the ",
+             a("Oregon Health Authority", href="https://www.oregon.gov/oha/ph/healthyenvironments/recreation/harmfulalgaeblooms/pages/blue-greenalgaeadvisories.aspx",.noWS = "outside",target="_blank"),
+           " to learn about recreational use and drinking water advisories related to cyanobacteria blooms. "),
            "Additional assessments with imagery from the",
            a("Sentinel 2", href="https://www.sentinel-hub.com/explore/sentinelplayground/",target="_blank"),
            "Satellites, local visual assessment, and/or water quality sampling are needed to provide additional information on potential human health ",
