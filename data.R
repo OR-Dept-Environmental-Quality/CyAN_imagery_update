@@ -70,8 +70,8 @@ missing.dates <- lookup.date %>%
   dplyr::filter(is.na(Day.dta))
 
 # (3) Map: shapefiles ----
-lakes.resolvable <- sf::st_read(dsn = paste0(data.path,"/data/updatedValidLakes_CyAN_OR_53.shp"),
-                                layer = "updatedValidLakes_CyAN_OR_53") %>% 
+lakes.resolvable <- sf::st_read(dsn = paste0(data.path,"/data/CyAN_Waterbodies.shp"),
+                                layer = "CyAN_Waterbodies") %>% 
   st_transform(crs = 4326) %>% 
   dplyr::filter(GNISIDNAME %in% dta1$inApp) # filter out saline lakes
 
@@ -183,6 +183,9 @@ last7days <- lookup.date %>%
   dplyr::filter(Date %in% as.Date(c((today()-7):(today()-1)))) %>% 
   dplyr::arrange(Day.fulldays) %>% 
   dplyr::pull(Date)
+
+# when last7days need to be manually defined
+# last7days <- c("2022-05-16","2022-05-17","2022-05-18","2022-05-19","2022-05-20","2022-05-21","2022-05-22")
 
 map.file.name <- data.frame(File_waterbody = character(),
                             File_name = character())
