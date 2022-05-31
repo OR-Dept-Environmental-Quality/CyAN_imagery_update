@@ -185,7 +185,7 @@ last7days <- lookup.date %>%
   dplyr::pull(Date)
 
 # when last7days need to be manually defined
-# last7days <- c("2022-05-16","2022-05-17","2022-05-18","2022-05-19","2022-05-20","2022-05-21","2022-05-22")
+# last7days <- c("2022-05-23","2022-05-24","2022-05-25","2022-05-26","2022-05-27","2022-05-28","2022-05-29")
 
 map.file.name <- data.frame(File_waterbody = character(),
                             File_name = character())
@@ -194,8 +194,8 @@ map.file.name <- data.frame(File_waterbody = character(),
 # This for loop will take more than 2 hours to run.
 for (x in 1:length(waterbody.list)){
   
-  # test: x <- 1
-  # test: y <- 5
+  # test: x <- 11
+  # test: y <- 4
   
   print(waterbody.list[x])
   
@@ -241,16 +241,19 @@ for (x in 1:length(waterbody.list)){
                                                                     "color" = "blue"))) %>% 
       leaflet::fitBounds(lng1=bounds[[1]], lat1=bounds[[2]], lng2=bounds[[3]], lat2=bounds[[4]])
     
-    mapview::mapshot(map, file = paste0("./Images/",waterbody.list[x],"-",last7days[y],".png"))
+    #mapview::mapshot(map, file = paste0("./Images/",waterbody.list[x],"-",last7days[y],".png")) # somehow mapshot stops working
     
-    map.file.name.y <- paste0("./Images/",waterbody.list[x],"-",last7days[y],".png")
+    htmlwidgets::saveWidget(map, file = paste0("./Images/",waterbody.list[x],"-",last7days[y],".html"),selfcontained=TRUE)
+    webshot::webshot(url = paste0("./Images/",waterbody.list[x],"-",last7days[y],".html"), 
+                     file = paste0("./Images/",waterbody.list[x],"-",last7days[y],".jpg"))
+    
+    map.file.name.y <- paste0("./Images/",waterbody.list[x],"-",last7days[y],".jpg")
     
     map.file.name.x <- map.file.name.x %>% 
       dplyr::add_row(File_waterbody = waterbody.list[x],
                      File_name = map.file.name.y)
     
   }
-  
   
   map.file.name <- rbind(map.file.name,map.file.name.x)
   
@@ -272,8 +275,8 @@ for(i in sort(unique(map.file.name$File_waterbody))){
   imgs <- magick::image_read(img.files)
   #imgs.comb <- image_montage(imgs, tile = '3x3', geometry = "x200+3+5")
   imgs.comb <- magick::image_montage(imgs, tile = '4x2', geometry = "300x200+1+1")
-  magick::image_write(imgs.comb, path = paste0("./Report_Images/",i,".png"), format = "png")
-  print(paste0("./Report_Images/",i,".png"))
+  magick::image_write(imgs.comb, path = paste0("./Report_Images/",i,".jpg"), format = "jpg")
+  print(paste0("./Report_Images/",i,".jpg"))
   
 }
 

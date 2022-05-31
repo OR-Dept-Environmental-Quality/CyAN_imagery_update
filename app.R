@@ -853,7 +853,7 @@ shinyApp(
         
         output$maps7 <- renderImage({
           
-          list(src = paste0("./Report_Images/",input$waterbody,".png"),
+          list(src = paste0("./Report_Images/",input$waterbody,".jpg"),
                width = "100%")
           
         }, deleteFile = FALSE)
