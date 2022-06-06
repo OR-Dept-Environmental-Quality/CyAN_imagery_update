@@ -39,7 +39,8 @@ dta2 <- readxl::read_xlsx(paste0(data.path,"./data/HAB_resolvablelakes_2022.xlsx
   dplyr::filter(GNISIDNAME %in% dta1$inApp) # filter out saline lakes
 
 dta3 <- readxl::read_xlsx(paste0(data.path,"./data/HAB_resolvablelakes_2016_2021.xlsx"), sheet = "HAB_resolvablelakes_2016_2021") %>% 
-  dplyr::filter(GNISIDNAME %in% dta1$inApp) # filter out saline lakes
+  dplyr::filter(GNISIDNAME %in% dta1$inApp) %>% # filter out saline lakes
+  dplyr::select(-c(13,14)) # remove two last columns for excel data summary
 
 dta <- rbind(dta2,dta3) %>% 
   dplyr::rename(Mean = MEAN_cellsml,
