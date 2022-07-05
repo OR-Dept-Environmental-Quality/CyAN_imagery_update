@@ -73,6 +73,7 @@ missing.dates <- lookup.date %>%
 # (3) Map: shapefiles ----
 lakes.resolvable <- sf::st_read(dsn = paste0(data.path,"/data/CyAN_Waterbodies.shp"),
                                 layer = "CyAN_Waterbodies") %>% 
+  sf::st_zm() %>% 
   st_transform(crs = 4326) %>% 
   dplyr::filter(GNISIDNAME %in% dta1$inApp) # filter out saline lakes
 
@@ -180,13 +181,14 @@ waterbody.list <- sort(unique(lakes.resolvable$GNISIDNAME))
 
 # Dates:
 # require: fulldays; lookup.date; tbl.data.7days
-last7days <- lookup.date %>% 
-  dplyr::filter(Date %in% as.Date(c((today()-7):(today()-1)))) %>% 
-  dplyr::arrange(Day.fulldays) %>% 
+last7days <- lookup.date %>%
+  dplyr::filter(Date %in% as.Date(c((today()-7):(today()-1)))) %>%
+  dplyr::arrange(Day.fulldays) %>%
   dplyr::pull(Date)
 
-# when last7days need to be manually defined
+# when last7days need to be manually defined. !! Remember to check/save map_file_name.csv.
 # last7days <- c("2022-05-23","2022-05-24","2022-05-25","2022-05-26","2022-05-27","2022-05-28","2022-05-29")
+# last7days <- c("2022-07-04")
 
 map.file.name <- data.frame(File_waterbody = character(),
                             File_name = character())
@@ -195,8 +197,8 @@ map.file.name <- data.frame(File_waterbody = character(),
 # This for loop will take more than 2 hours to run.
 for (x in 1:length(waterbody.list)){
   
-  # test: x <- 49
-  # test: y <- 4
+  # test: x <- 1
+  # test: y <- 1
   
   print(waterbody.list[x])
   
@@ -261,6 +263,9 @@ for (x in 1:length(waterbody.list)){
 }
 
 write.csv(map.file.name,"map_file_name.csv")
+
+file.remove(file.path("./Images/",dir(path = "./Images",pattern="*.html")))
+unlink(file.path("./Images/",dir(path = "./Images",pattern="_files")),recursive = TRUE)
 
 # _ report images ----
 library(magick)

@@ -316,7 +316,7 @@ shinyApp(
             
             textOutput("non_select"),
             uiOutput("no_pixels"),
-            shiny::imageOutput("maps7")
+            shinyfullscreen::fullscreen_this(shiny::imageOutput("maps7"))
             
           )
         ),
