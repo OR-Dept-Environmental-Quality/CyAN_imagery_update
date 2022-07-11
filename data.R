@@ -181,14 +181,14 @@ waterbody.list <- sort(unique(lakes.resolvable$GNISIDNAME))
 
 # Dates:
 # require: fulldays; lookup.date; tbl.data.7days
-last7days <- lookup.date %>%
-  dplyr::filter(Date %in% as.Date(c((today()-7):(today()-1)))) %>%
-  dplyr::arrange(Day.fulldays) %>%
-  dplyr::pull(Date)
+# last7days <- lookup.date %>%
+#   dplyr::filter(Date %in% as.Date(c((today()-7):(today()-1)))) %>%
+#   dplyr::arrange(Day.fulldays) %>%
+#   dplyr::pull(Date)
 
 # when last7days need to be manually defined. !! Remember to check/save map_file_name.csv.
 # last7days <- c("2022-05-23","2022-05-24","2022-05-25","2022-05-26","2022-05-27","2022-05-28","2022-05-29")
-# last7days <- c("2022-07-04")
+last7days <- c("2022-07-10")
 
 map.file.name <- data.frame(File_waterbody = character(),
                             File_name = character())
@@ -262,6 +262,7 @@ for (x in 1:length(waterbody.list)){
   
 }
 
+#write.csv(map.file.name,"map_file_name_Sunday.csv")
 write.csv(map.file.name,"map_file_name.csv")
 
 file.remove(file.path("./Images/",dir(path = "./Images",pattern="*.html")))
@@ -273,9 +274,9 @@ library(magick)
 map.file.name <- read.csv("map_file_name.csv")
 
 for(i in sort(unique(map.file.name$File_waterbody))){
-  
+
   # test: i <- "Odell Lake_01147159"
-  
+
   df.imgs <- map.file.name %>% dplyr::filter(File_waterbody == i)
   img.files <- c(df.imgs$File_name[1:7],"./Report_Images/legend/legend.png")
   imgs <- magick::image_read(img.files)
@@ -283,7 +284,7 @@ for(i in sort(unique(map.file.name$File_waterbody))){
   imgs.comb <- magick::image_montage(imgs, tile = '4x2', geometry = "300x200+1+1")
   magick::image_write(imgs.comb, path = paste0("./Report_Images/",i,".jpg"), format = "jpg")
   print(paste0("./Report_Images/",i,".jpg"))
-  
+
 }
 
 # Save data ----
