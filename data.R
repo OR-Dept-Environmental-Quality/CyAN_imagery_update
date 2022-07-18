@@ -181,14 +181,14 @@ waterbody.list <- sort(unique(lakes.resolvable$GNISIDNAME))
 
 # Dates:
 # require: fulldays; lookup.date; tbl.data.7days
-# last7days <- lookup.date %>%
-#   dplyr::filter(Date %in% as.Date(c((today()-7):(today()-1)))) %>%
-#   dplyr::arrange(Day.fulldays) %>%
-#   dplyr::pull(Date)
+last7days <- lookup.date %>%
+  dplyr::filter(Date %in% as.Date(c((today()-7):(today()-1)))) %>%
+  dplyr::arrange(Day.fulldays) %>%
+  dplyr::pull(Date)
 
 # when last7days need to be manually defined. !! Remember to check/save map_file_name.csv.
 # last7days <- c("2022-05-23","2022-05-24","2022-05-25","2022-05-26","2022-05-27","2022-05-28","2022-05-29")
-last7days <- c("2022-07-10")
+# last7days <- c("2022-07-10")
 
 map.file.name <- data.frame(File_waterbody = character(),
                             File_name = character())
