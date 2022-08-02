@@ -160,7 +160,7 @@ palette7dadm_lg <- leaflet::colorFactor(palette = c('#00441b'),
 #rm(dta1); rm(dta2); rm(dta3)
 save.image(file = "data.RData")
 
-pause()
+#pause()
 
 # (7) Thumbnail maps ----
 tag.map.date <- shiny::tags$style(HTML("
