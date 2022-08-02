@@ -10,6 +10,10 @@ library(rasterVis)
 library(zoo)
 library(shiny)
 
+# Get update of NASA data----
+# Need to have ArcPro on your machine; modify path in the script to point to the correct version of python
+source("Update_NASA_imagery.R")
+
 # ---
 pause = function()
 {
