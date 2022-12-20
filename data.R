@@ -13,6 +13,7 @@ library(shiny)
 # Get update of NASA data----
 # Need to have ArcPro on your machine; modify path in the script to point to the correct version of python
 source("Update_NASA_imagery.R")
+source("dbf2excel.R")
 
 # ---
 pause = function()
@@ -43,14 +44,13 @@ dta2 <- readxl::read_xlsx(paste0(data.path,"./data/HAB_resolvablelakes_2022.xlsx
   dplyr::filter(GNISIDNAME %in% dta1$inApp) # filter out saline lakes
 
 dta3 <- readxl::read_xlsx(paste0(data.path,"./data/HAB_resolvablelakes_2016_2021.xlsx"), sheet = "HAB_resolvablelakes_2016_2021") %>% 
-  dplyr::filter(GNISIDNAME %in% dta1$inApp) %>% # filter out saline lakes
-  dplyr::select(-c(13,14)) # remove two last columns for excel data summary
+  dplyr::filter(GNISIDNAME %in% dta1$inApp) # filter out saline lakes
 
-dta <- rbind(dta2,dta3) %>% 
+dta <- rbind(dta2[,c(1:11)],dta3[,c(1:11)]) %>% 
   dplyr::rename(Mean = MEAN_cellsml,
                 Maximum = MAX_cellsml,
                 Minimum = MIN_cellsml) %>% 
-  tidyr::gather(`Summary Statistics`, `Cyanobacteria (cells/mL)`, -GNISIDNAME,-COUNT,-AREA,-PercentArea_Value, -Day,-Year,-Date) %>% 
+  tidyr::gather(`Summary Statistics`, `Cyanobacteria (cells/mL)`, -GNISIDNAME,-COUNT,-AREA,-Day,-Year,-Date) %>% 
   tidyr::separate(GNISIDNAME,c("GNISNAME","GNISID"), sep="_") %>% 
   dplyr::mutate(GNISIDNAME = paste0(GNISNAME,"_",GNISID)) %>% 
   dplyr::mutate(Date = lubridate::ymd(Date)) %>% 

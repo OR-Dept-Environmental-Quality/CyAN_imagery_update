@@ -46,7 +46,6 @@ if sys.version_info < (3, 7):
 # Define the base URL and check that it is a valid address
 # baseurl = "https://oceancolor.gsfc.nasa.gov/CYAN/OLCI/"
 
-
 try:
     ssl._create_default_https_context = ssl._create_unverified_context
     urllib.request.urlopen(baseurl)
@@ -65,11 +64,13 @@ print("Year:", year)
 list_of_files = glob.glob(tif_file_path)  # Change directory as needed
 latest_file = max(list_of_files, key=os.path.getctime)  # Getting the last day from the last update
 hab_day_start = int(latest_file[85:88]) + 1  # assumes weekly updates; adjust as needed
-# Line 68 used when a new year starts, and Line 66 need to be muted
+# hab_day_start = int(1) used when a new year starts, and "hab_day_start = int(latest_file[85:88]) + 1" need to be muted
 # hab_day_start = int(1)
+# hab_day_start = 297
 print("start day:", hab_day_start)
 
 hab_day_end = date.today().timetuple().tm_yday - 1  # assumes data from the previous day available
+# hab_day_end = 343
 # hab_day_end = int(366)
 print("end day:", hab_day_end)
 
@@ -95,7 +96,6 @@ url = [baseurl + year + '/' + hab_days[i] + '/' + file[i]
 extract_path = extract_base + year  # Change as needed
 
 # Step 2c - download, extract, and rename imagery for date range
-
 for i in range(0, hab_days_length):
     print(url[i])
 
@@ -150,7 +150,7 @@ for i in range(0, hab_days_length):
 
 # Convert to cells/ml , mosaic 4 tiles into one oregon image, calc zonal stats for resolvable lakes
 # Setnull and cellsml
-
+print("done")
 
 for i in range(0, hab_days_length):
 
@@ -283,29 +283,30 @@ for i, file in enumerate(os.listdir(stats_dir)):
 thestatsname = thestatsname[(hab_day_start - 1):(hab_day_end + 1)]
 
 # Convert table to df, rename fields, add new field, and append excel file
-for i in range(0, hab_days_length):
-    dbf = Dbf5(os.path.join(stats_dir, thestatsname[i]))
-    df = dbf.to_dataframe()
-
-    # add new field and rename existing fields
-    df.insert(3, "PercentArea_Value", '', True)
-    df.rename(columns={"MIN": "MIN_cellsml", "MAX": "MAX_cellsml", "RANGE": "RANGE_cellsml", "MEAN": "MEAN_cellsml",
-                       "STD": "STD_cellsml"})
-
-    # append new data to exsiting excel spreadhseet
-    # BKK - spreadhseet and worksheet shouldn't have date
-    # dir_Shiny = "\\\\deqhq1\\wq-share\\Harmful Algal Blooms Coordination Team\\HAB_Shiny_app\\data"
-    thetable = os.path.join(dir_Shiny, 'HAB_resolvablelakes_2022.xlsx')
-    writer = pd.ExcelWriter(thetable, engine='openpyxl', mode='a')
-    writer.book = load_workbook(thetable)
-    writer.sheets = dict((ws.title, ws) for ws in writer.book.worksheets)
-    # BKF - need to make sure that startrow isn't overwriting last row
-    firstrow = writer.book['HAB_resolvable_lake_data'].max_row
-
-    df.to_excel(writer, sheet_name='HAB_resolvable_lake_data', startrow=firstrow, startcol=0, index=False, header=None)
-
-    writer.save()
-    # writer.close
+# for i in range(0, hab_days_length):
+#     # test: i = 0
+#     dbf = Dbf5(os.path.join(stats_dir, thestatsname[i]))
+#     df = dbf.to_dataframe()
+# 
+#     # add new field and rename existing fields
+#     df.insert(3, "PercentArea_Value", '', True)
+#     df.rename(columns={"MIN": "MIN_cellsml", "MAX": "MAX_cellsml", "RANGE": "RANGE_cellsml", "MEAN": "MEAN_cellsml",
+#                        "STD": "STD_cellsml"})
+# 
+#     # append new data to exsiting excel spreadhseet
+#     # BKK - spreadhseet and worksheet shouldn't have date
+#     # dir_Shiny = "\\\\deqhq1\\wq-share\\Harmful Algal Blooms Coordination Team\\HAB_Shiny_app\\data"
+#     thetable = os.path.join(dir_Shiny, 'HAB_resolvablelakes_2022.xlsx')
+#     writer = pd.ExcelWriter(thetable, engine='openpyxl', mode='a', if_sheet_exists='overlay')
+#     writer.book = load_workbook(thetable)
+#     writer.sheets = dict((ws.title, ws) for ws in writer.book.worksheets)
+#     # BKF - need to make sure that startrow isn't overwriting last row
+#     firstrow = writer.book['HAB_resolvable_lake_data'].max_row
+# 
+#     df.to_excel(writer, sheet_name='HAB_resolvable_lake_data', startrow=firstrow, startcol=0, index=False, header=None)
+# 
+#     writer.save()
+#     #writer.close
 
 # Set workspace and directory for reprojection; manually adjust for now
 env.workspace = os.path.join(extract_path, "mosaic")
@@ -342,3 +343,5 @@ for raster in mosaicfilename2:
                           out_raster=finalraster,
                           in_template_dataset=themask, nodata_value="-3.402823e+038",
                           clipping_geometry="ClippingGeometry", maintain_clipping_extent="NO_MAINTAIN_EXTENT")
+
+print("done")
