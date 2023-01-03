@@ -40,10 +40,10 @@ data.path <- "//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/HAB_Shiny
 # (1) Timeseries Data Table ----
 dta1 <- readxl::read_xlsx(paste0(data.path,"./data/Resolvable_Lakes.xlsx"), sheet = "cyan_resolvable_lakes")
 
-dta2 <- readxl::read_xlsx(paste0(data.path,"./data/HAB_resolvablelakes_2022.xlsx"), sheet = "HAB_resolvable_lake_data") %>% 
+dta2 <- readxl::read_xlsx(paste0(data.path,"./data/HAB_resolvablelakes_2023.xlsx"), sheet = "HAB_resolvable_lake_data") %>% 
   dplyr::filter(GNISIDNAME %in% dta1$inApp) # filter out saline lakes
 
-dta3 <- readxl::read_xlsx(paste0(data.path,"./data/HAB_resolvablelakes_2016_2021.xlsx"), sheet = "HAB_resolvablelakes_2016_2021") %>% 
+dta3 <- readxl::read_xlsx(paste0(data.path,"./data/HAB_resolvablelakes_2016_2022.xlsx"), sheet = "HAB_resolvablelakes_2016_2022") %>% 
   dplyr::filter(GNISIDNAME %in% dta1$inApp) # filter out saline lakes
 
 dta <- rbind(dta2[,c(1:11)],dta3[,c(1:11)]) %>% 
@@ -278,9 +278,9 @@ library(magick)
 map.file.name <- read.csv("map_file_name.csv")
 
 for(i in sort(unique(map.file.name$File_waterbody))){
-
+  
   # test: i <- "Odell Lake_01147159"
-
+  
   df.imgs <- map.file.name %>% dplyr::filter(File_waterbody == i)
   img.files <- c(df.imgs$File_name[1:7],"./Report_Images/legend/legend.png")
   imgs <- magick::image_read(img.files)
@@ -288,7 +288,7 @@ for(i in sort(unique(map.file.name$File_waterbody))){
   imgs.comb <- magick::image_montage(imgs, tile = '4x2', geometry = "300x200+1+1")
   magick::image_write(imgs.comb, path = paste0("./Report_Images/",i,".jpg"), format = "jpg")
   print(paste0("./Report_Images/",i,".jpg"))
-
+  
 }
 
 # Save data ----

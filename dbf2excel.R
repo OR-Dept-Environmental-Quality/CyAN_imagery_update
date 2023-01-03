@@ -3,7 +3,7 @@ library(foreign)
 library(readxl)
 library(writexl)
 
-thetable <- "\\\\deqhq1\\wq-share\\Harmful Algal Blooms Coordination Team\\HAB_Shiny_app\\data\\HAB_resolvablelakes_2022.xlsx"
+thetable <- "\\\\deqhq1\\wq-share\\Harmful Algal Blooms Coordination Team\\HAB_Shiny_app\\data\\HAB_resolvablelakes_2023.xlsx"
 stats_dir <- py$stats_dir
 thestatsname <- py$thestatsname
 hab_days_length <- py$hab_days_length

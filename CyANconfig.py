@@ -2,7 +2,7 @@
 
 baseurl = "https://oceancolor.gsfc.nasa.gov/CYAN/OLCI/"
 # tif_file_path need to be updated for the year folder:
-tif_file_path = '\\\\deqhq1\\wq-share\\Harmful Algal Blooms Coordination Team\\HAB_Shiny_app\\data\\2022\\*.tif'
+tif_file_path = '\\\\deqhq1\\wq-share\\Harmful Algal Blooms Coordination Team\\HAB_Shiny_app\\data\\2023\\*.tif'
 
 extract_base = '\\\\deqhq1\\wq-share\\Harmful Algal Blooms Coordination Team\\GIS\\cyan\\'
 zones = r"\\deqhq1\WQ-Share\Harmful Algal Blooms Coordination Team\HAB_Shiny_app\data\CyAN_Waterbodies.shp"

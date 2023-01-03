@@ -56,11 +56,11 @@ except:
 # Gets the appropriate date range for the current query
 # Note that the query can only be done for the current year
 year = str(date.today().year)
-# year = str("2020")
+# year = str("2022")
 print("Year:", year)
 
 # Get the start date
-# tif_file_path = '\\\\deqhq1\\wq-share\\Harmful Algal Blooms Coordination Team\\HAB_Shiny_app\\data\\2022\\*.tif'
+# tif_file_path = '\\\\deqhq1\\wq-share\\Harmful Algal Blooms Coordination Team\\HAB_Shiny_app\\data\\2023\\*.tif'
 list_of_files = glob.glob(tif_file_path)  # Change directory as needed
 latest_file = max(list_of_files, key=os.path.getctime)  # Getting the last day from the last update
 hab_day_start = int(latest_file[85:88]) + 1  # assumes weekly updates; adjust as needed
@@ -71,7 +71,7 @@ print("start day:", hab_day_start)
 
 hab_day_end = date.today().timetuple().tm_yday - 1  # assumes data from the previous day available
 # hab_day_end = 343
-# hab_day_end = int(366)
+# hab_day_end = int(365)
 print("end day:", hab_day_end)
 
 # Generate sequence

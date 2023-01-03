@@ -336,9 +336,9 @@ shinyApp(
             shiny::radioButtons(
               inputId = "ploty",
               label = tags$h4("Date Range:"),
-              choices = c("Current Year: 2022",
+              choices = c("Current Year: 2023",
                           "Select a Date Range"),
-              selected = "Current Year: 2022"
+              selected = "Current Year: 2023"
             ),
             
             shiny::dateRangeInput(inputId = "date_plot",
@@ -451,7 +451,7 @@ shinyApp(
     
     yr <- reactive({ 
       
-      if(input$ploty == "Current Year: 2022"){"2022"}else{sort(unique(dta$Year))}
+      if(input$ploty == "Current Year: 2023"){"2023"}else{sort(unique(dta$Year))}
       
     })
     
