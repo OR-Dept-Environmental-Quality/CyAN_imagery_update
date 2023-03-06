@@ -228,6 +228,7 @@ mosaickey2 = mosaickey2[(hab_day_start - 1):(hab_day_end + 1)]
 
 # Zonal stats
 for i in range(0, hab_days_length):
+  # i=6
     zonalraster = os.path.join(mosaicdir, mosaicfilename2[i])
     # zones = r"\\deqhq1\wq-share\Harmful Algal Blooms Coordination Team\GIS\cyan\HAB_deschutes2020.gdb\NHDWaterbody_resolvable_lakes"
     stats_dir = os.path.join(extract_path, 'mosaic', 'stats')
@@ -272,7 +273,6 @@ for i in range(0, hab_days_length):
     shutil.rmtree(archive_dir[i], ignore_errors=True)
 
 # Need to get a list of stat files for mosaic key
-
 stats_dir = os.path.join(extract_path, 'mosaic', 'stats')
 
 thestatsname = list()

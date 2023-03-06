@@ -27,8 +27,8 @@ pause = function()
 
 # Get update of NASA data----
 # Need to have ArcPro on your machine; modify path in the script to point to the correct version of python
-source("Update_NASA_imagery.R")
-source("dbf2excel.R")
+# source("Update_NASA_imagery.R")
+# source("dbf2excel.R")
 
 # Project data folder @ sharedrive:
 data.path <- "//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/HAB_Shiny_app"

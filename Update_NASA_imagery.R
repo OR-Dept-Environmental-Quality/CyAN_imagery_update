@@ -13,4 +13,4 @@ use_python("C:\\Program Files\\ArcGIS\\Pro\\bin\\Python\\envs\\arcgispro-py3\\py
            required = T)
 
 # Runs python script
-py_run_file("DEQ_CyAN_HABs_Get_NASA_Data.py")
+# py_run_file("DEQ_CyAN_HABs_Get_NASA_Data.py")

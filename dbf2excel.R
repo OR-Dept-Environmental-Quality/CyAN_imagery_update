@@ -8,6 +8,13 @@ stats_dir <- py$stats_dir
 thestatsname <- py$thestatsname
 hab_days_length <- py$hab_days_length
 
+# modify for missing periods
+# thestatsname <- c("2023044_stats.dbf","2023045_stats.dbf","2023046_stats.dbf","2023047_stats.dbf","2023048_stats.dbf","2023049_stats.dbf","2023050_stats.dbf",
+#                   "2023051_stats.dbf","2023052_stats.dbf","2023053_stats.dbf","2023054_stats.dbf","2023056_stats.dbf","2023056_stats.dbf","2023057_stats.dbf",
+#                   py$thestatsname)
+# hab_days_length <- 21
+
+
 dbf <- NULL
 for(i in 1:hab_days_length){
   print(thestatsname[i])

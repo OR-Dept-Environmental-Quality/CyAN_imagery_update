@@ -1,0 +1,12 @@
+---
+title: "Step of running the weekly report"
+output: html_notebook
+---
+
+1.  Update_NSA_imagery.R
+2.  CyANconfig.py
+3.  DEQ_CyAN_HABs_Get_NASA_Data.py
+4.  dbf2excel.R
+5.  data.R
+6.  app.R
+7.  publish
