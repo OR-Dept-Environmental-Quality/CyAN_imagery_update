@@ -14,7 +14,6 @@ hab_days_length <- py$hab_days_length
 #                   py$thestatsname)
 # hab_days_length <- 21
 
-
 dbf <- NULL
 for(i in 1:hab_days_length){
   print(thestatsname[i])

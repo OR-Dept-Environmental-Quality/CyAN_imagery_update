@@ -74,14 +74,14 @@ missing.dates <- lookup.date %>%
 lakes.resolvable <- sf::st_read(dsn = paste0(data.path,"/data/CyAN_Waterbodies.shp"),
                                 layer = "CyAN_Waterbodies") %>% 
   sf::st_zm() %>% 
-  st_transform(crs = 4326) %>% 
+  sf::st_transform(crs = 4326) %>% 
   dplyr::filter(GNISIDNAME %in% dta1$inApp) # filter out saline lakes
 
 state.boundary <- sf::st_read(paste0(data.path,"/data/state_boundary_blm.shp")) %>% 
-  st_transform(crs = 4326)
+  sf::st_transform(crs = 4326)
 
 huc6 <- sf::st_read(dsn = paste0(data.path,"/data/WBD_HU6.shp"), layer = "WBD_HU6") %>% 
-  st_transform(crs = 4326)
+  sf::st_transform(crs = 4326)
 
 pal.huc6 <- leaflet::colorFactor(palette = c(RColorBrewer::brewer.pal(name="BrBG", n = 9), RColorBrewer::brewer.pal(name="Paired", n = 9)), domain = unique(sort(huc6$HU_6_NAME)))
 
@@ -187,7 +187,7 @@ last7days <- lookup.date %>%
   dplyr::pull(Date)
 
 # when last7days need to be manually defined. !! Remember to check/save map_file_name.csv.
-# last7days <- c("2022-05-23","2022-05-24","2022-05-25","2022-05-26","2022-05-27","2022-05-28","2022-05-29")
+# last7days <- c("2023-05-14","2023-05-15","2023-05-16","2023-05-17","2023-05-18","2023-05-19","2023-05-20")
 # last7days <- c("2022-07-10")
 
 map.file.name <- data.frame(File_waterbody = character(),
@@ -278,7 +278,7 @@ for(i in sort(unique(map.file.name$File_waterbody))){
   # test: i <- "Odell Lake_01147159"
   
   df.imgs <- map.file.name %>% dplyr::filter(File_waterbody == i)
-  img.files <- c(df.imgs$File_name[1:7],"./Report_Images/legend/legend.png")
+  img.files <- c(df.imgs$File_name[1:7],"./Report_Images/legend/legend.png") 
   imgs <- magick::image_read(img.files)
   #imgs.comb <- image_montage(imgs, tile = '3x3', geometry = "x200+3+5")
   imgs.comb <- magick::image_montage(imgs, tile = '4x2', geometry = "300x200+1+1")

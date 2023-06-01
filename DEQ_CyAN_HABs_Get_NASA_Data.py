@@ -20,7 +20,7 @@
 
 # Import libraries
 
-from CyANconfig import *
+# from CyANconfig import *
 # Configuration file with file paths and website addresses; place in same folder as this python script
 import sys
 import urllib.request
@@ -153,15 +153,18 @@ for i in range(0, hab_days_length):
 print("done")
 
 for i in range(0, hab_days_length):
-
+  
+    # Test:      
+    i=7
     # rename oregon images
     env.workspace = temp_dir[i]
     arcpy.CheckOutExtension("Spatial")
-
     os.mkdir(os.path.join(temp_dir[i], 'cellsml'))
     cellsml_dir = os.path.join(temp_dir[i], 'cellsml')
     output_DIR = os.path.join('c:', 'hab', 'cyan', year, 'cellsml')
     for raster in arcpy.ListRasters():
+        # Test:         
+        raster = "L2023148_2_2.tif"
         # set non cyano values to null
         outSetNull = SetNull(raster, raster, 'VALUE = 255 or VALUE = 254')
         # 254 = land; 255 = water
@@ -174,6 +177,8 @@ for i in range(0, hab_days_length):
 
         del outSetNull
         del outCellsML
+        
+print("done")
 
 # Make mosaic directory
 # os.mkdir(os.path.join(extract_path, 'mosaic')) # Needed for start of new year
@@ -205,6 +210,7 @@ for i in range(0, hab_days_length):
                 print(mosaicfilename)
                 arcpy.MosaicToNewRaster_management(mosaicdict[mosaickey], mosaicdir, mosaicfilename, sr,
                                                    "32_BIT_FLOAT", "300", "1", "LAST", "FIRST")
+print("done")
 
 # Need to get a list of file names for zonal statistics
 # Need to modify to account for existing files in the directory
@@ -228,7 +234,8 @@ mosaickey2 = mosaickey2[(hab_day_start - 1):(hab_day_end + 1)]
 
 # Zonal stats
 for i in range(0, hab_days_length):
-  # i=6
+  #test: 
+  i=7
     zonalraster = os.path.join(mosaicdir, mosaicfilename2[i])
     # zones = r"\\deqhq1\wq-share\Harmful Algal Blooms Coordination Team\GIS\cyan\HAB_deschutes2020.gdb\NHDWaterbody_resolvable_lakes"
     stats_dir = os.path.join(extract_path, 'mosaic', 'stats')
@@ -271,6 +278,8 @@ for i in range(0, hab_days_length):
     shutil.rmtree(os.path.join(temp_dir[i], 'cellsml'), ignore_errors=True)
     shutil.rmtree(temp_dir[i], ignore_errors=True)
     shutil.rmtree(archive_dir[i], ignore_errors=True)
+    
+print("done")
 
 # Need to get a list of stat files for mosaic key
 stats_dir = os.path.join(extract_path, 'mosaic', 'stats')
@@ -345,3 +354,4 @@ for raster in mosaicfilename2:
                           clipping_geometry="ClippingGeometry", maintain_clipping_extent="NO_MAINTAIN_EXTENT")
 
 print("done")
+
