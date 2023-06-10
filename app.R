@@ -422,7 +422,7 @@ shinyApp(
             #title = "copyright",
             solidHeader = FALSE,
             
-            h4("The report is provided by the Oregon DEQ Watershed Management Section. Copyright (C) 2020-2022, Oregon DEQ."),
+            h4("The report is provided by the Oregon DEQ Watershed Management Section. Copyright (C) 2020-2023, Oregon DEQ."),
             h4("The source code of this report is publicly available at GitHub repository: ", 
                a("Satellite Estimates of Cyanobacteria in Oregon Lakes and Reservoirs",
                  href="https://github.com/OR-Dept-Environmental-Quality/CyAN_imagery_update",.noWS = "outside",target="_blank"),".",

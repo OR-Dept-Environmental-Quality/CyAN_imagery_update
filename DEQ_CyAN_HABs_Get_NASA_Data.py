@@ -154,8 +154,8 @@ print("done")
 
 for i in range(0, hab_days_length):
   
-    # Test:      
-    i=7
+    # Test:          
+    i=6
     # rename oregon images
     env.workspace = temp_dir[i]
     arcpy.CheckOutExtension("Spatial")
@@ -163,8 +163,8 @@ for i in range(0, hab_days_length):
     cellsml_dir = os.path.join(temp_dir[i], 'cellsml')
     output_DIR = os.path.join('c:', 'hab', 'cyan', year, 'cellsml')
     for raster in arcpy.ListRasters():
-        # Test:         
-        raster = "L2023148_2_2.tif"
+        # Test:                 
+        raster = "L2023155_2_2.tif"
         # set non cyano values to null
         outSetNull = SetNull(raster, raster, 'VALUE = 255 or VALUE = 254')
         # 254 = land; 255 = water
@@ -234,8 +234,8 @@ mosaickey2 = mosaickey2[(hab_day_start - 1):(hab_day_end + 1)]
 
 # Zonal stats
 for i in range(0, hab_days_length):
-  #test: 
-  i=7
+  #test:   
+  i=6
     zonalraster = os.path.join(mosaicdir, mosaicfilename2[i])
     # zones = r"\\deqhq1\wq-share\Harmful Algal Blooms Coordination Team\GIS\cyan\HAB_deschutes2020.gdb\NHDWaterbody_resolvable_lakes"
     stats_dir = os.path.join(extract_path, 'mosaic', 'stats')
