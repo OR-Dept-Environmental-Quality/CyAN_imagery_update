@@ -9,15 +9,13 @@ thestatsname <- py$thestatsname
 hab_days_length <- py$hab_days_length
 
 # modify for missing periods
-# thestatsname <- c("2023044_stats.dbf","2023045_stats.dbf","2023046_stats.dbf","2023047_stats.dbf","2023048_stats.dbf","2023049_stats.dbf","2023050_stats.dbf",
-#                   "2023051_stats.dbf","2023052_stats.dbf","2023053_stats.dbf","2023054_stats.dbf","2023056_stats.dbf","2023056_stats.dbf","2023057_stats.dbf",
-#                   py$thestatsname)
-# hab_days_length <- 21
+# thestatsname <- c("2023184_stats.dbf", "2023185_stats.dbf", "2023186_stats.dbf", "2023187_stats.dbf", "2023188_stats.dbf", "2023189_stats.dbf", "2023190_stats.dbf")
+# hab_days_length <- 7
 
 dbf <- NULL
 for(i in 1:hab_days_length){
+  # test:     i=4
   print(thestatsname[i])
-  # test: i=2
   dbf.i <- foreign::read.dbf(paste0(stats_dir,"\\",thestatsname[i]))
   dbf <- dplyr::bind_rows(dbf,dbf.i)
 }

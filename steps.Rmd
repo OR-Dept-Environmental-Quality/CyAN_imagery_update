@@ -3,10 +3,11 @@ title: "Step of running the weekly report"
 output: html_notebook
 ---
 
-1.  Update_NSA_imagery.R
-2.  CyANconfig.py
-3.  DEQ_CyAN_HABs_Get_NASA_Data.py
-4.  dbf2excel.R
-5.  data.R
-6.  app.R
-7.  publish
+1.  Check ArcGIS login
+2.  Update_NSA_imagery.R
+3.  CyANconfig.py
+4.  DEQ_CyAN_HABs_Get_NASA_Data.py
+5.  dbf2excel.R
+6.  data.R
+7.  app.R
+8.  publish

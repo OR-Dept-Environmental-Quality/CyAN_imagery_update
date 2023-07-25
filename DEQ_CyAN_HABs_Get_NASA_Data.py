@@ -97,6 +97,7 @@ extract_path = extract_base + year  # Change as needed
 
 # Step 2c - download, extract, and rename imagery for date range
 for i in range(0, hab_days_length):
+  # test:   i = 6
     print(url[i])
 
     # BKF - add some code that doesnt download if .tgz file already exist in _tgz subdirectory
@@ -147,14 +148,16 @@ for i in range(0, hab_days_length):
         print(compactFileName)
 
         arcpy.Rename_management(raster, compactFileName)
+        
+print("done")
 
 # Convert to cells/ml , mosaic 4 tiles into one oregon image, calc zonal stats for resolvable lakes
 # Setnull and cellsml
-print("done")
 
 for i in range(0, hab_days_length):
   
-    # Test: i=6
+    # Test: 
+    i=5
     # rename oregon images
     env.workspace = temp_dir[i]
     arcpy.CheckOutExtension("Spatial")
@@ -162,7 +165,8 @@ for i in range(0, hab_days_length):
     cellsml_dir = os.path.join(temp_dir[i], 'cellsml')
     output_DIR = os.path.join('c:', 'hab', 'cyan', year, 'cellsml')
     for raster in arcpy.ListRasters():
-        # Test: raster = "L2023155_2_2.tif"
+        # Test: 
+        raster = "L2023203_2_2.tif"
         # set non cyano values to null
         outSetNull = SetNull(raster, raster, 'VALUE = 255 or VALUE = 254')
         # 254 = land; 255 = water
@@ -184,7 +188,7 @@ mosaicdir = os.path.join(extract_path, 'mosaic')
 
 # Mosaic
 for i in range(0, hab_days_length):
-    cellsml_dir = os.path.join(temp_dir[i], 'cellsml')
+    cellsml_dir = os.path.join(extract_path,temp_dir[i], 'cellsml')
     env.workspace = cellsml_dir
 
     sr = arcpy.SpatialReference()
@@ -232,7 +236,8 @@ mosaickey2 = mosaickey2[(hab_day_start - 1):(hab_day_end + 1)]
 
 # Zonal stats
 for i in range(0, hab_days_length):
-  #test: i=6
+  #test:        
+  i=6
     zonalraster = os.path.join(mosaicdir, mosaicfilename2[i])
     # zones = r"\\deqhq1\wq-share\Harmful Algal Blooms Coordination Team\GIS\cyan\HAB_deschutes2020.gdb\NHDWaterbody_resolvable_lakes"
     stats_dir = os.path.join(extract_path, 'mosaic', 'stats')
@@ -243,7 +248,7 @@ for i in range(0, hab_days_length):
     # Process: Zonal Statistics as Table
     env.workspace = mosaicdir
     arcpy.gp.ZonalStatisticsAsTable_sa(zones, "GNISIDNAME", zonalraster, thestatsname, "DATA", "ALL")
-
+   
     arcpy.DeleteField_management(thestatsname, ["ZONE_CODE", "SUM", "MEDIAN", "PCT90"])
 
     # calcdaydate
@@ -286,7 +291,7 @@ for i, file in enumerate(os.listdir(stats_dir)):
     if file.endswith(".dbf"):
         thestatsname.append(os.path.basename(file))
 
-thestatsname = thestatsname[(hab_day_start - 1):(hab_day_end + 1)]
+thestatsname = thestatsname[(hab_day_start - 2):(hab_day_end + 1)]
 
 # Convert table to df, rename fields, add new field, and append excel file
 # for i in range(0, hab_days_length):
@@ -329,6 +334,7 @@ arcpy.CheckOutExtension("Spatial")
 # theextent = r"\\deqhq1\wq-share\Harmful Algal Blooms Coordination Team\GIS\cyan\HAB_deschutes2020.gdb\stateline_buffer50web"
 
 for raster in mosaicfilename2:
+  # test:    raster = "2023169.tif"
     fileName, fileExtension = os.path.splitext(raster)
     tile = fileName[-8:]
     tmpfile = "temp.tif"
