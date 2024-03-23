@@ -150,13 +150,16 @@ shinyApp(
                       style = "color: black; font-size: 40px; font-weight:bold")),
         
         tags$h3("Reporting Period: ",
-                ifelse(month(as.Date(max(dta2$Date))-6) %in% c(8,9,10,11,12,1,2), 
-                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%b. %d, %Y')), 
+                ifelse(month(as.Date(max(dta2$Date))-6) %in% c(8,9,10,11,12,1,2),
+                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%b. %d, %Y')),
                        gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%B %d, %Y'))),
+                # "Aug. 14, 2023",
                 " - ",
-                ifelse(month(as.Date(max(dta2$Date))) %in% c(8,9,10,11,12,1,2), 
-                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%b. %d, %Y')), 
-                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%B %d, %Y'))))
+                ifelse(month(as.Date(max(dta2$Date))) %in% c(8,9,10,11,12,1,2),
+                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%b. %d, %Y')),
+                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%B %d, %Y')))
+                # "Aug. 20, 2023"
+                )
         
         # tags$div(span(HTML(paste0("Last sourced from the ",
         #                           a("U.S. EPA CyAN Project", 
@@ -188,13 +191,21 @@ shinyApp(
            a("Oregon Health Authority", href="https://www.oregon.gov/oha/ph/healthyenvironments/recreation/harmfulalgaeblooms/pages/blue-greenalgaeadvisories.aspx",.noWS = "outside",target="_blank"),".",
            .noWS = c("after-begin", "before-end")),
         
+        h4("This report incorporates historical data from various European Space Agency (ESA) satellite sensors, including MERIS (2002-2012), ",
+           "OLCI on Sentinel-3A (2016-present), and OLCI on Sentinel-3B (2018-present). Starting from March 2024, the report utilizes version 5 (V5) data, ",
+           "which underwent reprocessing as of May 2023 by NASA. The V5 dataset has an enhanced filter for excluding turbid water and a correction for clear water. ",
+           "Further information on the V5 data can be found on the ",
+           a("NASA/OB.DAAC", href="https://oceancolor.gsfc.nasa.gov/data/reprocessing/projects/cyan/version/5/",.noWS = "outside",target="_blank")," website.",
+           .noWS = c("after-begin", "before-end")),
+        
         h4("All data presented in this report are provisional and subject to change. Estimates of cyanobacteria from satellite imagery do not ",
            "imply the presence of cyanotoxins or other water quality impairments and do not have regulatory implications. ",
            tags$b("Visit the ",
              a("Oregon Health Authority", href="https://www.oregon.gov/oha/ph/healthyenvironments/recreation/harmfulalgaeblooms/pages/blue-greenalgaeadvisories.aspx",.noWS = "outside",target="_blank"),
            " to learn about recreational use and drinking water advisories related to cyanobacteria blooms. "),
            "Additional assessments with imagery from the",
-           a("Sentinel 2", href="https://www.sentinel-hub.com/explore/sentinelplayground/",target="_blank"),
+           a("Sentinel 2", href="https://browser.dataspace.copernicus.eu/?zoom=7&lat=44.3466&lng=-119.25&themeId=DEFAULT-THEME&visualizationUrl=https%3A%2F%2Fsh.dataspace.copernicus.eu%2Fogc%2Fwms%2F274a990e-7090-4676-8f7d-f1867e8474a7&datasetId=S2_L1C_CDAS&fromTime=2023-07-01T00%3A00%3A00.000Z&toTime=2024-01-01T23%3A59%3A59.999Z&layerId=1_TRUE_COLOR&demSource3D=%22MAPZEN%22&cloudCoverage=100&dateMode=MOSAIC",
+             target="_blank"),
            "Satellites, local visual assessment, and/or water quality sampling are needed to provide additional information on potential human health ",
            "and environmental effects of cyanobacteria. Please note that estimates of cyanobacteria abundance presented in this report may be skewed ",
            "by cloud cover, ice cover, sun glint, water surface roughness, dry lake beds, algal mats, and shoreline effects.",
@@ -214,13 +225,15 @@ shinyApp(
         
         tags$h4(p(strong("Waterbodies with high cyanobacteria abundance (>100,000 cells/mL) based on the average of daily maximum estimates during the 7-day reporting period (7DADM)."))),
         tags$h4(p(strong(paste0("Reporting Period: ",
-                                ifelse(month(as.Date(max(dta2$Date))-6) %in% c(8,9,10,11,12,1,2), 
-                                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%b. %d, %Y')), 
+                                ifelse(month(as.Date(max(dta2$Date))-6) %in% c(8,9,10,11,12,1,2),
+                                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%b. %d, %Y')),
                                        gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%B %d, %Y'))),
+                                # "Aug. 14, 2023",
                                 " - ",
-                                ifelse(month(as.Date(max(dta2$Date))) %in% c(8,9,10,11,12,1,2), 
-                                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%b. %d, %Y')), 
+                                ifelse(month(as.Date(max(dta2$Date))) %in% c(8,9,10,11,12,1,2),
+                                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%b. %d, %Y')),
                                        gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%B %d, %Y')))
+                                # "Aug. 20, 2023"
         )))),
         
         # ___ Table 7DADM ----
@@ -305,13 +318,15 @@ shinyApp(
             
             # ____ 7maps ----
             tags$h4(p(strong(paste0("Satellite estimates of cyanobacteria abundance from ",
-                                    ifelse(month(as.Date(max(dta2$Date))-6) %in% c(8,9,10,11,12,1,2), 
-                                           gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%b. %d, %Y')), 
+                                    ifelse(month(as.Date(max(dta2$Date))-6) %in% c(8,9,10,11,12,1,2),
+                                           gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%b. %d, %Y')),
                                            gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%B %d, %Y'))),
+                                    # "Aug. 14, 2023",
                                     " to ",
-                                    ifelse(month(as.Date(max(dta2$Date))) %in% c(8,9,10,11,12,1,2), 
-                                           gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%b. %d, %Y')), 
+                                    ifelse(month(as.Date(max(dta2$Date))) %in% c(8,9,10,11,12,1,2),
+                                           gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%b. %d, %Y')),
                                            gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%B %d, %Y'))),
+                                    # "Aug. 20, 2023",
                                     ".")))),
             
             textOutput("non_select"),
@@ -336,9 +351,9 @@ shinyApp(
             shiny::radioButtons(
               inputId = "ploty",
               label = tags$h4("Date Range:"),
-              choices = c("Current Year: 2023",
+              choices = c("Current Year: 2024",
                           "Select a Date Range"),
-              selected = "Current Year: 2023"
+              selected = "Current Year: 2024"
             ),
             
             shiny::dateRangeInput(inputId = "date_plot",
@@ -422,14 +437,14 @@ shinyApp(
             #title = "copyright",
             solidHeader = FALSE,
             
-            h4("The report is provided by the Oregon DEQ Watershed Management Section. Copyright (C) 2020-2023, Oregon DEQ."),
+            h4("The report is provided by the Oregon DEQ Watershed Management Section. Copyright (C) 2020-2024, Oregon DEQ."),
             h4("The source code of this report is publicly available at GitHub repository: ", 
                a("Satellite Estimates of Cyanobacteria in Oregon Lakes and Reservoirs",
                  href="https://github.com/OR-Dept-Environmental-Quality/CyAN_imagery_update",.noWS = "outside",target="_blank"),".",
                .noWS = c("after-begin", "before-end")),
             h4("For more information on this report, please contact"),
             h4("Daniel Sobota (Lead), ", a("daniel.sobota@deq.oregon.gov",href="mailto:dan.sobota@deq.oregon.gov",target="_blank")),
-            h4("Erin Costello, ", a("erin.costello@deq.oregon.gov",href="mailto:erin.costello@deq.oregon.gov",target="_blank")),
+            # h4("Erin Costello, ", a("erin.costello@deq.oregon.gov",href="mailto:erin.costello@deq.oregon.gov",target="_blank")),
             h4("Yuan Grund, ", a("yuan.grund@deq.oregon.gov",href="mailto:yuan.grund@deq.oregon.gov",target="_blank"))
             
           )
@@ -451,7 +466,7 @@ shinyApp(
     
     yr <- reactive({ 
       
-      if(input$ploty == "Current Year: 2023"){"2023"}else{sort(unique(dta$Year))}
+      if(input$ploty == "Current Year: 2024"){"2024"}else{sort(unique(dta$Year))}
       
     })
     
@@ -546,13 +561,15 @@ shinyApp(
         
         output$who_line <- renderUI(HTML(paste("&nbsp;","&nbsp;","&nbsp;","&nbsp;",
                                                em(paste0("*RP: Reporting period from ",
-                                                         ifelse(month(as.Date(max(dta2$Date))-6) %in% c(8,9,10,11,12,1,2), 
-                                                                gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%b. %d, %Y')), 
+                                                         ifelse(month(as.Date(max(dta2$Date))-6) %in% c(8,9,10,11,12,1,2),
+                                                                gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%b. %d, %Y')),
                                                                 gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%B %d, %Y'))),
+                                                         # "Aug. 14, 2023",
                                                          " to ",
-                                                         ifelse(month(as.Date(max(dta2$Date))) %in% c(8,9,10,11,12,1,2), 
-                                                                gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%b. %d, %Y')), 
+                                                         ifelse(month(as.Date(max(dta2$Date))) %in% c(8,9,10,11,12,1,2),
+                                                                gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%b. %d, %Y')),
                                                                 gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%B %d, %Y'))),
+                                                         # "Aug. 20, 2023",
                                                          ".")),
                                                "<br/>",
                                                "&nbsp;","&nbsp;","&nbsp;","&nbsp;",
@@ -618,14 +635,16 @@ shinyApp(
         output$no_data <- renderText({})
         
         output$caption <- renderUI(HTML(unique((paste0(#"&nbsp;","&nbsp;","&nbsp;","&nbsp;",
-          df_tbl()$Waterbody_GNISID,", ",
-          ifelse(month(as.Date(max(df_tbl()$Date))-6) %in% c(8,9,10,11,12,1,2), 
-                 gsub("(\\D)0", "\\1", format(as.Date(max(df_tbl()$Date))-6,'%b. %d, %Y')), 
-                 gsub("(\\D)0", "\\1", format(as.Date(max(df_tbl()$Date))-6,'%B %d, %Y'))),
-          " - ",
-          ifelse(month(as.Date(max(df_tbl()$Date))) %in% c(8,9,10,11,12,1,2), 
-                 gsub("(\\D)0", "\\1", format(as.Date(max(df_tbl()$Date)),'%b. %d, %Y')), 
-                 gsub("(\\D)0", "\\1", format(as.Date(max(df_tbl()$Date)),'%B %d, %Y')))
+          df_tbl()$Waterbody_GNISID
+          #,
+          # ", ",
+          # ifelse(month(as.Date(max(df_tbl()$Date))-6) %in% c(8,9,10,11,12,1,2), 
+          #        gsub("(\\D)0", "\\1", format(as.Date(max(df_tbl()$Date))-6,'%b. %d, %Y')), 
+          #        gsub("(\\D)0", "\\1", format(as.Date(max(df_tbl()$Date))-6,'%B %d, %Y'))),
+          # " - ",
+          # ifelse(month(as.Date(max(df_tbl()$Date))) %in% c(8,9,10,11,12,1,2), 
+          #        gsub("(\\D)0", "\\1", format(as.Date(max(df_tbl()$Date)),'%b. %d, %Y')), 
+          #        gsub("(\\D)0", "\\1", format(as.Date(max(df_tbl()$Date)),'%B %d, %Y')))
         )))))
         
         output$table <- DT::renderDataTable({
