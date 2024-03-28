@@ -10,6 +10,7 @@ library(reticulate)
 Sys.setenv(RETICULATE_PYTHON = "C:\\Program Files\\ArcGIS\\Pro\\bin\\Python\\envs\\arcgispro-py3\\python.exe")
 Sys.setenv(PROJ_LIB = "C:\\Users\\ygrund\\AppData\\Local\\R\\win-library\\4.3\\PROJ\\proj")
 # Sys.setlocale(locale = "English_United States.1252")
+Sys.setlocale("LC_ALL", "en_US.UTF-8")
 data_path <- "//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/HAB_Shiny_app/data/"
 data <-  readxl::read_excel(paste0(data_path,"HAB_resolvablelakes_2024.xlsx"))
 dates <- readxl::read_excel("./data/calendar-dates.xlsx")
@@ -17,12 +18,11 @@ resolvable_lakes <- readxl::read_excel("./data/Resolvable_Lakes.xlsx")
 
 ```
 
-
 ## Step 1. Download data from NASA's data site.
 
 ```{r OceanData}
 # # Download data from OceanData site - not working
-# day_start <- "2024054"
+# day_start <- "2024081"
 # 
 # library(httr)
 # 
@@ -33,7 +33,7 @@ resolvable_lakes <- readxl::read_excel("./data/Resolvable_Lakes.xlsx")
 # 
 # # Define username and password
 # username <- "ygrund"
-# password <- "Cosmetic88&&"
+# password <- "XXX" (Not-disclosed)
 # 
 # # Create the session
 # my_session <- session(username, password)
@@ -47,27 +47,27 @@ resolvable_lakes <- readxl::read_excel("./data/Resolvable_Lakes.xlsx")
 # print(paste0("Day End: ",dates[which(dates$CyAN_File_NUM == day_end),]$Date, " | ",day_end))
 # print(paste0("Total Days | ",hab_days_length))
 # 
-# file_num <- dates %>% dplyr::filter(as.numeric(CyAN_File_NUM) >= as.numeric(day_start) & 
+# file_num <- dates %>% dplyr::filter(as.numeric(CyAN_File_NUM) >= as.numeric(day_start) &
 #                                       as.numeric(CyAN_File_NUM) <= as.numeric(day_end))
 # tiles <- c("1_1","1_2","2_1","2_2")
 # 
-# outPath_ci <- "//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/Satellite data/CyAN_Data_V5/Sentinel-3/CI_cyano/raw/"
+# outPath_dn <- "//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/Satellite data/CyAN_Data_V5/Sentinel-3/CI_cyano/raw/"
 # 
 # for(fileNum in file_num$CyAN_File_NUM) {
-#   
-#   # test: fileNum = "2024054"
+# 
+#   # test: fileNum = "2024081"
 #   year <- file_num %>% dplyr::filter(CyAN_File_NUM == fileNum) %>% dplyr::pull(Year)
 #   filename_list <- list()
 # 
-#   folder_path <- paste0(outPath_ci, year, "/temp/")
+#   folder_path <- paste0(outPath_dn, year, "/temp/")
 #   if(!file.exists(folder_path)) {dir.create(folder_path, showWarnings = TRUE, recursive = FALSE)}else{}
-#   
+# 
 #   for(tile in tiles){
-#     
+# 
 #     # test: tile = "1_1"
 #     url <- paste0("https://oceandata.sci.gsfc.nasa.gov/getfile/L",fileNum,".L3m_DAY_CYAN_CI_cyano_CYAN_CONUS_300m_",tile,".tif")
 #     filename <- sub(".*/", "", url)
-#     
+# 
 #     tryCatch({
 #       # Submit the request using the configured session
 #       response <- httr::GET(
@@ -76,12 +76,12 @@ resolvable_lakes <- readxl::read_excel("./data/Resolvable_Lakes.xlsx")
 #         # httr::add_headers(`User-Agent` = "Mozilla/5.0"),
 #         httr::authenticate(username, password)
 #       )
-#       
+# 
 #       # Check for successful response
 #       if (httr::status_code(response) == 200) {
 #         # Save the file
 #         content <- httr::content(response, as = "raw")
-#         writeBin(content, paste0(outPath_ci,year,"/temp/",filename))
+#         writeBin(content, paste0(outPath_dn,year,"/temp/",filename))
 #         print(paste0("File downloaded successfully: ",fileNum))
 #       } else {
 #         stop(paste0("Failed to download the file: ",filename))
@@ -92,16 +92,16 @@ resolvable_lakes <- readxl::read_excel("./data/Resolvable_Lakes.xlsx")
 #     })
 #     filename_list <- c(filename_list,filename)
 #   }
-#   
+# 
 #   # combine four tif flies into a single file
-#   raster1 <- raster::raster(paste0(outPath_ci,"/",year,"/temp/",filename_list[1]))
-#   raster2 <- raster::raster(paste0(outPath_ci,"/",year,"/temp/",filename_list[2]))
-#   raster3 <- raster::raster(paste0(outPath_ci,"/",year,"/temp/",filename_list[3]))
-#   raster4 <- raster::raster(paste0(outPath_ci,"/",year,"/temp/",filename_list[4]))
+#   raster1 <- raster::raster(paste0(outPath_dn,"/",year,"/temp/",filename_list[1]))
+#   raster2 <- raster::raster(paste0(outPath_dn,"/",year,"/temp/",filename_list[2]))
+#   raster3 <- raster::raster(paste0(outPath_dn,"/",year,"/temp/",filename_list[3]))
+#   raster4 <- raster::raster(paste0(outPath_dn,"/",year,"/temp/",filename_list[4]))
 #   raster_list <- list(raster1, raster2, raster3, raster4)
 #   merged_raster <- raster::merge(raster1, raster2, raster3, raster4)
 #   raster::writeRaster(merged_raster,
-#                       filename = paste0(outPath_ci,year,"/",stringr::str_sub(filename, start = 1, end = 8)),
+#                       filename = paste0(outPath_dn,year,"/",stringr::str_sub(filename, start = 1, end = 8)),
 #                       format = "GTiff", overwrite = TRUE)
 # }
 
@@ -111,7 +111,7 @@ resolvable_lakes <- readxl::read_excel("./data/Resolvable_Lakes.xlsx")
 # Download rasters from the OceanColor site
 
 baseurl <- "https://oceancolor.gsfc.nasa.gov/CYAN/OLCI/"
-outPath_ci <- "//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/Satellite data/CyAN_Data_V5/Sentinel-3/CI_cyano/raw/"
+outPath_dn <- "//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/Satellite data/CyAN_Data_V5/Sentinel-3/CI_cyano/raw/"
 
 tiles <- paste0("_", paste(c("1_1","1_2","2_1","2_2"), collapse = "|"), "\\.tif$")
 
@@ -125,12 +125,16 @@ print(paste0("Day State: ",dates[which(dates$CyAN_File_NUM == day_start),]$Date,
 print(paste0("Day End: ",dates[which(dates$CyAN_File_NUM == day_end),]$Date, " | ",day_end))
 print(paste0("Total Days | ",hab_days_length))
 
-download_tgz_path <- paste0(outPath_ci, year, "/temp/tgz/")
+download_tgz_path <- paste0(outPath_dn, year, "/temp/tgz/")
 download_tgz <- paste0('L', year, hab_days, '.L3m_DAY_CYAN_CI_cyano_CYAN_CONUS_300m.tgz')
 url <- paste0(baseurl, year, '/', hab_days, '/', download_tgz)
 
+download_file_list <- list()
+retry <- FALSE
 for (i in 1:hab_days_length) {
+  
   # test: i=1
+  retry <- FALSE
   cat(url[i], "\n")
   
   tryCatch(
@@ -141,9 +145,11 @@ for (i in 1:hab_days_length) {
     },
     error = function(e) {
       cat("Error:", conditionMessage(e), "\n")
-      next
+      retry <<- TRUE
     }
   )
+  
+  if(retry){next}
   
   download_folder <- sub("\\.tgz$", "", file.path(paste0(download_tgz_path, download_tgz[i])))
   downloaded_files <- list.files(download_folder, full.names = TRUE)
@@ -155,15 +161,17 @@ for (i in 1:hab_days_length) {
   }
   
   print("Combine four tiles into a single file")
-  raster1 <- raster::raster(paste0(outPath_ci,"/",year,"/temp/",tile_file_names[1]))
-  raster2 <- raster::raster(paste0(outPath_ci,"/",year,"/temp/",tile_file_names[2]))
-  raster3 <- raster::raster(paste0(outPath_ci,"/",year,"/temp/",tile_file_names[3]))
-  raster4 <- raster::raster(paste0(outPath_ci,"/",year,"/temp/",tile_file_names[4]))
+  raster1 <- raster::raster(paste0(outPath_dn,"/",year,"/temp/",tile_file_names[1]))
+  raster2 <- raster::raster(paste0(outPath_dn,"/",year,"/temp/",tile_file_names[2]))
+  raster3 <- raster::raster(paste0(outPath_dn,"/",year,"/temp/",tile_file_names[3]))
+  raster4 <- raster::raster(paste0(outPath_dn,"/",year,"/temp/",tile_file_names[4]))
   raster_list <- list(raster1, raster2, raster3, raster4)
   merged_raster <- raster::merge(raster1, raster2, raster3, raster4)
   raster::writeRaster(merged_raster,
-                      filename = paste0(outPath_ci,year,"/",stringr::str_sub(tile_file_names[1], start = 2, end = 8)),
+                      filename = paste0(outPath_dn,year,"/",stringr::str_sub(tile_file_names[1], start = 2, end = 8)),
                       format = "GTiff", overwrite = TRUE)
+  
+  download_file_list <- c(download_file_list, stringr::str_sub(tile_file_names[1], start = 2, end = 8))
 }
 
 print("Step 1 completed")
@@ -180,6 +188,8 @@ import arcpy
 from arcpy.sa import *
 import pandas as pd
 import os
+import shutil
+import glob
 import tempfile
 
 arcpy.env.overwriteOutput = True
@@ -197,39 +207,24 @@ print("Initialize empty dataframes to store tabulate and zonal results.")
 tabulate_result_df = pd.DataFrame(dtype='object')
 zonal_result_df = pd.DataFrame(dtype='object')
 
-try:
-    day_start = r.day_start
-    year = r.year
-except:
-    print("Provide start day.")
-    
-# day_start = "2024079"
-# year = day_start[:4]
-
 extent = arcpy.Extent(-2315637.32, 2919264.13, -1566307.49, 2284415.24)
 
+year = r.year
 raw_path = os.path.join(base_path, f"raw\\{year}")
+dn_path = os.path.join(base_path, f"dn\\{year}")
 ci_path = os.path.join(base_path, f"ci\\{year}")
-cyan_path = os.path.join(base_path, f"cyan\\{year}")
 
 temp_tabulate = os.path.join(temp_dir, f"tabulate_result_{year}.dbf")
 temp_zonal = os.path.join(temp_dir, f"zonal_result_{year}.dbf")
 
-raw_names = []
-raw_files = os.listdir(raw_path)
-raw_names.extend([file[:7] for file in raw_files if file.endswith("tif")])
-start_index = raw_names.index(day_start)
-updated_raw_names = raw_names[start_index:]
-
-for raw_name in updated_raw_names:
+for raw_name in r.download_file_list:
   arcpy.CheckOutExtension("Spatial")
-  # test: raw_name = '2024080'
+  # test: raw_name = '2024082'
   print(raw_name)
   
   raw_tif_path = os.path.join(raw_path, f"{raw_name}.tif")
+  output_dn_path = os.path.join(dn_path, f"{raw_name}.tif")
   output_ci_path = os.path.join(ci_path, f"{raw_name}.tif")
-  output_cyan_path = os.path.join(cyan_path, f"{raw_name}.tif")
-  copy_cyan_path = os.path.join(project_path, year, f"{raw_name}.tif")
   
   raw_tif = arcpy.Raster(raw_tif_path)
   raw_tif_int = arcpy.sa.Int(raw_tif)
@@ -241,20 +236,20 @@ for raw_name in updated_raw_names:
       print("...Clip the raster for Oregon's extent")
       outSetNull_clip = arcpy.sa.ExtractByRectangle(outSetNull, extent)
       
-      print("...Convert CyAN index to cells/ml")
+      print("...Convert DN to CI cells/ml")
       outCellsML = (arcpy.sa.Power(10, (3.0 / 250.0 * outSetNull_clip - 4.2))) * 100000000
       
       print("...Check if the output raster files already exists")
+      if arcpy.Exists(output_dn_path):
+        arcpy.Delete_management(output_dn_path)
+        
       if arcpy.Exists(output_ci_path):
         arcpy.Delete_management(output_ci_path)
-        
-      if arcpy.Exists(output_cyan_path):
-        arcpy.Delete_management(output_cyan_path)
         
       print("...Reproject and save the output raster")
       arcpy.management.ProjectRaster(
         in_raster=outSetNull_clip,
-        out_raster=output_ci_path, 
+        out_raster=output_dn_path, 
         out_coor_system="PROJCS['WGS_1984_Web_Mercator_Auxiliary_Sphere',GEOGCS['GCS_WGS_1984',DATUM['D_WGS_1984',SPHEROID['WGS_1984',6378137.0,298.257223563]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]],PROJECTION['Mercator_Auxiliary_Sphere'],PARAMETER['False_Easting',0.0],PARAMETER['False_Northing',0.0],PARAMETER['Central_Meridian',0.0],PARAMETER['Standard_Parallel_1',0.0],PARAMETER['Auxiliary_Sphere_Type',0.0],UNIT['Meter',1.0]]",
         resampling_type="NEAREST",
         cell_size="300 300",
@@ -266,7 +261,7 @@ for raw_name in updated_raw_names:
       print("...Reproject and save the output raster")
       arcpy.management.ProjectRaster(
         in_raster=outCellsML,
-        out_raster=output_cyan_path, 
+        out_raster=output_ci_path, 
         out_coor_system="PROJCS['WGS_1984_Web_Mercator_Auxiliary_Sphere',GEOGCS['GCS_WGS_1984',DATUM['D_WGS_1984',SPHEROID['WGS_1984',6378137.0,298.257223563]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]],PROJECTION['Mercator_Auxiliary_Sphere'],PARAMETER['False_Easting',0.0],PARAMETER['False_Northing',0.0],PARAMETER['Central_Meridian',0.0],PARAMETER['Standard_Parallel_1',0.0],PARAMETER['Auxiliary_Sphere_Type',0.0],UNIT['Meter',1.0]]",
         resampling_type="NEAREST",
         cell_size="300 300",
@@ -274,8 +269,16 @@ for raw_name in updated_raw_names:
         Registration_Point="",
         in_coor_system="PROJCS['USA_Contiguous_Albers_Equal_Area_Conic_USGS_version',GEOGCS['GCS_North_American_1983',DATUM['D_North_American_1983',SPHEROID['GRS_1980',6378137.0,298.257222101]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]],PROJECTION['Albers'],PARAMETER['False_Easting',0.0],PARAMETER['False_Northing',0.0],PARAMETER['Central_Meridian',-96.0],PARAMETER['Standard_Parallel_1',29.5],PARAMETER['Standard_Parallel_2',45.5],PARAMETER['Latitude_Of_Origin',23.0],UNIT['Meter',1.0]]"
         )
-      shutil.copy(output_cyan_path, copy_cyan_path)
-      
+        
+      print("...Copy the output raster to the project folder")
+      pattern = os.path.join(ci_path, raw_name + ".*")
+      files_to_copy = glob.glob(pattern)
+      for file_path in files_to_copy:
+        file_name = os.path.basename(file_path)
+        base_name, extension = file_name.rsplit('.', 1)
+        copy_ci_path = os.path.join(project_path, year, file_name)
+        shutil.copy(file_path, copy_ci_path)
+
       print("...Tabulate Area")
       tabulate_result = arcpy.sa.TabulateArea(
         in_zone_data=zones,
@@ -347,7 +350,7 @@ for raw_name in updated_raw_names:
 
 ```{r zonaltbl}
 print("...Generate zonal statistics data table")
-zonal_temp_file_names <- paste0("zonal_result_", py$updated_raw_names, ".csv")
+zonal_temp_file_names <- paste0("zonal_result_", download_file_list, ".csv")
 zonal_temp_file_paths <- file.path(py$temp_dir, zonal_temp_file_names)
 all_data <- list()
 for (file in zonal_temp_file_paths) {
@@ -382,16 +385,18 @@ zonal_update <- dplyr::bind_rows(data,zonal_combined) %>% dplyr::mutate(Date = a
 
 writexl::write_xlsx(zonal_update, paste0(data_path,"HAB_resolvablelakes_2024.xlsx"))
 
+print("Step 2 completed")
+
 ```
 
 ## Step 3. Gether data for the shiny app.
-
-```{r shinydata}
-
+### shinydata_1 for interactive raster maps
+```{r shinydata_1}
 # (1) Timeseries Data Table ----
 dta1 <- readxl::read_xlsx(paste0(data_path,"Resolvable_Lakes.xlsx"), sheet = "cyan_resolvable_lakes")
 
-dta2 <- data %>% dplyr::filter(GNISIDNAME %in% dta1$inApp) # filter out saline lakes
+dta2 <- readxl::read_excel(paste0(data_path,"HAB_resolvablelakes_2024.xlsx")) %>% 
+  dplyr::filter(GNISIDNAME %in% dta1$inApp) # filter out saline lakes
 
 dta3 <- readxl::read_xlsx(paste0(data_path,"HAB_resolvablelakes_2002-2023.xlsx"), sheet = "data") %>% 
   dplyr::filter(GNISIDNAME %in% dta1$inApp) # filter out saline lakes
@@ -439,8 +444,7 @@ pal.huc6 <- leaflet::colorFactor(palette = c(RColorBrewer::brewer.pal(name="BrBG
 # (4) Map: raster ----
 # Raster color 
 thevalues <- c(0,6310,20000,100000,7000000)
-#paletteFunc <- grDevices::colorRampPalette(c('#bdbdbd','#66c2a4','#2ca25f','#006d2c'))
-#palette     <- paletteFunc(4)
+
 palette <- c('#bdbdbd','#66c2a4','#2ca25f','#006d2c')
 
 pal.map <- leaflet::colorBin(palette = palette,
@@ -450,6 +454,14 @@ pal.map <- leaflet::colorBin(palette = palette,
 # Legend labels
 labels = c("Non-detect","Low: 6,311 - 20,000","Moderate: 20,000 - 100,000","High: >100,000")
 
+# Save data ----
+#rm(dta1); rm(dta2); rm(dta3)
+save.image(file = "data.RData")
+
+```
+
+### shinydata_2 for thumbnail maps
+```{r shinydata_2}
 # (5) 7DADM Table  ----
 tbl.data.7days <- dta2 %>% 
   dplyr::arrange(GNISIDNAME, desc(Date)) %>% 
@@ -503,10 +515,6 @@ palette7dadm <- leaflet::colorFactor(palette = c('#006d2c'),
 palette7dadm_lg <- leaflet::colorFactor(palette = c('#00441b'), 
                                         domain = unique(sort(lakes.resolvable.7dadm$`7dadm`)))
 
-# Save data ----
-#rm(dta1); rm(dta2); rm(dta3)
-save.image(file = "data.RData")
-
 #pause()
 
 # (7) Thumbnail maps ----
@@ -526,8 +534,6 @@ tag.map.date <- shiny::tags$style(htmltools::HTML("
 
 # require: thevalues; paletteFunc; palette; pal.map
 
-# Data subset for testing:
-#subset <- lakes.resolvable[which(lakes.resolvable$GNISIDNAME %in% c("Upper Klamath Lake_01151685", "Detroit Lake_01639301")),]
 waterbody.list <- sort(unique(lakes.resolvable$GNISIDNAME))
 
 # Dates:
@@ -537,37 +543,40 @@ last7days <- lookup.date %>%
   dplyr::arrange(Day.dates) %>%
   dplyr::pull(Date)
 
-# when last7days need to be manually defined. !! Remember to check/save map_file_name.csv.
-# last7days <- c("2024-03-14", "2024-03-15", "2024-03-16", "2024-03-17", "2024-03-18","2024-03-19", "2024-03-20")
-# last7days <- c("2024-03-15")
-
-map.file.name <- data.frame(File_waterbody = character(),
-                            File_name = character())
+last7days_downloaded <- sort(unique(as.Date(tbl.data.7days$Date)))
+last7days_noImage <- last7days[!last7days %in% last7days_downloaded]
 
 # _ images ----
+map.file.name <- readxl::read_excel("./data/map_file_name.xlsx")
+if(max(as.Date(map.file.name$Date))<max(as.Date(last7days_downloaded))){
+  image_dates <- seq(max(as.Date(map.file.name$Date)) + 1, max(as.Date(last7days_downloaded)), by = "day")
+}else{
+    print("No need to update the images.")
+  }
+
+image_dates <- c("2024-03-22","2024-03-23","2024-03-24","2024-03-25")
 # This for loop will take more than 2 hours to run.
 for (x in 1:length(waterbody.list)){
   
-  # test: x <- 38
-  # test: y <- 1
+  # test: x <- 1
+  # test: y <- 4
   
   print(waterbody.list[x])
   
-  map.file.name.x <- data.frame(File_waterbody = character(),
-                                File_name = character())
+  map.file.name.x <- data.frame(File_waterbody = character(),File_name = character(), Date = character())
   
-  for(y in 1:length(last7days)){
+  for(y in 1:length(image_dates)){
     
-    print(last7days[y])
+    print(image_dates[y])
     
-    title.date <- shiny::tags$div(tag.map.date, htmltools::HTML(paste0(last7days[y])))
+    title.date <- shiny::tags$div(tag.map.date, htmltools::HTML(paste0(image_dates[y])))
     
     one.lake <- lakes.resolvable[which(lakes.resolvable$GNISIDNAME == waterbody.list[x]),]
     
     bounds <- sf::st_bbox(one.lake)
     
     df.map.date <- lookup.date %>% 
-      dplyr::filter(Date %in% as.Date(last7days[y])) %>% 
+      dplyr::filter(Date %in% as.Date(image_dates[y])) %>% 
       dplyr::mutate(Day.dta = ifelse(Day.dates < 10, paste0("00",as.character(Day.dates)),
                                      ifelse((Day.dates >= 10 & Day.dates < 100), paste0("0",as.character(Day.dates)), Day.dates))) %>% 
       dplyr::mutate(map_day = paste0(Year.dates,Day.dta))
@@ -575,37 +584,62 @@ for (x in 1:length(waterbody.list)){
     tif.dir <- paste0("//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/HAB_Shiny_app/data/", df.map.date$Year.dates, "/")
     file.name <- paste0(df.map.date$map_day,".tif")
     
-    rst <- raster::raster(paste0(tif.dir,file.name))
-
-    map <- leaflet::leaflet() %>% 
-      leaflet::addControl(title.date, position = "topleft", className="map-date")%>% 
-      leaflet::addProviderTiles("OpenStreetMap",group = "OpenStreetMap") %>% 
-      leaflet::addRasterImage(rst, layerId = "Value", project = FALSE, colors=pal.map, opacity = 1) %>% 
-      #leaflet::addLegend(pal = pal.map, values = thevalues, title = "Cyanobacteria (cells/mL)", position = "bottomright") %>% 
-      leaflet::addPolygons(data = lakes.resolvable, 
-                           color = "blue",
-                           weight = 2,
-                           layer = ~lakes.resolvable$GNISIDNAME,
-                           smoothFactor = 0.5,
-                           opacity = 0.5,
-                           fillColor = "transparent",
-                           fillOpacity = 1.0,
-                           label = ~lakes.resolvable$GNIS_Name,
-                           labelOptions = leaflet::labelOptions(style = list("font-size" = "18px",
-                                                                    "color" = "blue"))) %>% 
-      leaflet::fitBounds(lng1=bounds[[1]], lat1=bounds[[2]], lng2=bounds[[3]], lat2=bounds[[4]])
+    if(exists("rst")){
+      
+      rst <- raster::raster(paste0(tif.dir,file.name))
+      
+      map <- leaflet::leaflet() %>% 
+        leaflet::addControl(title.date, position = "topleft", className="map-date")%>% 
+        leaflet::addProviderTiles("OpenStreetMap",group = "OpenStreetMap") %>% 
+        leaflet::addRasterImage(rst, layerId = "Value", project = FALSE, colors=pal.map, opacity = 1) %>% 
+        #leaflet::addLegend(pal = pal.map, values = thevalues, title = "Cyanobacteria (cells/mL)", position = "bottomright") %>% 
+        leaflet::addPolygons(data = lakes.resolvable, 
+                             color = "blue",
+                             weight = 2,
+                             layer = ~lakes.resolvable$GNISIDNAME,
+                             smoothFactor = 0.5,
+                             opacity = 0.5,
+                             fillColor = "transparent",
+                             fillOpacity = 1.0,
+                             label = ~lakes.resolvable$GNIS_Name,
+                             labelOptions = leaflet::labelOptions(style = list("font-size" = "18px",
+                                                                               "color" = "blue"))) %>% 
+        leaflet::fitBounds(lng1=bounds[[1]], lat1=bounds[[2]], lng2=bounds[[3]], lat2=bounds[[4]])
     
-    #mapview::mapshot(map, file = paste0("./Images/",waterbody.list[x],"-",last7days[y],".png")) # somehow mapshot stops working
+      }else{
+      
+      map <- leaflet::leaflet() %>% 
+        leaflet::addControl(title.date, position = "topleft", className="map-date")%>% 
+        leaflet::addProviderTiles("OpenStreetMap",group = "OpenStreetMap") %>% 
+        # leaflet::addRasterImage(rst, layerId = "Value", project = FALSE, colors=pal.map, opacity = 1) %>% 
+        # leaflet::addLegend(pal = pal.map, values = thevalues, title = "Cyanobacteria (cells/mL)", position = "bottomright") %>% 
+        leaflet::addPolygons(data = lakes.resolvable, 
+                             color = "blue",
+                             weight = 2,
+                             layer = ~lakes.resolvable$GNISIDNAME,
+                             smoothFactor = 0.5,
+                             opacity = 0.5,
+                             fillColor = "transparent",
+                             fillOpacity = 1.0,
+                             label = ~lakes.resolvable$GNIS_Name,
+                             labelOptions = leaflet::labelOptions(style = list("font-size" = "18px",
+                                                                               "color" = "blue"))) %>% 
+        leaflet::fitBounds(lng1=bounds[[1]], lat1=bounds[[2]], lng2=bounds[[3]], lat2=bounds[[4]])
+      
+    }
     
-    htmlwidgets::saveWidget(map, file = paste0("./Images/",waterbody.list[x],"-",last7days[y],".html"),selfcontained=TRUE)
-    webshot::webshot(url = paste0("./Images/",waterbody.list[x],"-",last7days[y],".html"), 
-                     file = paste0("./Images/",waterbody.list[x],"-",last7days[y],".jpg"))
+    # mapview::mapshot(map, file = paste0("./Images/",waterbody.list[x],"-",image_dates[y],".png")) # somehow mapshot stops working
     
-    map.file.name.y <- paste0("./Images/",waterbody.list[x],"-",last7days[y],".jpg")
+    htmlwidgets::saveWidget(map, file = paste0("./Images/",waterbody.list[x],"-",image_dates[y],".html"),selfcontained=TRUE)
+    webshot::webshot(url = paste0("./Images/",waterbody.list[x],"-",image_dates[y],".html"), 
+                     file = paste0("./Images/",waterbody.list[x],"-",image_dates[y],".jpg"))
+    
+    map.file.name.y <- paste0("./Images/",waterbody.list[x],"-",image_dates[y],".jpg")
     
     map.file.name.x <- map.file.name.x %>% 
       dplyr::add_row(File_waterbody = waterbody.list[x],
-                     File_name = map.file.name.y)
+                     File_name = map.file.name.y,
+                     Date = as.character(image_dates[y]))
     
   }
   
@@ -613,8 +647,7 @@ for (x in 1:length(waterbody.list)){
   
 }
 
-#write.csv(map.file.name,"map_file_name_Sunday.csv")
-write.csv(map.file.name,"./data/map_file_name.csv")
+writexl::write_xlsx(map.file.name,"./data/map_file_name.xlsx")
 
 file.remove(file.path("./Images/",dir(path = "./Images",pattern="*.html")))
 unlink(file.path("./Images/",dir(path = "./Images",pattern="_files")),recursive = TRUE)
@@ -622,17 +655,16 @@ unlink(file.path("./Images/",dir(path = "./Images",pattern="_files")),recursive 
 # _ report images ----
 library(magick)
 
-map.file.name <- read.csv("./data/map_file_name.csv")
+map.file.name <- readxl::read_excel("./data/map_file_name.xlsx") %>% 
+  dplyr::filter(Date >= max(as.Date(Date)) - 6 & Date <= max(as.Date(Date))) %>% 
+  dplyr::distinct(File_waterbody,Date, .keep_all = TRUE)
 
 for(i in sort(unique(map.file.name$File_waterbody))){
   
   # test: i <- "Aspen Lake_01161255"
-  
   df.imgs <- map.file.name %>% dplyr::filter(File_waterbody == i)
-  # img.files <- c(df.imgs$File_name[1:7],"./Report_Images/legend/legend.png")
   img.files <- c(df.imgs$File_name[1:7],"./Report_Images/legend/legend.png") 
   imgs <- magick::image_read(img.files)
-  #imgs.comb <- image_montage(imgs, tile = '3x3', geometry = "x200+3+5")
   imgs.comb <- magick::image_montage(imgs, tile = '4x2', geometry = "300x200+1+1")
   magick::image_write(imgs.comb, path = paste0("./Report_Images/",i,".jpg"), format = "jpg")
   print(paste0("./Report_Images/",i,".jpg"))
