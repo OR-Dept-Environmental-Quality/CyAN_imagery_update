@@ -191,11 +191,11 @@ shinyApp(
            a("Oregon Health Authority", href="https://www.oregon.gov/oha/ph/healthyenvironments/recreation/harmfulalgaeblooms/pages/blue-greenalgaeadvisories.aspx",.noWS = "outside",target="_blank"),".",
            .noWS = c("after-begin", "before-end")),
         
-        h4("This report incorporates historical data from various European Space Agency (ESA) satellite sensors, including MERIS (2002-2012), ",
-           "OLCI on Sentinel-3A (2016-present), and OLCI on Sentinel-3B (2018-present). Starting from March 2024, the report utilizes version 5 (V5) data, ",
-           "which underwent reprocessing as of May 2023 by NASA. The V5 dataset has an enhanced filter for excluding turbid water and a correction for clear water. ",
-           "Further information on the V5 data can be found on the ",
-           a("NASA/OB.DAAC", href="https://oceancolor.gsfc.nasa.gov/data/reprocessing/projects/cyan/version/5/",.noWS = "outside",target="_blank")," website.",
+        h4("This report includes historical data from several satellite sensors, including MERIS (2002-2012)*, OLCI on Sentinel-3A (2016-present), and OLCI on ",
+           "Sentinel-3B (2018-present). Beginning in March 2024, the report presents version 5 (V5) data, which underwent reprocessing by NASA in May 2023. ",
+           "The V5 dataset includes an enhanced filter for turbid water and a correction for clear water. Please refer to the ",
+           a("NASA", href="https://oceancolor.gsfc.nasa.gov/data/reprocessing/projects/cyan/version/5/",.noWS = "outside",target="_blank"),
+           " website for additional information on V5 data.",
            .noWS = c("after-begin", "before-end")),
         
         h4("All data presented in this report are provisional and subject to change. Estimates of cyanobacteria from satellite imagery do not ",
@@ -209,6 +209,9 @@ shinyApp(
            "Satellites, local visual assessment, and/or water quality sampling are needed to provide additional information on potential human health ",
            "and environmental effects of cyanobacteria. Please note that estimates of cyanobacteria abundance presented in this report may be skewed ",
            "by cloud cover, ice cover, sun glint, water surface roughness, dry lake beds, algal mats, and shoreline effects.",
+           .noWS = c("after-begin", "before-end")),
+        
+        em("*MERIS data is currently under further investigation due to unusual patterns observed in the time series plots.",
            .noWS = c("after-begin", "before-end"))
         
       ), 
@@ -224,6 +227,7 @@ shinyApp(
         #dropdownMenu = boxDropdown(),
         
         tags$h4(p(strong("Waterbodies with high cyanobacteria abundance (>100,000 cells/mL) based on the average of daily maximum estimates during the 7-day reporting period (7DADM)."))),
+        tags$h4(p(strong("A 7-Day Daily Maximum Geometric Mean (7DDMGM) is calculated for each highlighted waterbody as a reference."))),
         tags$h4(p(strong(paste0("Reporting Period: ",
                                 ifelse(month(as.Date(max(dta2$Date))-6) %in% c(8,9,10,11,12,1,2),
                                        gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%b. %d, %Y')),
