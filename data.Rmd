@@ -141,7 +141,7 @@ for (i in 1:hab_days_length) {
     {
       utils::download.file(url[i], destfile = paste0(download_tgz_path, download_tgz[i]))
       utils::untar(paste0(download_tgz_path, download_tgz[i]), exdir = download_tgz_path)
-      print("Download completed")
+      print("Tiles download completed")
     },
     error = function(e) {
       cat("Error:", conditionMessage(e), "\n")
@@ -217,9 +217,10 @@ ci_path = os.path.join(base_path, f"ci\\{year}")
 temp_tabulate = os.path.join(temp_dir, f"tabulate_result_{year}.dbf")
 temp_zonal = os.path.join(temp_dir, f"zonal_result_{year}.dbf")
 
+# r.download_file_list = ['2024096']
 for raw_name in r.download_file_list:
   arcpy.CheckOutExtension("Spatial")
-  # test: raw_name = '2024082'
+  # test: raw_name = '2024096'
   print(raw_name)
   
   raw_tif_path = os.path.join(raw_path, f"{raw_name}.tif")
@@ -227,71 +228,100 @@ for raw_name in r.download_file_list:
   output_ci_path = os.path.join(ci_path, f"{raw_name}.tif")
   
   raw_tif = arcpy.Raster(raw_tif_path)
-  raw_tif_int = arcpy.sa.Int(raw_tif)
-  
-  outSetNull = arcpy.sa.SetNull(raw_tif_int, raw_tif_int, 'VALUE = 255 OR VALUE = 254') # 255=no_data 254=land
-  
-  # try:
-  #   if arcpy.management.GetRasterProperties(outSetNull, "MINIMUM") != 254:
   print("...Clip the raster for Oregon's extent")
-  outSetNull_clip = arcpy.sa.ExtractByRectangle(outSetNull, extent)
-      
+  raw_tif_clip = arcpy.sa.ExtractByRectangle(raw_tif, extent)
+  print("...Convert raster values to integer")
+  raw_tif_int = arcpy.sa.Int(raw_tif_clip)
+  print("...Set 254 and 255 to null")
+  outSetNull = arcpy.sa.SetNull(raw_tif_int,raw_tif_int,"Value = 254 Or Value = 255") # 255=no_data 254=land
   print("...Convert DN to CI cells/ml")
-  outCellsML = (arcpy.sa.Power(10, (3.0 / 250.0 * outSetNull_clip - 4.2))) * 100000000
-      
+  outCellsML = (arcpy.sa.Power(10, (3.0 / 250.0 * outSetNull - 4.2))) * 100000000
+  
   print("...Check if the output raster files already exists")
   if arcpy.Exists(output_dn_path):
-    arcpy.Delete_management(output_dn_path)
-        
+    arcpy.management.Delete(output_dn_path)
+    
   if arcpy.Exists(output_ci_path):
-    arcpy.Delete_management(output_ci_path)
-        
-  print("...Reproject and save the output raster")
+    arcpy.management.Delete(output_ci_path)
+    
+  print("...Reproject and save the output rasters")
+  out_coor_system = (
+    "PROJCS['WGS_1984_Web_Mercator_Auxiliary_Sphere',"
+    "GEOGCS['GCS_WGS_1984',"
+    "DATUM['D_WGS_1984',"
+    "SPHEROID['WGS_1984',6378137.0,298.257223563]],"
+    "PRIMEM['Greenwich',0.0],"
+    "UNIT['Degree',0.0174532925199433]],"
+    "PROJECTION['Mercator_Auxiliary_Sphere'],"
+    "PARAMETER['False_Easting',0.0],"
+    "PARAMETER['False_Northing',0.0],"
+    "PARAMETER['Central_Meridian',0.0],"
+    "PARAMETER['Standard_Parallel_1',0.0],"
+    "PARAMETER['Auxiliary_Sphere_Type',0.0],"
+    "UNIT['Meter',1.0]]"
+    )
+    
+  in_coor_system = (
+    "PROJCS['USA_Contiguous_Albers_Equal_Area_Conic_USGS_version',"
+    "GEOGCS['GCS_North_American_1983',"
+    "DATUM['D_North_American_1983',"
+    "SPHEROID['GRS_1980',6378137.0,298.257222101]],"
+    "PRIMEM['Greenwich',0.0],"
+    "UNIT['Degree',0.0174532925199433]],"
+    "PROJECTION['Albers'],"
+    "PARAMETER['False_Easting',0.0],"
+    "PARAMETER['False_Northing',0.0],"
+    "PARAMETER['Central_Meridian',-96.0],"
+    "PARAMETER['Standard_Parallel_1',29.5],"
+    "PARAMETER['Standard_Parallel_2',45.5],"
+    "PARAMETER['Latitude_Of_Origin',23.0],"
+    "UNIT['Meter',1.0]]"
+    )
+    
   arcpy.management.ProjectRaster(
-    in_raster=outSetNull_clip,
-    out_raster=output_dn_path, 
-    out_coor_system="PROJCS['WGS_1984_Web_Mercator_Auxiliary_Sphere',GEOGCS['GCS_WGS_1984',DATUM['D_WGS_1984',SPHEROID['WGS_1984',6378137.0,298.257223563]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]],PROJECTION['Mercator_Auxiliary_Sphere'],PARAMETER['False_Easting',0.0],PARAMETER['False_Northing',0.0],PARAMETER['Central_Meridian',0.0],PARAMETER['Standard_Parallel_1',0.0],PARAMETER['Auxiliary_Sphere_Type',0.0],UNIT['Meter',1.0]]",
+    in_raster=outSetNull,
+    out_raster=output_dn_path,
+    out_coor_system=out_coor_system,
     resampling_type="NEAREST",
     cell_size="300 300",
     geographic_transform="WGS_1984_(ITRF00)_To_NAD_1983",
     Registration_Point="",
-    in_coor_system="PROJCS['USA_Contiguous_Albers_Equal_Area_Conic_USGS_version',GEOGCS['GCS_North_American_1983',DATUM['D_North_American_1983',SPHEROID['GRS_1980',6378137.0,298.257222101]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]],PROJECTION['Albers'],PARAMETER['False_Easting',0.0],PARAMETER['False_Northing',0.0],PARAMETER['Central_Meridian',-96.0],PARAMETER['Standard_Parallel_1',29.5],PARAMETER['Standard_Parallel_2',45.5],PARAMETER['Latitude_Of_Origin',23.0],UNIT['Meter',1.0]]"
+    in_coor_system=in_coor_system
     )
-    
-  print("...Reproject and save the output raster")
+      
   arcpy.management.ProjectRaster(
     in_raster=outCellsML,
-    out_raster=output_ci_path, 
-    out_coor_system="PROJCS['WGS_1984_Web_Mercator_Auxiliary_Sphere',GEOGCS['GCS_WGS_1984',DATUM['D_WGS_1984',SPHEROID['WGS_1984',6378137.0,298.257223563]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]],PROJECTION['Mercator_Auxiliary_Sphere'],PARAMETER['False_Easting',0.0],PARAMETER['False_Northing',0.0],PARAMETER['Central_Meridian',0.0],PARAMETER['Standard_Parallel_1',0.0],PARAMETER['Auxiliary_Sphere_Type',0.0],UNIT['Meter',1.0]]",
+    out_raster=output_ci_path,
+    out_coor_system=out_coor_system,
     resampling_type="NEAREST",
     cell_size="300 300",
     geographic_transform="WGS_1984_(ITRF00)_To_NAD_1983",
     Registration_Point="",
-    in_coor_system="PROJCS['USA_Contiguous_Albers_Equal_Area_Conic_USGS_version',GEOGCS['GCS_North_American_1983',DATUM['D_North_American_1983',SPHEROID['GRS_1980',6378137.0,298.257222101]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]],PROJECTION['Albers'],PARAMETER['False_Easting',0.0],PARAMETER['False_Northing',0.0],PARAMETER['Central_Meridian',-96.0],PARAMETER['Standard_Parallel_1',29.5],PARAMETER['Standard_Parallel_2',45.5],PARAMETER['Latitude_Of_Origin',23.0],UNIT['Meter',1.0]]"
+    in_coor_system=in_coor_system
     )
     
-  print("...Copy the output raster to the project folder")
+  print("...Copy the CI raster to the project folder")
   pattern = os.path.join(ci_path, raw_name + ".*")
   files_to_copy = glob.glob(pattern)
   for file_path in files_to_copy:
     file_name = os.path.basename(file_path)
     base_name, extension = file_name.rsplit('.', 1)
-    copy_ci_path = os.path.join(project_path, year, file_name)
+    copy_ci_path = os.path.join(project_path, str(year), str(file_name))
     shutil.copy(file_path, copy_ci_path)
-
+      
   print("...Tabulate Area")
   tabulate_result = arcpy.sa.TabulateArea(
     in_zone_data=zones,
     zone_field="GNISIDNAME",
-    in_class_data=raw_tif_int, # Use raw_tif_int (instead of outSetNull_clip) to include 254 & 255
+    in_class_data=raw_tif_int, # Use raw_tif_int to include 254 & 255
     class_field="Value",
-    out_table=temp_tabulate  # Use the temporary table path
+    out_table=temp_tabulate
     )
-        
+      
   print("...Add File_NUM")
   if "File_NUM" not in [f.name for f in arcpy.ListFields(temp_tabulate)]:
     arcpy.AddField_management(temp_tabulate, "File_NUM", "TEXT")
-
+    
   with arcpy.da.UpdateCursor(temp_tabulate, ["File_NUM"]) as cursor:
     for row in cursor:
       row[0] = raw_name
@@ -302,7 +332,7 @@ for raw_name in r.download_file_list:
   if "OID" in tabulate_df.columns:
     tabulate_df = tabulate_df.drop(columns=['OID'])
   tabulate_result_df = pd.concat([tabulate_result_df, tabulate_df], ignore_index=True)
-      
+    
   print("...Zonal Statistics")
   arcpy.sa.ZonalStatisticsAsTable(
     in_zone_data=zones,
@@ -318,16 +348,16 @@ for raw_name in r.download_file_list:
     circular_wrap_value=360,
     out_join_layer=None
     )
-        
+      
   print("...Add File_NUM")
   if "File_NUM" not in [f.name for f in arcpy.ListFields(temp_zonal)]:
     arcpy.AddField_management(temp_zonal, "File_NUM", "TEXT")
-        
+    
   with arcpy.da.UpdateCursor(temp_zonal, ["File_NUM"]) as cursor:
     for row in cursor:
       row[0] = raw_name
       cursor.updateRow(row)
-        
+    
   print("...Convert zonal statistics result to dataframe and append to the final dataframe")
   zonal_df = pd.DataFrame(arcpy.da.TableToNumPyArray(temp_zonal, '*'))
   if "OID" in zonal_df.columns:
@@ -337,14 +367,10 @@ for raw_name in r.download_file_list:
   print("...Save intermediate results to CSV after each raw_name")
   tabulate_result_df.to_csv(os.path.join(temp_dir, f"tabulate_result_{raw_name}.csv"), index=False)
   zonal_result_df.to_csv(os.path.join(temp_dir, f"zonal_result_{raw_name}.csv"), index=False)
-      
+    
   print("...Clear dataframes for the next iteration")
   tabulate_result_df = pd.DataFrame(dtype='object')
   zonal_result_df = pd.DataFrame(dtype='object')
-      
-  # except arcpy.ExecuteError:
-  #   print("Raster contains only null values (254 and 255). Skipping further processing for this raster.")
-  #   continue
 
 ```
 
@@ -376,6 +402,7 @@ zonal_combined <- bind_rows(all_data) %>%
   dplyr::left_join(dates, by=c("File_NUM"="CyAN_File_NUM")) %>% 
   dplyr::mutate(Month = lubridate::month(Date)) %>% 
   dplyr::mutate(Day = lubridate::day(Date)) %>% 
+  dplyr::mutate(Date = as.Date(Date)) %>% 
   dplyr::select(GNISIDNAME,Area_Total_Cells,Date,MIN,MAX,MEAN,STD,MEDIAN,Year,Month,Day,Julian_day) %>% 
   dplyr::arrange(Date,GNISIDNAME) %>% 
   dplyr::distinct(Date,GNISIDNAME,.keep_all = TRUE)
@@ -395,9 +422,10 @@ print("Step 2 completed")
 # (1) Timeseries Data Table ----
 dta1 <- resolvable_lakes
 
-dta2 <- data %>% dplyr::filter(GNISIDNAME %in% dta1$inApp) # filter out saline lakes
+dta2 <- readxl::read_excel(paste0(data_path,"HAB_resolvablelakes_2024.xlsx")) %>% 
+  dplyr::filter(GNISIDNAME %in% dta1$inApp) # filter out saline lakes
 
-dta3 <- readxl::read_xlsx(paste0(data_path,"HAB_resolvablelakes_2002-2023.xlsx"), sheet = "data") %>% 
+dta3 <- readxl::read_xlsx(paste0(data_path,"HAB_resolvablelakes_2002-2023.xlsx")) %>% 
   dplyr::filter(GNISIDNAME %in% dta1$inApp) # filter out saline lakes
 
 dta <- rbind(dta2,dta3) %>% 
@@ -438,7 +466,9 @@ state.boundary <- sf::st_read(paste0(data_path,"gis/state_boundary_blm.shp")) %>
 huc6 <- sf::st_read(dsn = paste0(data_path,"gis/WBD_HU6.shp"), layer = "WBD_HU6") %>% 
   sf::st_transform(crs = sf::st_crs("+init=EPSG:4326"))
 
-pal.huc6 <- leaflet::colorFactor(palette = c(RColorBrewer::brewer.pal(name="BrBG", n = 9), RColorBrewer::brewer.pal(name="Paired", n = 9)), domain = unique(sort(huc6$HU_6_NAME)))
+pal.huc6 <- leaflet::colorFactor(palette = c(RColorBrewer::brewer.pal(name="BrBG", n = 9), 
+                                             RColorBrewer::brewer.pal(name="Paired", n = 9)), 
+                                 domain = unique(sort(huc6$HU_6_NAME)))
 
 # (4) Map: raster ----
 # Raster color 
@@ -554,6 +584,7 @@ last7days_noImage <- last7days[!last7days %in% last7days_downloaded]
 map.file.name <- readxl::read_excel("./data/map_file_name.xlsx")
 if(max(as.Date(map.file.name$Date))<max(as.Date(last7days_downloaded))){
   image_dates <- seq(max(as.Date(map.file.name$Date)) + 1, max(as.Date(last7days_downloaded)), by = "day")
+  print(image_dates)
 }else{
     print("No need to update the images.")
   }

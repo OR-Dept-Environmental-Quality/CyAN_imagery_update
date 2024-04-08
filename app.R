@@ -159,7 +159,7 @@ shinyApp(
                        gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%b. %d, %Y')),
                        gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%B %d, %Y')))
                 # "Aug. 20, 2023"
-                )
+        )
         
         # tags$div(span(HTML(paste0("Last sourced from the ",
         #                           a("U.S. EPA CyAN Project", 
@@ -191,7 +191,7 @@ shinyApp(
            a("Oregon Health Authority", href="https://www.oregon.gov/oha/ph/healthyenvironments/recreation/harmfulalgaeblooms/pages/blue-greenalgaeadvisories.aspx",.noWS = "outside",target="_blank"),".",
            .noWS = c("after-begin", "before-end")),
         
-        h4("This report includes historical data from several satellite sensors, including MERIS (2002-2012)*, OLCI on Sentinel-3A (2016-present), and OLCI on ",
+        h4("This report includes historical data from several satellite sensors, including MERIS (2002-2012), OLCI on Sentinel-3A (2016-present), and OLCI on ",
            "Sentinel-3B (2018-present). Beginning in March 2024, the report presents version 5 (V5) data, which underwent reprocessing by NASA in May 2023. ",
            "The V5 dataset includes an enhanced filter for turbid water and a correction for clear water. Please refer to the ",
            a("NASA", href="https://oceancolor.gsfc.nasa.gov/data/reprocessing/projects/cyan/version/5/",.noWS = "outside",target="_blank"),
@@ -201,17 +201,14 @@ shinyApp(
         h4("All data presented in this report are provisional and subject to change. Estimates of cyanobacteria from satellite imagery do not ",
            "imply the presence of cyanotoxins or other water quality impairments and do not have regulatory implications. ",
            tags$b("Visit the ",
-             a("Oregon Health Authority", href="https://www.oregon.gov/oha/ph/healthyenvironments/recreation/harmfulalgaeblooms/pages/blue-greenalgaeadvisories.aspx",.noWS = "outside",target="_blank"),
-           " to learn about recreational use and drinking water advisories related to cyanobacteria blooms. "),
+                  a("Oregon Health Authority", href="https://www.oregon.gov/oha/ph/healthyenvironments/recreation/harmfulalgaeblooms/pages/blue-greenalgaeadvisories.aspx",.noWS = "outside",target="_blank"),
+                  " to learn about recreational use and drinking water advisories related to cyanobacteria blooms. "),
            "Additional assessments with imagery from the",
            a("Sentinel 2", href="https://browser.dataspace.copernicus.eu/?zoom=7&lat=44.3466&lng=-119.25&themeId=DEFAULT-THEME&visualizationUrl=https%3A%2F%2Fsh.dataspace.copernicus.eu%2Fogc%2Fwms%2F274a990e-7090-4676-8f7d-f1867e8474a7&datasetId=S2_L1C_CDAS&fromTime=2023-07-01T00%3A00%3A00.000Z&toTime=2024-01-01T23%3A59%3A59.999Z&layerId=1_TRUE_COLOR&demSource3D=%22MAPZEN%22&cloudCoverage=100&dateMode=MOSAIC",
              target="_blank"),
            "Satellites, local visual assessment, and/or water quality sampling are needed to provide additional information on potential human health ",
            "and environmental effects of cyanobacteria. Please note that estimates of cyanobacteria abundance presented in this report may be skewed ",
            "by cloud cover, ice cover, sun glint, water surface roughness, dry lake beds, algal mats, and shoreline effects.",
-           .noWS = c("after-begin", "before-end")),
-        
-        em("*MERIS data is currently under further investigation due to unusual patterns observed in the time series plots.",
            .noWS = c("after-begin", "before-end"))
         
       ), 
@@ -356,6 +353,7 @@ shinyApp(
               inputId = "ploty",
               label = tags$h4("Date Range:"),
               choices = c("Current Year: 2024",
+                          "Reset to Complete Data Range",
                           "Select a Date Range"),
               selected = "Current Year: 2024"
             ),
@@ -465,7 +463,7 @@ shinyApp(
     
     # (1) Plot ----
     # _ Time series plot ----
-    pal.plot <- c("orange","blue","green","white","white","white")
+    pal.plot <- c("orange","blue","white","green","white","white")
     pal.plot <- setNames(pal.plot,unique(sort(dta$`Summary Statistics`)))
     
     yr <- reactive({ 
@@ -476,12 +474,40 @@ shinyApp(
     
     df <- reactive({
       
-      dta %>% 
-        dplyr::filter(GNISIDNAME %in% input$waterbody) %>% 
-        dplyr::filter(`Summary Statistics` %in% input$matrix) %>% 
-        dplyr::filter(Year %in% c(yr())) %>% 
-        dplyr::filter(Date >= input$date_plot[1],Date <= input$date_plot[2])
+      if(input$ploty == "Current Year: 2024"){
+        
+        dta %>% 
+          dplyr::filter(GNISIDNAME %in% input$waterbody) %>% 
+          dplyr::filter(`Summary Statistics` %in% input$matrix) %>% 
+          dplyr::filter(Year %in% c(yr())) %>% 
+          dplyr::mutate(`Cyanobacteria (cells/mL)` = round(`Cyanobacteria (cells/mL)`,0))
+        
+      }else if (input$ploty == "Reset to Complete Data Range") {
+        
+        dta %>% 
+          dplyr::filter(GNISIDNAME %in% input$waterbody) %>% 
+          dplyr::filter(`Summary Statistics` %in% input$matrix) %>% 
+          dplyr::mutate(`Cyanobacteria (cells/mL)` = round(`Cyanobacteria (cells/mL)`,0))
+        
+      } else {
+        
+        dta %>% 
+          dplyr::filter(GNISIDNAME %in% input$waterbody) %>% 
+          dplyr::filter(`Summary Statistics` %in% input$matrix) %>% 
+          dplyr::filter(Year %in% c(yr())) %>%
+          dplyr::mutate(`Cyanobacteria (cells/mL)` = round(`Cyanobacteria (cells/mL)`,0)) %>% 
+          dplyr::filter(Date >= input$date_plot[1],Date <= input$date_plot[2])
+        
+      }
       
+    })
+    
+    df_before_gap <-  reactive({ 
+      df() %>% dplyr::filter(Date >= as.Date("2002-01-01") & Date <= as.Date("2012-12-31"))
+    })
+    
+    df_after_gap <- reactive({ 
+      df() %>% dplyr::filter(Date >= as.Date("2016-01-01"))
     })
     
     type <- reactive({
@@ -514,52 +540,184 @@ shinyApp(
         
         output$plot_cell <- renderPlotly({
           
-          plotly::plot_ly(data = df(), x = ~as.Date(Date)) %>% 
-            plotly::add_trace(y = ~`Cyanobacteria (cells/mL)`,
-                              split = ~`Summary Statistics`,
-                              type = "scatter",
-                              mode = "lines+markers",
-                              #connectgaps = TRUE,
-                              color = ~`Summary Statistics`,
-                              colors = pal.plot,
-                              marker = list(size = 8),
-                              legendgroup = "sta") %>% 
-            plotly::layout(xaxis = list(title = "Date", range = c(min(df()$Date),max(dta$Date)+1)),
-                           # yaxis = list(title = "Cyanobacteria (cells/mL)"),
-                           title = as.character(unique(df()$GNISIDNAME))) %>% 
-            plotly::layout(yaxis = list(type = type(),
-                                        title = yaxis())) %>% 
-            plotly::add_trace(y = 100000, mode = "lines",
-                              x = ~as.Date(dta$Date),
-                              line = list(shape = 'spline', color = '#006d2c', width = 3),
-                              name = "High",
-                              legendgroup = "high",
-                              showlegend = FALSE) %>% 
-            plotly::layout(annotations = list(x = max(dta$Date),
-                                              y = 100000,
-                                              text = "High (100,000 cells/mL)**",
-                                              font = list(size = 12),
-                                              xref = "x",
-                                              yref = "y",
-                                              showarrow = TRUE,
-                                              arrowhead = 3,
-                                              arrowsize = 1,
-                                              ax = -60,
-                                              ay = -20)) %>%
-            plotly::layout(shapes = list(list(type = "rect", 
-                                              text = 'Report', 
-                                              fillcolor = "green", 
-                                              line = list(color = "green"),
-                                              opacity = 0.2, 
-                                              y0 = 0.5, 
-                                              y1 = max(df()$`Cyanobacteria (cells/mL)`) + 50000, 
-                                              x0 = as.Date(max(dta2$Date))-6, 
-                                              x1 = as.Date(max(dta2$Date))))) %>% 
-            plotly::add_text(showlegend = FALSE, 
-                             x = c(as.Date(max(dta2$Date))-3), 
-                             y = c(max(df()$`Cyanobacteria (cells/mL)`) + 30000),
-                             text = c("RP*"),
-                             textfont = list(size=12))
+          if(input$ploty == "Current Year: 2024"){
+            
+            plotly::plot_ly() %>%
+              plotly::add_trace(data = df_before_gap(), 
+                                x = ~as.Date(Date), 
+                                y = ~`Cyanobacteria (cells/mL)`,
+                                split = ~`Summary Statistics`,
+                                type = "scatter",
+                                mode = "lines+markers",
+                                color = ~`Summary Statistics`,
+                                colors = pal.plot,
+                                marker = list(size = 8),
+                                legendgroup = "sta",
+                                showlegend = FALSE) %>%
+              plotly::add_trace(data = df_after_gap(), 
+                                x = ~as.Date(Date), 
+                                y = ~`Cyanobacteria (cells/mL)`,
+                                split = ~`Summary Statistics`,
+                                type = "scatter",
+                                mode = "lines+markers",
+                                color = ~`Summary Statistics`,
+                                colors = pal.plot,
+                                marker = list(size = 8),
+                                legendgroup = "sta") %>%
+              plotly::layout(xaxis = list(title = "Date", range = c(min(df()$Date),max(df()$Date)+1)),
+                             # yaxis = list(title = "Cyanobacteria (cells/mL)"),
+                             title = as.character(unique(df()$GNISIDNAME))) %>% 
+              plotly::layout(yaxis = list(type = type(),
+                                          title = yaxis())) %>% 
+              plotly::add_trace(y = 100000, mode = "lines",
+                                # x = ~as.Date(dta$Date),
+                                x = ~as.Date(df()$Date),
+                                line = list(shape = 'spline', color = '#006d2c', width = 3),
+                                name = "High",
+                                legendgroup = "high",
+                                showlegend = FALSE) %>% 
+              plotly::layout(annotations = list(x = max(as.Date(df()$Date)),
+                                                y = 100000,
+                                                text = "High (100,000 cells/mL)**",
+                                                font = list(size = 12),
+                                                xref = "x",
+                                                yref = "y",
+                                                showarrow = TRUE,
+                                                arrowhead = 3,
+                                                arrowsize = 1,
+                                                ax = -60,
+                                                ay = -20)) %>%
+              plotly::layout(shapes = list(list(type = "rect",
+                                                text = 'Report',
+                                                fillcolor = "green",
+                                                line = list(color = "green"),
+                                                opacity = 0.2,
+                                                y0 = 0.5,
+                                                y1 = max(df()$`Cyanobacteria (cells/mL)`) + 50000,
+                                                x0 = as.Date(max(dta2$Date))-6,
+                                                x1 = as.Date(max(dta2$Date))))) %>%
+              plotly::add_text(showlegend = FALSE,
+                               x = c(as.Date(max(dta2$Date))-3),
+                               y = c(max(df()$`Cyanobacteria (cells/mL)`) + 30000),
+                               text = c("RP*"),
+                               textfont = list(size=12))
+            
+          } else if (input$ploty == "Reset to Complete Data Range") {
+            
+            plotly::plot_ly() %>%
+              plotly::add_trace(data = df_before_gap(), 
+                                x = ~as.Date(Date), 
+                                y = ~`Cyanobacteria (cells/mL)`,
+                                split = ~`Summary Statistics`,
+                                type = "scatter",
+                                mode = "lines+markers",
+                                color = ~`Summary Statistics`,
+                                colors = pal.plot,
+                                marker = list(size = 8),
+                                legendgroup = "sta",
+                                showlegend = FALSE) %>%
+              plotly::add_trace(data = df_after_gap(), 
+                                x = ~as.Date(Date), 
+                                y = ~`Cyanobacteria (cells/mL)`,
+                                split = ~`Summary Statistics`,
+                                type = "scatter",
+                                mode = "lines+markers",
+                                color = ~`Summary Statistics`,
+                                colors = pal.plot,
+                                marker = list(size = 8),
+                                legendgroup = "sta") %>%
+              plotly::layout(xaxis = list(title = "Date", range = c(min(df()$Date),max(df()$Date)+1)),
+                             # yaxis = list(title = "Cyanobacteria (cells/mL)"),
+                             title = as.character(unique(df()$GNISIDNAME))) %>% 
+              plotly::layout(yaxis = list(type = type(),
+                                          title = yaxis())) %>% 
+              plotly::add_trace(y = 100000, mode = "lines",
+                                # x = ~as.Date(dta$Date),
+                                x = ~as.Date(df()$Date),
+                                line = list(shape = 'spline', color = '#006d2c', width = 3),
+                                name = "High",
+                                legendgroup = "high",
+                                showlegend = FALSE) %>% 
+              plotly::layout(annotations = list(x = max(as.Date(df()$Date)),
+                                                y = 100000,
+                                                text = "High (100,000 cells/mL)**",
+                                                font = list(size = 12),
+                                                xref = "x",
+                                                yref = "y",
+                                                showarrow = TRUE,
+                                                arrowhead = 3,
+                                                arrowsize = 1,
+                                                ax = -60,
+                                                ay = -20)) %>%
+              plotly::layout(shapes = list(list(type = "rect",
+                                                text = 'Report',
+                                                fillcolor = "green",
+                                                line = list(color = "green"),
+                                                opacity = 0.2,
+                                                y0 = 0.5,
+                                                y1 = max(df()$`Cyanobacteria (cells/mL)`) + 50000,
+                                                x0 = as.Date(max(dta2$Date))-6,
+                                                x1 = as.Date(max(dta2$Date))))) %>%
+              plotly::add_text(showlegend = FALSE,
+                               x = c(as.Date(max(dta2$Date))-3),
+                               y = c(max(df()$`Cyanobacteria (cells/mL)`) + 30000),
+                               text = c("RP*"),
+                               textfont = list(size=12))
+            
+            
+            
+          } else {
+            
+            plotly::plot_ly(data = df(), x = ~as.Date(Date)) %>% 
+              plotly::add_trace(y = ~`Cyanobacteria (cells/mL)`,
+                                split = ~`Summary Statistics`,
+                                type = "scatter",
+                                mode = "lines+markers",
+                                #connectgaps = TRUE,
+                                color = ~`Summary Statistics`,
+                                colors = pal.plot,
+                                marker = list(size = 8),
+                                legendgroup = "sta") %>% 
+              plotly::layout(xaxis = list(title = "Date", range = c(min(df()$Date),max(df()$Date)+1)),
+                             # yaxis = list(title = "Cyanobacteria (cells/mL)"),
+                             title = as.character(unique(df()$GNISIDNAME))) %>% 
+              plotly::layout(yaxis = list(type = type(),
+                                          title = yaxis())) %>% 
+              plotly::add_trace(y = 100000, mode = "lines",
+                                # x = ~as.Date(dta$Date),
+                                x = ~as.Date(df()$Date),
+                                line = list(shape = 'spline', color = '#006d2c', width = 3),
+                                name = "High",
+                                legendgroup = "high",
+                                showlegend = FALSE) %>% 
+              plotly::layout(annotations = list(x = max(as.Date(df()$Date)),
+                                                y = 100000,
+                                                text = "High (100,000 cells/mL)**",
+                                                font = list(size = 12),
+                                                xref = "x",
+                                                yref = "y",
+                                                showarrow = TRUE,
+                                                arrowhead = 3,
+                                                arrowsize = 1,
+                                                ax = -60,
+                                                ay = -20)) #%>%
+            # plotly::layout(shapes = list(list(type = "rect", 
+            #                                   text = 'Report', 
+            #                                   fillcolor = "green", 
+            #                                   line = list(color = "green"),
+            #                                   opacity = 0.2, 
+            #                                   y0 = 0.5, 
+            #                                   y1 = max(df()$`Cyanobacteria (cells/mL)`) + 50000, 
+            #                                   x0 = as.Date(max(dta2$Date))-6, 
+            #                                   x1 = as.Date(max(dta2$Date))))) %>% 
+            # plotly::add_text(showlegend = FALSE, 
+            #                  x = c(as.Date(max(dta2$Date))-3), 
+            #                  y = c(max(df()$`Cyanobacteria (cells/mL)`) + 30000),
+            #                  text = c("RP*"),
+            #                  textfont = list(size=12))
+            
+          }
+          
           
         })
         
@@ -605,7 +763,7 @@ shinyApp(
                                          list(targets = (3), width = "10%")),
                        buttons = list(#'print',
                          list(extend = 'collection',
-                              buttons = c('csv','excel','pdf'),
+                              buttons = c('csv','excel'),
                               text = 'Download')
                        )),
         rownames = FALSE,
@@ -667,7 +825,7 @@ shinyApp(
                            scorllX = TRUE,
                            buttons = list(#'print',
                              list(extend = 'collection',
-                                  buttons = c('csv','excel','pdf'),
+                                  buttons = c('csv','excel'),
                                   text = 'Download')
                            )),
             rownames = FALSE,
@@ -826,7 +984,7 @@ shinyApp(
         leaflet::hideGroup(c("Basins (HUC6)"))
       
     })
-
+    
     # _ map reactive @ waterbody picker ----
     observeEvent(input$waterbody,{
       
