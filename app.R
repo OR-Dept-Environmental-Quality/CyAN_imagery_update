@@ -10,6 +10,7 @@ library(raster)
 library(leaflet)
 library(leaflet.extras)
 library(leaflegend)
+library(mapview)
 library(scales)
 library(plotly)
 library(DT)
@@ -17,51 +18,17 @@ library(lubridate)
 
 load("data.RData")
 
-# Shiny App ----
 shinyApp(
+  
   ui = shinydashboardPlus::dashboardPage(
     options = list(sidebarExpandOnHover = FALSE),
-    #header = shinydashboardPlus::dashboardHeader(titleWidth = 400),
     header = shinydashboardPlus::dashboardHeader(titleWidth = 0, disable = TRUE),
     
-    # Sidebar ----
-    sidebar = shinydashboardPlus::dashboardSidebar(
-      width = "0px" #---remove sidebar
-    ),              #---remove sidebar
-    #  minified = TRUE, collapsed = TRUE, width = 400,
+    sidebar = shinydashboardPlus::dashboardSidebar(width = "0px"),
     
-    #   sidebarMenu(
-    #     menuItem("About", icon = icon("info-circle"),
-    #              menuSubItem(h4(HTML("
-    #                This web application provides an interactive<br/>
-    #                map to view satellite derived data on<br/>
-    #                cyanobacteria harmful algal blooms in<br/>
-    #                freshwater ecosystems of Oregon. Satellite<br/>
-    #                data come from the US EPA CyAN project<br/>
-    #                and are updated on a regular basis.<br/>
-    #                <br/>
-    #                Copyright (C) 2020-2021, ODEQ.")))),
-    #     menuItem("User Guide",  icon = icon("cog"), href="userGuide.html"),
-    #     menuItem("Contact", icon = icon("envelope"),
-    #              menuSubItem(h5(HTML("
-    #                For more information on the Oregon HABs Map<br/>
-    #                Application Project, please contact<br/>
-    #                <br/>
-    #                Dan Sobota, Water Quality Analyst (Lead) <br/>
-    #                Daniel.Sobota@deq.state.or.us<br/>
-    #                <br/>
-    #                Erin Costello, Water Quality Analyst<br/>
-    #                Erin.Costello@deq.state.or.us<br/>
-    #                <br/>
-    #                Yuan Grund, Water Quality Analyst<br/>
-    #                Yuan.Grund@deq.state.or.us"))))
-    #   ) # sidebarMenu END
-    # ), # dashboardSidebar END
-    
-    # Body ----
     body = shinydashboard::dashboardBody(
       
-      tags$div(
+      tags$head(
         tags$style(HTML('/* logo */
                          .skin-blue .main-header .logo {
                          background-color: #23769a;
@@ -78,11 +45,9 @@ shinyApp(
                          .skin-blue .main-sidebar {
                          background-color: #23769a;
                          }
-                         
                          .main-sidebar {
                          font-size: 20px;
                          }
-                                
                          /* active selected tab in the sidebarmenu */
                          .skin-blue .main-sidebar .sidebar .sidebar-menu .active a{
                          background-color: #23769a;
@@ -96,7 +61,6 @@ shinyApp(
                          .skin-blue .main-sidebar .sidebar .sidebar-menu a:hover{
                          background-color: #23769a;
                          }
-                                
                          /* toggle button when hovered  */
                          .skin-blue .main-header .navbar .sidebar-toggle:hover{
                          background-color: #23769a;
@@ -105,41 +69,35 @@ shinyApp(
                          .content-wrapper, .right-side {
                          background-color: white;
                          }
-                                
                          /* box */
                          .box{
                          -webkit-box-shadow: none; -moz-box-shadow: none;box-shadow: none;
                          }
-
                          .box-body {
                          padding-left: 10px;
                          padding-right: 10px;
                          }
-                         
                          /* sidebar */
                          .sidebar {
                          padding-top: 100px;
                          }
-                         
-                         /*pickerinput_waterbody*/
+                         /* pickerinput_waterbody */
                          .selectpicker {
-                         z-index: 999999999 !important;
+                         z-index:99999 !important;
                          }
-                         
-                         /*datepicker*/
+                         /* datepicker */
                          .datepicker {
                          z-index:99999 !important;
                          }
-                         
                          #caption {
                          font-size: 18px;
                          }
-                         
                          a {
                          color: #0000FF;
                          }
-                         '))),
-      
+                         '))
+        ),
+
       # _ Header ----
       shinydashboard::box(
         width = 12,
@@ -153,22 +111,11 @@ shinyApp(
                 ifelse(month(as.Date(max(dta2$Date))-6) %in% c(8,9,10,11,12,1,2),
                        gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%b. %d, %Y')),
                        gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%B %d, %Y'))),
-                # "Aug. 14, 2023",
                 " - ",
                 ifelse(month(as.Date(max(dta2$Date))) %in% c(8,9,10,11,12,1,2),
                        gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%b. %d, %Y')),
-                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%B %d, %Y')))
-                # "Aug. 20, 2023"
-        )
-        
-        # tags$div(span(HTML(paste0("Last sourced from the ",
-        #                           a("U.S. EPA CyAN Project", 
-        #                             href="https://www.epa.gov/water-research/cyanobacteria-assessment-network-cyan"),
-        #                           " on: ",
-        #                           max(dta$Date))),
-        #               style = "color: black; font-size: 20px"))
-        
-      ), # Header box END 
+                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%B %d, %Y'))))
+      ), # Header END
       
       # _ 1. Introduction ----
       shinydashboardPlus::box(
@@ -178,24 +125,22 @@ shinyApp(
         solidHeader = TRUE,
         collapsible = FALSE,
         collapsed = FALSE,
-        #dropdownMenu = boxDropdown(),
         
-        h4("This report provides an update to estimates of cyanobacteria abundance derived from satellite imagery for 49 large Oregon waterbodies. ",
-           "Updates are scheduled to occur weekly from March to October each year. Estimates derive from the ", 
+        h4("This report provides an update on estimates of cyanobacteria abundance derived from satellite imagery for 49 large Oregon waterbodies. ",
+           "Updates are scheduled to occur weekly from spring to fall each year. The estimates are derived from the ", 
            a("Cyanobacteria Assessment Network (CyAN)", href="https://www.epa.gov/water-research/cyanobacteria-assessment-network-cyan",target="_blank"),
-           " project. Three levels illustrate cyanobacteria abundance (cells/mL): Low: <20,000, Moderate: 20,000-100,000, and High: >100,000. ",
-           "The levels correspond to the World Health Organization (WHO) exposure guideline values ",
-           "(",a("WHO, 2003", href="https://apps.who.int/iris/bitstream/handle/10665/42591/9241545801.pdf?sequence=1&isAllowed=y",.noWS = "outside",target="_blank"),"). ",
-           "For more information on Harmful Algal Blooms in Oregon, please visit websites from the ",
-           a("Oregon DEQ", href="https://www.oregon.gov/deq/wq/Pages/Harmful-Algal-Blooms.aspx",target="_blank")," and the ",
-           a("Oregon Health Authority", href="https://www.oregon.gov/oha/ph/healthyenvironments/recreation/harmfulalgaeblooms/pages/blue-greenalgaeadvisories.aspx",.noWS = "outside",target="_blank"),".",
-           .noWS = c("after-begin", "before-end")),
-        
-        h4("This report includes historical data from several satellite sensors, including MERIS (2002-2012), OLCI on Sentinel-3A (2016-present), and OLCI on ",
-           "Sentinel-3B (2018-present). Beginning in March 2024, the report presents version 5 (V5) data, which underwent reprocessing by NASA in May 2023. ",
+           " project. Beginning in 2024, the report presents version 5 (V5) data, which underwent reprocessing by NASA in May 2023.",
            "The V5 dataset includes an enhanced filter for turbid water and a correction for clear water. Please refer to the ",
            a("NASA", href="https://oceancolor.gsfc.nasa.gov/data/reprocessing/projects/cyan/version/5/",.noWS = "outside",target="_blank"),
            " website for additional information on V5 data.",
+           .noWS = c("after-begin", "before-end")),
+        
+        h4("This report illustrates cyanobacteria abundance (cells/mL) in three levels: Low: <20,000, Moderate: 20,000-100,000, and High: >100,000. ",
+           "The levels correspond to the World Health Organization (WHO) exposure guideline values ",
+           "(",a("WHO, 2003", href="https://apps.who.int/iris/bitstream/handle/10665/42591/9241545801.pdf?sequence=1&isAllowed=y",.noWS = "outside",target="_blank"),"). ",
+           "For more information on harmful algal blooms in Oregon, please visit websites from the ",
+           a("Oregon DEQ", href="https://www.oregon.gov/deq/wq/Pages/Harmful-Algal-Blooms.aspx",target="_blank")," and the ",
+           a("Oregon Health Authority", href="https://www.oregon.gov/oha/ph/healthyenvironments/recreation/harmfulalgaeblooms/pages/blue-greenalgaeadvisories.aspx",.noWS = "outside",target="_blank"),".",
            .noWS = c("after-begin", "before-end")),
         
         h4("All data presented in this report are provisional and subject to change. Estimates of cyanobacteria from satellite imagery do not ",
@@ -203,17 +148,17 @@ shinyApp(
            tags$b("Visit the ",
                   a("Oregon Health Authority", href="https://www.oregon.gov/oha/ph/healthyenvironments/recreation/harmfulalgaeblooms/pages/blue-greenalgaeadvisories.aspx",.noWS = "outside",target="_blank"),
                   " to learn about recreational use and drinking water advisories related to cyanobacteria blooms. "),
-           "Additional assessments with imagery from the",
+           "Additional assessments using imagery from the",
            a("Sentinel 2", href="https://browser.dataspace.copernicus.eu/?zoom=7&lat=44.3466&lng=-119.25&themeId=DEFAULT-THEME&visualizationUrl=https%3A%2F%2Fsh.dataspace.copernicus.eu%2Fogc%2Fwms%2F274a990e-7090-4676-8f7d-f1867e8474a7&datasetId=S2_L1C_CDAS&fromTime=2023-07-01T00%3A00%3A00.000Z&toTime=2024-01-01T23%3A59%3A59.999Z&layerId=1_TRUE_COLOR&demSource3D=%22MAPZEN%22&cloudCoverage=100&dateMode=MOSAIC",
              target="_blank"),
-           "Satellites, local visual assessment, and/or water quality sampling are needed to provide additional information on potential human health ",
+           "Satellites, local visual assessments, and/or water quality sampling are needed to provide further information on potential human health ",
            "and environmental effects of cyanobacteria. Please note that estimates of cyanobacteria abundance presented in this report may be skewed ",
            "by cloud cover, ice cover, sun glint, water surface roughness, dry lake beds, algal mats, and shoreline effects.",
            .noWS = c("after-begin", "before-end"))
         
-      ), 
+      ), # Introduction End
       
-      # _ 2. Table and Oregon map ----
+      # _ 2. Highlighted Waterbodies ----
       shinydashboardPlus::box(
         width = 12,
         title = "Highlighted Waterbodies",
@@ -221,120 +166,112 @@ shinyApp(
         solidHeader = TRUE,
         collapsible = FALSE,
         collapsed = FALSE,
-        #dropdownMenu = boxDropdown(),
         
-        tags$h4(p(strong("Waterbodies with high cyanobacteria abundance (>100,000 cells/mL) based on the average of daily maximum estimates during the 7-day reporting period (7DADM)."))),
-        tags$h4(p(strong("A 7-Day Daily Maximum Geometric Mean (7DDMGM) is calculated for each highlighted waterbody as a reference."))),
-        tags$h4(p(strong(paste0("Reporting Period: ",
-                                ifelse(month(as.Date(max(dta2$Date))-6) %in% c(8,9,10,11,12,1,2),
-                                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%b. %d, %Y')),
-                                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%B %d, %Y'))),
-                                # "Aug. 14, 2023",
-                                " - ",
-                                ifelse(month(as.Date(max(dta2$Date))) %in% c(8,9,10,11,12,1,2),
-                                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%b. %d, %Y')),
-                                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%B %d, %Y')))
-                                # "Aug. 20, 2023"
-        )))),
+        # ___ Section Introduction ----
+        tags$h4(p(strong("Waterbodies with high cyanobacteria abundance (>100,000 cells/mL) are identified based on ",
+                         "the maximum value of the 7-Day Daily Maximum Geometric Mean (7DDMGM) during the reporting period, ",
+                         "with the corresponding 'Date_7DDMGM' indicating the date of the maximum 7DDMGM value. ",
+                         "The 7-Day Average Daily Maximum (7DADM) for each highlighted waterbody is reported as a reference. ",
+                         "Both 7DDMGM and 7DADM represent moving averages calculated from the daily maximums from ",
+                         "the most recent available data day within the reporting period to the preceding 7 days. ",
+                         "The 'Days of Data' refers to the number of days within a 7-day moving window for computing both 7DDMGM and 7DADM."),
+                  p("Due to limitations in server capacity, imagery provided is from 2024-03-01 to the present."))),
         
-        # ___ Table 7DADM ----
         shinydashboard::box(
           width = 5,
-          #title = "Table",
           solidHeader = TRUE,
           
-          shinycssloaders::withSpinner(DT::dataTableOutput("tbl7dadm")),
-          tags$br(),
-          tags$em("*GNISID: ",a("USGS Geographic Names Information System Identifier", 
-                                href="https://www.usgs.gov/faqs/what-geographic-names-information-system-gnis",
-                                .noWS = "outside",
-                                target="_blank"),
-                  .noWS = c("after-begin", "before-end"))
+          # ___ Select a Waterbody ----
+          shinydashboard::box(
+            width = 7,
+            solidHeader = TRUE,
+            
+            shinyWidgets::pickerInput(inputId = "waterbody",
+                                      label = tags$h4("Select waterbody to zoom in on the map:"),
+                                      choices = list("Oregon",
+                                                     "Waterbody Name_GNISID" = sort(unique(lakes.resolvable$GNISIDNAME))),
+                                      multiple = FALSE)
+            
+          ),
+          
+          # ___ Select a Date ----
+          shinydashboard::box(
+            width = 5,
+            solidHeader = TRUE,
+
+            shiny::dateInput(inputId = "date_map",
+                             label = tags$h4("Select date to update imagery:"),
+                             value = as.Date(max(dta2$Date)),
+                             # min = as.Date(max(dta2$Date))-6,
+                             min = as.Date("2024-03-01"),
+                             max = as.Date(max(dta2$Date)),
+                             format = "yyyy-mm-dd",
+                             startview = "month",
+                             weekstart = 0,
+                             datesdisabled = missing.dates$Date),
+            
+            ),
+          
+          # ___ 7-Day Table ----
+          shinydashboard::box(
+            width = 12,
+            solidHeader = TRUE,
+            
+            tags$h4(p(strong(paste0("Reporting Period: ",
+                                    ifelse(month(as.Date(max(dta2$Date))-6) %in% c(8,9,10,11,12,1,2),
+                                           gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%b. %d, %Y')),
+                                           gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%B %d, %Y'))),
+                                    " - ",
+                                    ifelse(month(as.Date(max(dta2$Date))) %in% c(8,9,10,11,12,1,2),
+                                           gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%b. %d, %Y')),
+                                           gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%B %d, %Y'))))))),
+            
+            shinycssloaders::withSpinner(DT::dataTableOutput("tbl7dadm")),
+            
+            tags$br(),
+            tags$em("*GNISID: ",a("USGS Geographic Names Information System Identifier", 
+                                  href="https://www.usgs.gov/faqs/what-geographic-names-information-system-gnis",
+                                  .noWS = "outside",
+                                  target="_blank"),
+                    .noWS = c("after-begin", "before-end"))
+            
+            )
           
         ),
-        
-        # ___ Oregon map ----
+
         shinydashboard::box(
           width = 7,
-          #title = "ORMap",
           solidHeader = TRUE,
           
-          # h4("Waterbodies with high cyanobacteria estimates from ",
-          #    format(as.Date(max(dta2$Date))-6, "%B %d, %Y")," to ",format(max(dta2$Date),'%B %d, %Y'),
-          #    "are outlined in red. Other resolvable waterbodies are in blue."),
-          
-          shinycssloaders::withSpinner(leaflet::leafletOutput("map", height = "680px"))
+          # ___ Map ----
+          shinydashboard::box(
+            width = 12,
+            solidHeader = TRUE,
+            
+            shinycssloaders::withSpinner(leaflet::leafletOutput("map", height = "800px"))
+            
+          )
           
         )
-      ),
+        
+      ), # Highlighted Waterbodies End
       
-      # _ 3. Maps and Time series plots ----
+      # _ 3. Time series data ----
       shinydashboardPlus::box(
         width = 12,
         height = "100%",
-        title = "Data Visualization",
+        title = "Time Series Data",
         status = "primary",
         solidHeader = TRUE,
         collapsible = FALSE,
         collapsed = FALSE,
         
-        tags$h4(p(strong("Maps and time series plot of cyanobacteria estimates for each of the 49 resolvable waterbodies according to the methods outlined in the ",
-                         a("CyAN Project", href="https://www.epa.gov/water-research/cyanobacteria-assessment-network-cyan",.noWS = "outside",target="_blank"),".",.noWS = c("after-begin", "before-end")))),
-        
-        # ___ 7maps ----
-        shinydashboard::box(
-          width = 12,
-          height = "100%",
-          #title = "map",
-          solidHeader = TRUE,
-          
-          shinydashboard::box(
-            width = 3,
-            #title = "left",
-            solidHeader = FALSE,
-            
-            # ____ Select a waterbody ----
-            shinyWidgets::pickerInput(inputId = "waterbody",
-                                      label = tags$h3("Select a Waterbody:"),
-                                      choices = list(
-                                        "Oregon",
-                                        "Waterbody Name_GNISID" = sort(unique(lakes.resolvable$GNISIDNAME))
-                                      ),
-                                      multiple = FALSE),
-            # ____ Drinking water area ----
-            shiny::textOutput("dw")#,
-            
-            # ____ Lake images ----
-            # tags$br(),
-            # textOutput("non_select_image"),
-            # shiny::imageOutput("lakeImage", width = "300",height = "100%", inline = TRUE),
-            # tags$h5("Lake image will be updated soon.")
-            
-          ),
-          
-          shinydashboard::box(
-            width = 9,
-            #title = "right",
-            solidHeader = FALSE,
-            
-            # ____ 7maps ----
-            tags$h4(p(strong(paste0("Satellite estimates of cyanobacteria abundance from ",
-                                    ifelse(month(as.Date(max(dta2$Date))-6) %in% c(8,9,10,11,12,1,2),
-                                           gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%b. %d, %Y')),
-                                           gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%B %d, %Y'))),
-                                    # "Aug. 14, 2023",
-                                    " to ",
-                                    ifelse(month(as.Date(max(dta2$Date))) %in% c(8,9,10,11,12,1,2),
-                                           gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%b. %d, %Y')),
-                                           gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%B %d, %Y'))),
-                                    # "Aug. 20, 2023",
-                                    ".")))),
-            
-            textOutput("non_select"),
-            uiOutput("no_pixels"),
-            shinyfullscreen::fullscreen_this(shiny::imageOutput("maps7"))
-          )
-        ),
+        # ___ Section Introduction ----
+        tags$h4(p(
+          # HTML("&nbsp;&nbsp;&nbsp;&nbsp;"),
+          strong("Time series data of cyanobacteria estimates is provided for each of the 49 resolvable waterbodies, according to the methods outlined in the ",
+                 a("CyAN Project", href="https://www.epa.gov/water-research/cyanobacteria-assessment-network-cyan",.noWS = "outside",target="_blank"),
+                 ".",.noWS = c("after-begin", "before-end")))),
         
         # ___ Plot and Table ----
         shinydashboard::box(
@@ -347,7 +284,15 @@ shinyApp(
             #title = "left",
             solidHeader = FALSE,
             
-            h3("Time Series Plot and Data:"),
+            # h3("Time Series Plot and Data:"),
+            
+            # ____ Select a Waterbody 2 ----
+            shinyWidgets::pickerInput(inputId = "waterbody2",
+                                      label = tags$h4("Select a waterbody:"),
+                                      choices = list("Oregon",
+                                                     "Waterbody Name_GNISID" = sort(unique(lakes.resolvable$GNISIDNAME))),
+                                      multiple = FALSE),
+            
             # ____ Date range ----
             shiny::radioButtons(
               inputId = "ploty",
@@ -355,8 +300,7 @@ shinyApp(
               choices = c("Current Year: 2024",
                           "Reset to Complete Data Range",
                           "Select a Date Range"),
-              selected = "Current Year: 2024"
-            ),
+              selected = "Current Year: 2024"),
             
             shiny::dateRangeInput(inputId = "date_plot",
                                   label = "",
@@ -378,10 +322,11 @@ shinyApp(
             checkboxGroupInput(
               inputId = "matrix",
               label = tags$h4("Summary Statistics:"),
-              choices = c("Maximum" = "Maximum",
-                          "Mean" = "Mean",
-                          "Minimum" = "Minimum"),
-              selected = c("Maximum","Mean")),
+              choices = c("7-Day Average Daily Maximum (7DADM)" = "7DADM",
+                          "7-Day Daily Maximum Geometric Mean (7DDMGM)" = "7DDMGM",
+                          "Daily Maximum" = "Daily Maximum",
+                          "Daily Mean" = "Daily Mean"),
+              selected = c("7DDMGM","Daily Maximum")),
             
             tags$br(),
             tags$br(),
@@ -455,15 +400,199 @@ shinyApp(
         
       )
       
-    )
+    ) # Body End
     
-  ),
+  ), # ui End
   
   server = function(input, output, session) {
     
-    # (1) Plot ----
-    # _ Time series plot ----
-    pal.plot <- c("orange","blue","white","green","white","white")
+    # 1. Maps ----
+    progress <- reactiveValues(value = 0)
+    # _ initial map ----
+    output$map <- leaflet::renderLeaflet({
+      
+      leaflet::leaflet() %>% 
+        leaflet::addMapPane("OpenStreetMap", zIndex = -40) %>% 
+        leaflet::addMapPane("National Geographic World Map", zIndex = -40) %>%
+        leaflet::addMapPane("state.boundary", zIndex = -30) %>%
+        leaflet::addMapPane("HUC6",zIndex = -20) %>% 
+        leaflet::addMapPane("lakes.resolvable", zIndex = 400) %>%
+        leaflet::addProviderTiles("OpenStreetMap",group = "OpenStreetMap",
+                                  options = leaflet::pathOptions(pane = "OpenStreetMap")) %>% 
+        leaflet::addProviderTiles(providers$Esri.NatGeoWorldMap,group = "National Geographic World Map",
+                                  options = leaflet::pathOptions(pane = "National Geographic World Map")) %>% 
+        leaflet::setView(lng = -120, lat = 44, zoom=7) %>%
+        leaflet.extras::addResetMapButton() %>% 
+        leaflet::addScaleBar(position = c("bottomright"),
+                             options = leaflet::scaleBarOptions()) %>% 
+        leaflet::addMiniMap(position = "bottomright",
+                            width = 180,
+                            height = 200,
+                            zoomLevelFixed = 5) %>% 
+        leaflet::addPolygons(data = lakes.resolvable, 
+                             color = "blue",
+                             weight = 2,
+                             layer = ~lakes.resolvable$GNISIDNAME,
+                             smoothFactor = 0.5,
+                             opacity = 0.5,
+                             fillColor = "transparent",
+                             fillOpacity = 1.0,
+                             label = ~lakes.resolvable$GNIS_Name,
+                             labelOptions = leaflet::labelOptions(style = list("font-size" = "18px",
+                                                                               "color" = "blue")),
+                             options = leaflet::pathOptions(pane = "lakes.resolvable"),
+                             group = "lakes.resolvable") %>% 
+        leaflet::addPolygons(data = huc6, 
+                             group = "Basins (HUC6)",
+                             color = "grey",
+                             weight = 2,
+                             smoothFactor = 0.5,
+                             opacity = 0.5,
+                             fillColor = ~pal.huc6(HU_6_NAME),
+                             fillOpacity = 0.2,
+                             label = ~huc6$HU_6_NAME,
+                             labelOptions = leaflet::labelOptions(noHide = TRUE,
+                                                                  textOnly = TRUE,
+                                                                  style = list("font-size" = "12px",
+                                                                               "color" = "black")),
+                             options = leaflet::pathOptions(pane = "HUC6")) %>% 
+        leaflet::addPolygons(data = state.boundary, 
+                             color = "black",
+                             weight = 2,
+                             fillColor = "transparent",
+                             fillOpacity = 1.0,
+                             options = leaflet::pathOptions(pane = "state.boundary")) %>% 
+        leaflet::addLayersControl(baseGroups = c("OpenStreetMap","National Geographic World Map"),
+                                  overlayGroups = c("Basins (HUC6)"),
+                                  position = "topleft",
+                                  options = leaflet::layersControlOptions(collapsed = TRUE, autoZIndex = FALSE)) %>% 
+        leaflet::hideGroup(c("Basins (HUC6)")) %>% 
+        leaflet.extras::addSearchFeatures(targetGroups = "lakes.resolvable",
+                                          options = leaflet.extras::searchFeaturesOptions(openPopup = TRUE,
+                                                                                          zoom = 8,
+                                                                                          textPlaceholder = "Search a waterbody..."))
+      
+    })
+    
+    # _ map reactive @ date selector ----
+    observeEvent(input$date_map,{
+      
+      progress$value <- 0
+      withProgress(message = 'Updating map, please wait...', value = progress$value, {
+        
+        df.map.date <- reactive({
+          
+          lookup.date %>% dplyr::filter(Date %in% as.Date(input$date_map))
+          
+        })
+        
+        if(is.na(df.map.date()$Year.dta)){
+          
+          return(NULL)
+          
+        } else {
+          
+          map.tif.dir <- reactive(paste0("./data/", df.map.date()$Year.dates, "/"))
+          file.name <- reactive(paste0(df.map.date()$CyAN_File_NUM,".tif"))
+          
+          rst <- reactive({
+            
+            r <- raster::raster(paste0(map.tif.dir(), file.name()))
+            raster::crs(r) <- "+proj=merc +a=6378137 +b=6378137 +lat_ts=0 +lon_0=0 +x_0=0 +y_0=0 +k=1 +units=m +nadgrids=@null +wktext +no_defs"
+            return(r)
+            
+          })
+          
+          leafletProxy("map") %>% 
+            leaflet::clearImages() %>% 
+            leaflet::clearControls() %>% 
+            leaflet::addRasterImage(rst(), layerId = "Value", project = FALSE, colors=pal.map, opacity = 1,
+                                    group = "Satellite Imagery of cyanobacteria") %>% 
+            leaflet::addLegend(pal = pal.map, values = thevalues, title = "Cyanobacteria (cells/mL)", position = "topright",
+                               labFormat = function(type,cuts,p){paste0(labels)},opacity = 1) %>% 
+            leaflet::addLayersControl(baseGroups = c("OpenStreetMap","National Geographic World Map"),
+                                      overlayGroups = c("Satellite Imagery of cyanobacteria","Basins (HUC6)"),
+                                      position = "topleft",
+                                      options = layersControlOptions(collapsed = TRUE, autoZIndex = FALSE)) %>% 
+            leaflet::hideGroup(c("Basins (HUC6)"))
+          
+        }
+        
+      })
+      
+    })
+    
+    
+    # _ map reactive @ waterbody picker ----
+    selected_waterbody <- reactiveVal(NULL)
+    observeEvent(input$waterbody,{
+      
+      if (input$waterbody == input$waterbody2) {
+        
+        if(input$waterbody == c("Oregon")) {
+          
+          leafletProxy("map") %>% 
+            leaflet::setView(lng = -120, lat = 44, zoom=7)
+          
+        } else {
+          
+          one.lake <- reactive({
+            
+            lakes.resolvable[which(lakes.resolvable$GNISIDNAME == input$waterbody),]
+            
+          })
+          
+          bounds <- reactive({
+            
+            sf::st_bbox(one.lake())
+            
+          })
+          
+          leafletProxy("map") %>% 
+            leaflet::fitBounds(lng1=bounds()[[1]], lat1=bounds()[[2]], lng2=bounds()[[3]], lat2=bounds()[[4]])
+        }
+        
+      }else{
+        
+        selected_waterbody(input$waterbody)
+        updatePickerInput(session, "waterbody2", selected = selected_waterbody())
+        
+        if(input$waterbody == c("Oregon")) {
+          
+          leafletProxy("map") %>% 
+            leaflet::setView(lng = -120, lat = 44, zoom=7)
+          
+        } else {
+          
+          one.lake <- reactive({
+            
+            lakes.resolvable[which(lakes.resolvable$GNISIDNAME == input$waterbody),]
+            
+          })
+          
+          bounds <- reactive({
+            
+            sf::st_bbox(one.lake())
+            
+          })
+          
+          leafletProxy("map") %>% 
+            leaflet::fitBounds(lng1=bounds()[[1]], lat1=bounds()[[2]], lng2=bounds()[[3]], lat2=bounds()[[4]])
+        }
+        
+      }
+      
+    })
+    
+    observeEvent(input$waterbody2, {
+      if (input$waterbody != input$waterbody2) {
+        selected_waterbody(input$waterbody2)
+        updatePickerInput(session, "waterbody", selected = selected_waterbody())
+      }
+    })
+
+    # 2. Time series plot ----
+    pal.plot <- c("brown","blue","orange","green","white","white","white")
     pal.plot <- setNames(pal.plot,unique(sort(dta$`Summary Statistics`)))
     
     yr <- reactive({ 
@@ -502,9 +631,9 @@ shinyApp(
       
     })
     
-    df_before_gap <-  reactive({ 
-      df() %>% dplyr::filter(Date >= as.Date("2002-01-01") & Date <= as.Date("2012-12-31"))
-    })
+    # df_before_gap <-  reactive({ 
+    #   df() %>% dplyr::filter(Date >= as.Date("2002-01-01") & Date <= as.Date("2012-12-31"))
+    # })
     
     df_after_gap <- reactive({ 
       df() %>% dplyr::filter(Date >= as.Date("2016-01-01"))
@@ -543,17 +672,17 @@ shinyApp(
           if(input$ploty == "Current Year: 2024"){
             
             plotly::plot_ly() %>%
-              plotly::add_trace(data = df_before_gap(), 
-                                x = ~as.Date(Date), 
-                                y = ~`Cyanobacteria (cells/mL)`,
-                                split = ~`Summary Statistics`,
-                                type = "scatter",
-                                mode = "lines+markers",
-                                color = ~`Summary Statistics`,
-                                colors = pal.plot,
-                                marker = list(size = 8),
-                                legendgroup = "sta",
-                                showlegend = FALSE) %>%
+              # plotly::add_trace(data = df_before_gap(), 
+              #                   x = ~as.Date(Date), 
+              #                   y = ~`Cyanobacteria (cells/mL)`,
+              #                   split = ~`Summary Statistics`,
+              #                   type = "scatter",
+              #                   mode = "lines+markers",
+              #                   color = ~`Summary Statistics`,
+              #                   colors = pal.plot,
+              #                   marker = list(size = 8),
+              #                   legendgroup = "sta",
+              #                   showlegend = FALSE) %>%
               plotly::add_trace(data = df_after_gap(), 
                                 x = ~as.Date(Date), 
                                 y = ~`Cyanobacteria (cells/mL)`,
@@ -605,17 +734,17 @@ shinyApp(
           } else if (input$ploty == "Reset to Complete Data Range") {
             
             plotly::plot_ly() %>%
-              plotly::add_trace(data = df_before_gap(), 
-                                x = ~as.Date(Date), 
-                                y = ~`Cyanobacteria (cells/mL)`,
-                                split = ~`Summary Statistics`,
-                                type = "scatter",
-                                mode = "lines+markers",
-                                color = ~`Summary Statistics`,
-                                colors = pal.plot,
-                                marker = list(size = 8),
-                                legendgroup = "sta",
-                                showlegend = FALSE) %>%
+              # plotly::add_trace(data = df_before_gap(), 
+              #                   x = ~as.Date(Date), 
+              #                   y = ~`Cyanobacteria (cells/mL)`,
+              #                   split = ~`Summary Statistics`,
+              #                   type = "scatter",
+              #                   mode = "lines+markers",
+              #                   color = ~`Summary Statistics`,
+              #                   colors = pal.plot,
+              #                   marker = list(size = 8),
+              #                   legendgroup = "sta",
+              #                   showlegend = FALSE) %>%
               plotly::add_trace(data = df_after_gap(), 
                                 x = ~as.Date(Date), 
                                 y = ~`Cyanobacteria (cells/mL)`,
@@ -700,24 +829,9 @@ shinyApp(
                                                 arrowhead = 3,
                                                 arrowsize = 1,
                                                 ax = -60,
-                                                ay = -20)) #%>%
-            # plotly::layout(shapes = list(list(type = "rect", 
-            #                                   text = 'Report', 
-            #                                   fillcolor = "green", 
-            #                                   line = list(color = "green"),
-            #                                   opacity = 0.2, 
-            #                                   y0 = 0.5, 
-            #                                   y1 = max(df()$`Cyanobacteria (cells/mL)`) + 50000, 
-            #                                   x0 = as.Date(max(dta2$Date))-6, 
-            #                                   x1 = as.Date(max(dta2$Date))))) %>% 
-            # plotly::add_text(showlegend = FALSE, 
-            #                  x = c(as.Date(max(dta2$Date))-3), 
-            #                  y = c(max(df()$`Cyanobacteria (cells/mL)`) + 30000),
-            #                  text = c("RP*"),
-            #                  textfont = list(size=12))
+                                                ay = -20))
             
           }
-          
           
         })
         
@@ -741,8 +855,8 @@ shinyApp(
       
     })
     
-    # (2) Tables ----
-    # _ 7DADM ----
+    # 2. Tables ----
+    # _ 7-Day Table ----
     output$tbl7dadm <- DT::renderDataTable({
       
       DT::datatable(
@@ -750,7 +864,7 @@ shinyApp(
         style = 'bootstrap',
         extensions = 'Buttons',
         options = list(dom = 'frtilpB',
-                       pageLength = 10,
+                       pageLength = 5,
                        compact = TRUE,
                        nowrap = TRUE,
                        scorllX = TRUE,
@@ -770,7 +884,9 @@ shinyApp(
         filter = 'bottom'
       ) #%>% 
       #DT::formatDate("Date","toLocaleString")
-    }, server = FALSE)
+    }, server = FALSE
+    
+    )
     
     # _ Data table ----
     df_tbl <- reactive({
@@ -796,26 +912,12 @@ shinyApp(
         
         output$no_data <- renderText({})
         
-        output$caption <- renderUI(HTML(unique((paste0(#"&nbsp;","&nbsp;","&nbsp;","&nbsp;",
-          df_tbl()$Waterbody_GNISID
-          #,
-          # ", ",
-          # ifelse(month(as.Date(max(df_tbl()$Date))-6) %in% c(8,9,10,11,12,1,2), 
-          #        gsub("(\\D)0", "\\1", format(as.Date(max(df_tbl()$Date))-6,'%b. %d, %Y')), 
-          #        gsub("(\\D)0", "\\1", format(as.Date(max(df_tbl()$Date))-6,'%B %d, %Y'))),
-          # " - ",
-          # ifelse(month(as.Date(max(df_tbl()$Date))) %in% c(8,9,10,11,12,1,2), 
-          #        gsub("(\\D)0", "\\1", format(as.Date(max(df_tbl()$Date)),'%b. %d, %Y')), 
-          #        gsub("(\\D)0", "\\1", format(as.Date(max(df_tbl()$Date)),'%B %d, %Y')))
-        )))))
+        output$caption <- renderUI(HTML(unique((df_tbl()$Waterbody_GNISID))))
         
         output$table <- DT::renderDataTable({
           
           DT::datatable(
             data = df_tbl(),
-            # caption = unique(paste0(df_tbl()$Waterbody_GNISID,", ",
-            #                         format(as.Date(min(df_tbl()$Date)),"%B %d, %Y")," - ",
-            #                         format(as.Date(max(df_tbl()$Date)),"%B %d, %Y"))),
             style = 'bootstrap',
             extensions = 'Buttons',
             options = list(dom = 'frtilpB',
@@ -823,22 +925,20 @@ shinyApp(
                            compact = TRUE,
                            nowrap = TRUE,
                            scorllX = TRUE,
-                           buttons = list(#'print',
+                           buttons = list(
                              list(extend = 'collection',
                                   buttons = c('csv','excel'),
                                   text = 'Download')
                            )),
             rownames = FALSE,
-            filter = 'bottom'
-          ) #%>% 
-          #DT::formatDate("Date","toLocaleString")
+            filter = 'bottom')
         }, server = FALSE)
         
       }
       
     })
     
-    # (3) Texts ----
+    # 4. Text ----
     # _ Drinking Water Area ----
     dw <- reactive({
       
@@ -882,169 +982,6 @@ shinyApp(
       
     })
     
-    # (4) Image: Lake images ----
-    # observeEvent(input$waterbody,{
-    #   
-    #   if(input$waterbody == c("Oregon")) {
-    #     
-    #     output$non_select_image <- renderText({ 
-    #       
-    #       "Select a waterbody to show the lake image."
-    #       
-    #     })
-    #     
-    #   } else {
-    #     
-    #     output$non_select_image <- renderText({})
-    #     
-    #     output$lakeImage <- renderImage({
-    #       
-    #       list(src = paste0("./Lake_Images/",input$waterbody,".jpg"),
-    #            width = 400,
-    #            height = 300)
-    #       
-    #     }, deleteFile = FALSE)
-    #     
-    #   }
-    #   
-    # })
-    
-    # (5) Maps ----
-    # _ initial map ----
-    output$map <- leaflet::renderLeaflet({
-      
-      leaflet::leaflet() %>% 
-        leaflet::addMapPane("OpenStreetMap", zIndex = -40) %>% 
-        leaflet::addMapPane("National Geographic World Map", zIndex = -40) %>%
-        leaflet::addMapPane("state.boundary", zIndex = -30) %>%
-        leaflet::addMapPane("HUC6",zIndex = -20) %>% 
-        leaflet::addMapPane("lakes.resolvable.7dadm", zIndex = 400) %>%
-        leaflet::addProviderTiles("OpenStreetMap",group = "OpenStreetMap",
-                                  options = pathOptions(pane = "OpenStreetMap")) %>% 
-        leaflet::addProviderTiles(providers$Esri.NatGeoWorldMap,group = "National Geographic World Map",
-                                  options = pathOptions(pane = "National Geographic World Map")) %>% 
-        leaflet::setView(lng = -120, lat = 44, zoom=7) %>% 
-        leaflet.extras::addResetMapButton() %>% 
-        leaflet::addScaleBar(position = c("bottomright"),
-                             options = scaleBarOptions()) %>% 
-        leaflet::addMiniMap(position = "bottomright",
-                            width = 180,
-                            height = 200,
-                            zoomLevelFixed = 5) %>% 
-        leaflet::addPolygons(data = lakes.resolvable.7dadm, 
-                             color = ~palette7dadm(lakes.resolvable.7dadm$`7dadm`),
-                             weight = 2,
-                             layer = ~lakes.resolvable.7dadm$GNISIDNAME,
-                             smoothFactor = 0.5,
-                             opacity = 1,
-                             fillColor = "transparent",
-                             fillOpacity = 0,
-                             label = ~lakes.resolvable.7dadm$GNIS_Name,
-                             labelOptions = labelOptions(style = list("font-size" = "18px",
-                                                                      "color" = "blue")),
-                             options = pathOptions(pane = "lakes.resolvable.7dadm"),
-                             group = "lakes.resolvable.7dadm") %>% 
-        leaflegend::addLegendFactor(pal = palette7dadm_lg, 
-                                    values = lakes.resolvable.7dadm$`7dadm`,
-                                    #title = "Cyanobacteria Abundance 7DADM:",
-                                    shape = "rect",
-                                    opacity = 1,
-                                    fillOpacity = 0,
-                                    position = "topright") %>% 
-        leaflet::addPolygons(data = huc6, 
-                             group = "Basins (HUC6)",
-                             color = "grey",
-                             weight = 2,
-                             smoothFactor = 0.5,
-                             opacity = 0.5,
-                             fillColor = ~pal.huc6(HU_6_NAME),
-                             fillOpacity = 0.2,
-                             label = ~huc6$HU_6_NAME,
-                             labelOptions = labelOptions(noHide = TRUE,
-                                                         textOnly = TRUE,
-                                                         style = list("font-size" = "12px",
-                                                                      "color" = "black")),
-                             options = pathOptions(pane = "HUC6")) %>% 
-        leaflet::addPolygons(data = state.boundary, 
-                             color = "black",
-                             weight = 2,
-                             fillColor = "transparent",
-                             fillOpacity = 1.0,
-                             options = pathOptions(pane = "state.boundary")) %>% 
-        # _ Tools ----
-      leaflet.extras::addSearchFeatures(targetGroups = "lakes.resolvable.7dadm",
-                                        options = leaflet.extras::searchFeaturesOptions(openPopup = TRUE, 
-                                                                                        zoom = 8,
-                                                                                        textPlaceholder = "Search a waterbody...")) %>% 
-        #leaflet::addRasterImage(rst, colors = pal.map, opacity = 1) %>% 
-        leaflet::addLayersControl(baseGroups = c("OpenStreetMap","National Geographic World Map"),
-                                  overlayGroups = c("Basins (HUC6)"),
-                                  position = "topleft",
-                                  options = layersControlOptions(collapsed = TRUE, autoZIndex = FALSE)) %>% 
-        leaflet::hideGroup(c("Basins (HUC6)"))
-      
-    })
-    
-    # _ map reactive @ waterbody picker ----
-    observeEvent(input$waterbody,{
-      
-      if(input$waterbody == c("Oregon")) {
-        
-        leafletProxy("map") %>% 
-          leaflet::setView(lng = -120, lat = 44, zoom=7)
-        
-      } else {
-        
-        one.lake <- reactive({
-          
-          lakes.resolvable[which(lakes.resolvable$GNISIDNAME == input$waterbody),]
-          
-        })
-        
-        bounds <- reactive({
-          
-          sf::st_bbox(one.lake())
-          
-        })
-        
-        leafletProxy("map") %>% 
-          leaflet::fitBounds(lng1=bounds()[[1]], lat1=bounds()[[2]], lng2=bounds()[[3]], lat2=bounds()[[4]])
-      }
-      
-    })
-    
-    # _ 7 maps ----
-    observeEvent(input$waterbody,{
-      
-      if(input$waterbody == c("Oregon")) {
-        
-        output$non_select <- renderText({ 
-          
-          "Select a waterbody to show the maps."
-          
-        })
-        
-        output$no_pixels <- renderUI(HTML(paste("")))
-        
-        
-      } else {
-        
-        output$non_select <- renderText({})
-        
-        output$maps7 <- renderImage({
-          
-          list(src = paste0("./Report_Images/",input$waterbody,".jpg"),
-               width = "100%")
-          
-        }, deleteFile = FALSE)
-        
-        output$no_pixels <- renderUI(HTML(paste("&nbsp;","&nbsp;","&nbsp;","&nbsp;",
-                                                em("No pixels on the map indicates no data for the lake on that day."))))
-        
-      }
-      
-    })
-    
   }
   
-) # shinyApp END
+)

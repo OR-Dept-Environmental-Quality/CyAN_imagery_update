@@ -13,8 +13,8 @@ Sys.setenv(PROJ_LIB = "C:\\Users\\ygrund\\AppData\\Local\\R\\win-library\\4.3\\P
 Sys.setlocale("LC_ALL", "en_US.UTF-8")
 data_path <- "//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/HAB_Shiny_app/data/"
 data <-  readxl::read_excel(paste0(data_path,"HAB_resolvablelakes_2024.xlsx"))
-dates <- readxl::read_excel("./data/calendar-dates.xlsx")
-resolvable_lakes <- readxl::read_excel("./data/Resolvable_Lakes.xlsx")
+dates <- readxl::read_excel(paste0(data_path,"calendar-dates.xlsx"))
+resolvable_lakes <- readxl::read_excel(paste0(data_path,"Resolvable_Lakes.xlsx"))
 
 ```
 
@@ -179,9 +179,6 @@ print("Step 1 completed")
 ```
 
 ## Step 2. Process data.
-
-![Figure 1. Step 2 workflow.](data/flow_chart_1.jpg)
-
 ```{python}
 import sys
 import arcpy
@@ -197,7 +194,8 @@ arcpy.CheckOutExtension("Spatial")
 
 zones = r"\\deqhq1\WQ-Share\Harmful Algal Blooms Coordination Team\HAB_Shiny_app\data\gis\CyAN_Waterbodies.shp"
 base_path = r"\\deqhq1\WQ-Share\Harmful Algal Blooms Coordination Team\Satellite data\CyAN_Data_V5\Sentinel-3\CI_cyano"
-project_path = r"\\deqhq1\WQ-Share\Harmful Algal Blooms Coordination Team\HAB_Shiny_app\data"
+habs_project_path = r"\\deqhq1\WQ-Share\Harmful Algal Blooms Coordination Team\HAB_Shiny_app\data"
+cyan_project_path = r"\\deqhq1\WQ-Share\Harmful Algal Blooms Coordination Team\CyAN_Weekly_Report\CyAN_imagery_update\data"
 
 print("Create a temporary location to store the temporary output tables.")
 temp_dir = os.path.join(base_path, "temp")
@@ -300,14 +298,19 @@ for raw_name in r.download_file_list:
     in_coor_system=in_coor_system
     )
     
-  print("...Copy the CI raster to the project folder")
+  print("...Copy the CI raster to the HABs project folder")
   pattern = os.path.join(ci_path, raw_name + ".*")
   files_to_copy = glob.glob(pattern)
   for file_path in files_to_copy:
     file_name = os.path.basename(file_path)
     base_name, extension = file_name.rsplit('.', 1)
-    copy_ci_path = os.path.join(project_path, str(year), str(file_name))
-    shutil.copy(file_path, copy_ci_path)
+    copy_ci_path_1 = os.path.join(habs_project_path, str(year), str(file_name))
+    shutil.copy(file_path, copy_ci_path_1)
+    
+  print("...Copy the CI raster to the CyAN project folder")
+  file_to_copy = os.path.join(ci_path, raw_name + ".tif")
+  copy_ci_path_2 = os.path.join(cyan_project_path, year, raw_name + ".tif")
+  shutil.copy(file_to_copy, copy_ci_path_2)
       
   print("...Tabulate Area")
   tabulate_result = arcpy.sa.TabulateArea(
@@ -376,8 +379,11 @@ for raw_name in r.download_file_list:
 
 ```{r zonaltbl}
 print("...Generate zonal statistics data table")
+# download_file_list <- c("2024103","2024104")
+# temp_dir <- "//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/Satellite data/CyAN_Data_V5/Sentinel-3/CI_cyano/temp/"
 zonal_temp_file_names <- paste0("zonal_result_", download_file_list, ".csv")
 zonal_temp_file_paths <- file.path(py$temp_dir, zonal_temp_file_names)
+# zonal_temp_file_paths <- file.path(temp_dir, zonal_temp_file_names)
 all_data <- list()
 for (file in zonal_temp_file_paths) {
   print(file)
@@ -396,6 +402,7 @@ for (file in zonal_temp_file_paths) {
   }
 }
 
+data_pre <- data %>% dplyr::mutate(Julian_day = sprintf("%03d", as.numeric(Julian_day))) 
 zonal_combined <- bind_rows(all_data) %>% 
   dplyr::left_join(resolvable_lakes, by=c("GNISIDNAME"="GNIS_Name_ID")) %>% 
   dplyr::mutate(File_NUM = as.character(File_NUM)) %>% 
@@ -403,13 +410,40 @@ zonal_combined <- bind_rows(all_data) %>%
   dplyr::mutate(Month = lubridate::month(Date)) %>% 
   dplyr::mutate(Day = lubridate::day(Date)) %>% 
   dplyr::mutate(Date = as.Date(Date)) %>% 
+  dplyr::distinct(Date,GNISIDNAME,.keep_all = TRUE) %>% 
   dplyr::select(GNISIDNAME,Area_Total_Cells,Date,MIN,MAX,MEAN,STD,MEDIAN,Year,Month,Day,Julian_day) %>% 
-  dplyr::arrange(Date,GNISIDNAME) %>% 
-  dplyr::distinct(Date,GNISIDNAME,.keep_all = TRUE)
+  dplyr::mutate(`7DDMGM` = as.numeric(NA),
+                `7DADM` = as.numeric(NA),
+                `Days of Data` = as.numeric(NA)) %>% 
+  dplyr::bind_rows(data_pre[which(as.Date(data_pre$Date)>as.Date(max(sort(unique(data_pre$Date))))-14),]) %>% 
+  dplyr::select(-c(`7DDMGM`,`7DADM`,`Days of Data`)) 
 
-data <- data %>% dplyr::mutate(Julian_day = sprintf("%03d", as.numeric(Julian_day)))
-zonal_update <- dplyr::bind_rows(data,zonal_combined) %>% dplyr::mutate(Date = as.Date(Date))
 
+zonal_new <- data.frame()
+for(gnis in sort(unique(zonal_combined$GNISIDNAME))) {
+  # test: gnis = "Siltcoos Lake_01158483"
+  print(gnis)
+  
+  dta_gnis <- zonal_combined %>% dplyr::filter(GNISIDNAME == gnis) %>% dplyr::arrange(Date) 
+  
+  dta_gnis_7d <- within(dta_gnis, {
+    w <- seq_along(as.Date(dta_gnis$Date)) - findInterval(as.Date(dta_gnis$Date) - 7, as.Date(dta_gnis$Date))
+    `7DADM` <- zoo::rollapplyr(MAX, w, mean)
+    `7DDMGM` <- zoo::rollapply(MAX, w, FUN = function(x) exp(mean(log(x))), fill = NA, align = "right", partial = TRUE)
+  })
+  
+  zonal_new <- rbind(zonal_new,dta_gnis_7d)
+  
+}
+
+zonal <- zonal_new %>% 
+  dplyr::mutate(Date = as.Date(Date)) %>% 
+  dplyr::rename(`Days of Data` = w) %>% 
+  dplyr::select(GNISIDNAME,Area_Total_Cells,Date,MIN,MAX,MEAN,STD,MEDIAN,Year,Month,Day,Julian_day,`7DDMGM`,`7DADM`,`Days of Data`) %>% 
+  dplyr::arrange(Date,GNISIDNAME)  %>% 
+  dplyr::filter(as.Date(Date) %in% as.Date(dates[which(dates$CyAN_File_NUM %in% download_file_list),]$Date))
+
+zonal_update <- dplyr::bind_rows(data,zonal) %>% dplyr::mutate(Date = as.Date(Date))
 writexl::write_xlsx(zonal_update, paste0(data_path,"HAB_resolvablelakes_2024.xlsx"))
 
 print("Step 2 completed")
@@ -417,7 +451,6 @@ print("Step 2 completed")
 ```
 
 ## Step 3. Gether data for the shiny app.
-### shinydata_1 for interactive raster maps
 ```{r shinydata_1}
 # (1) Timeseries Data Table ----
 dta1 <- resolvable_lakes
@@ -429,15 +462,16 @@ dta3 <- readxl::read_xlsx(paste0(data_path,"HAB_resolvablelakes_2002-2023.xlsx")
   dplyr::filter(GNISIDNAME %in% dta1$inApp) # filter out saline lakes
 
 dta <- rbind(dta2,dta3) %>% 
-  dplyr::rename(Mean = MEAN,
-                Maximum = MAX,
-                Minimum = MIN) %>% 
-  tidyr::gather(`Summary Statistics`, `Cyanobacteria (cells/mL)`, -GNISIDNAME,-Area_Total_Cells,-Date,-Year,-Month,-Day,-Julian_day) %>% 
+  dplyr::rename(`Daily Mean` = MEAN,
+                `Daily Maximum` = MAX) %>% 
+  tidyr::gather(`Summary Statistics`, `Cyanobacteria (cells/mL)`, 
+                -GNISIDNAME,-Area_Total_Cells,-Date,-Year,-Month,-Day,-Julian_day,-`Days of Data`) %>% 
   tidyr::separate(GNISIDNAME,c("GNISNAME","GNISID"), sep="_") %>% 
   dplyr::mutate(GNISIDNAME = paste0(GNISNAME,"_",GNISID)) %>% 
   dplyr::mutate(Date = lubridate::ymd(Date)) %>% 
   dplyr::arrange(desc(Date)) %>% 
-  dplyr::mutate(wi_DWSA = ifelse(GNISIDNAME %in% dta1$wi_DWSA, "Yes", "No"))
+  dplyr::mutate(wi_DWSA = ifelse(GNISIDNAME %in% dta1$wi_DWSA, "Yes", "No")) %>% 
+  dplyr::filter(Year > 2015)
 
 # (2) Date Lookup Table ----
 dates <- dates %>% dplyr::mutate(Date = lubridate::ymd(Date))
@@ -483,228 +517,37 @@ pal.map <- leaflet::colorBin(palette = palette,
 # Legend labels
 labels = c("Non-detect","Low: 6,311 - 20,000","Moderate: 20,000 - 100,000","High: >100,000")
 
-# Save data ----
-# rm(dta1); rm(dta2); rm(dta3)
-# save.image(file = "//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/HAB_Shiny_app/data.RData")
+# (5) 7D Table  ----
+dta_wide <- dta %>% 
+  dplyr::filter((as.Date(Date) <= as.Date(max(dta2$Date))) & (as.Date(Date) >= as.Date(max(dta2$Date))-6)) %>% 
+  tidyr::pivot_wider(names_from = `Summary Statistics`, values_from = `Cyanobacteria (cells/mL)`)
 
-```
-
-### shinydata_2 for thumbnail maps
-```{r shinydata_2}
-# (5) 7DADM Table  ----
-tbl.data.7days <- dta2 %>% 
-  dplyr::arrange(GNISIDNAME, desc(Date)) %>% 
-  dplyr::filter((as.Date(Date) <= as.Date(max(dta2$Date))) & (as.Date(Date) >= as.Date(max(dta2$Date))-6))
-
-no.data <- dta1 %>% 
-  dplyr::filter(!is.na(inApp)) %>% 
-  dplyr::filter(!GNIS_Name_ID %in% tbl.data.7days$GNISIDNAME) %>% 
-  dplyr::mutate(mean_7DayMax = "No Data Available") %>% 
-  dplyr::rename(GNISIDNAME = GNIS_Name_ID) %>% 
-  dplyr::select(GNISIDNAME,mean_7DayMax)
-
-tbl.data <- tbl.data.7days %>% 
-  dplyr::group_by(GNISIDNAME) %>% 
-  dplyr::summarise(mean_7DayMax = mean(MAX),                # 7 day average daily maximum
-                   geomean_7DayMax = exp(mean(log(MAX))),   # 7-Day Daily Maximum Geometric Mean
-                   #`7DMC` = max(MAX),                      # 7 day maximum composite
-                   n=n()) %>%    
-  dplyr::ungroup() %>% 
-  dplyr::arrange(desc(mean_7DayMax)) %>%
-  dplyr::mutate(mean_7DayMax = ifelse(mean_7DayMax<= 6310, "Non-detect",
-                                      format(round(mean_7DayMax,0),big.mark=",",scientific = FALSE))) %>%
-  # dplyr::arrange(desc(geomean_7DayMax)) %>% 
-  dplyr::mutate(geomean_7DayMax = ifelse(geomean_7DayMax<= 6310, "Non-detect",
-                                      format(round(geomean_7DayMax,0),big.mark=",",scientific = FALSE))) %>% 
-  #rbind(no.data) %>% 
+tbl.data <- dta_wide %>% 
+  dplyr::group_by(GNISIDNAME) %>%
+  dplyr::summarise(`7DDMGM` = max(`7DDMGM`)) %>%
+  dplyr::inner_join(dta_wide, by = c("GNISIDNAME", "7DDMGM")) %>%
+  dplyr::distinct(GNISIDNAME, .keep_all = TRUE) %>% 
   dplyr::left_join(lakes.resolvable, by = "GNISIDNAME") %>% 
   dplyr::mutate(Basin = ifelse(`HU_6_NAME` == "Willamette",`HU_8_NAME`,`HU_6_NAME`)) %>% 
-  dplyr::select(GNISIDNAME,Basin,mean_7DayMax,geomean_7DayMax,n) %>%
-  # dplyr::select(GNISIDNAME,Basin,geomean_7DayMax,n) %>% 
-  dplyr::distinct(GNISIDNAME, .keep_all = TRUE) %>% 
-  #dplyr::mutate(Date = as.Date(Date,format="%Y-%b-%d")) %>% 
-  dplyr::rename(`Waterbody_GNISID*` = GNISIDNAME,
-                `7DADM (cells/mL)` = mean_7DayMax,
-                `7DDMGM (cells/mL)` = geomean_7DayMax,
-                `Days of Data` = n)
-
+  dplyr::select(GNISIDNAME,Basin,`7DDMGM`,`7DADM`,Date,`Days of Data`) %>% 
+  dplyr::arrange(desc(`7DDMGM`)) %>% 
+  dplyr::mutate(`7DDMGM` = ifelse(`7DDMGM`<= 6310, "Non-detect",format(round(`7DDMGM`,0),big.mark=",",scientific = FALSE))) %>%
+  dplyr::mutate(`7DADM` = ifelse(`7DADM`<= 6310, "Non-detect",format(round(`7DADM`,0),big.mark=",",scientific = FALSE))) %>% 
+  dplyr::rename(`Waterbody_GNISID*`= GNISIDNAME,
+                `7DADM (cells/mL)` = `7DADM`,
+                `7DDMGM (cells/mL)` = `7DDMGM`,
+                `Date_7DDMGM` = Date)
+  
 map.tbl.data <- tbl.data %>% 
-  dplyr::filter(!`7DADM (cells/mL)` %in% c("Non-detect","No Data Available")) %>% 
-  dplyr::mutate(`7dadm` = gsub(",","",`7DADM (cells/mL)`)) %>% 
-  dplyr::filter(as.numeric(`7dadm`) > 100000) %>% 
-  dplyr::select(-`7dadm`)
-
-# (6) 7DADM Map  ----
-lakes.resolvable.7dadm <- lakes.resolvable %>% 
-  dplyr::mutate(`7dadm` = ifelse(GNISIDNAME %in% map.tbl.data$`Waterbody_GNISID*`,"Waterbody with high cyanobacteria abundance","Others")) %>% 
-  dplyr::filter(!`7dadm` == "Others")
-
-#Create a palette function, using the selected color
-#palette7dadm <- leaflet::colorFactor(palette = c('red','blue'), 
-#                                     domain = unique(sort(lakes.resolvable.7dadm$`7dadm`)))
-
-palette7dadm <- leaflet::colorFactor(palette = c('#006d2c'), 
-                                     domain = unique(sort(lakes.resolvable.7dadm$`7dadm`)))
-
-palette7dadm_lg <- leaflet::colorFactor(palette = c('#00441b'), 
-                                        domain = unique(sort(lakes.resolvable.7dadm$`7dadm`)))
-
-#pause()
-
-# (7) Thumbnail maps ----
-tag.map.date <- shiny::tags$style(htmltools::HTML("
-  .leaflet-control.map-date { 
-    transform: translate(-50%,20%);
-    position: fixed !important;
-    left: 0%;
-    text-align: left;
-    padding-left: 5px; 
-    padding-right: 5px; 
-    background: rgba(255,255,255,0.75);
-    font-weight: bold;
-    font-size: 40px;
-  }
-"))
-
-# require: thevalues; paletteFunc; palette; pal.map
-
-waterbody.list <- sort(unique(lakes.resolvable$GNISIDNAME))
-
-# Dates:
-# require: dates; lookup.date; tbl.data.7days
-last7days <- lookup.date %>%
-  dplyr::filter(Date %in% as.Date(c((lubridate::today()-7):(lubridate::today()-1)))) %>%
-  dplyr::arrange(JDay.dates) %>%
-  dplyr::pull(Date)
-
-last7days_downloaded <- sort(unique(as.Date(tbl.data.7days$Date)))
-last7days_noImage <- last7days[!last7days %in% last7days_downloaded]
-
-# _ images ----
-map.file.name <- readxl::read_excel("./data/map_file_name.xlsx")
-if(max(as.Date(map.file.name$Date))<max(as.Date(last7days_downloaded))){
-  image_dates <- seq(max(as.Date(map.file.name$Date)) + 1, max(as.Date(last7days_downloaded)), by = "day")
-  print(image_dates)
-}else{
-    print("No need to update the images.")
-  }
-
-# image_dates <- c("2024-01-01")
-# This for loop will take more than 2 hours to run.
-for (x in 1:length(waterbody.list)){
-  
-  # test: x <- 38
-  # test: y <- 1
-  
-  print(waterbody.list[x])
-  
-  map.file.name.x <- data.frame(File_waterbody = character(),File_name = character(), Date = character())
-  
-  for(y in 1:length(image_dates)){
-    
-    print(image_dates[y])
-    
-    title.date <- shiny::tags$div(tag.map.date, htmltools::HTML(paste0(image_dates[y])))
-    
-    one.lake <- lakes.resolvable[which(lakes.resolvable$GNISIDNAME == waterbody.list[x]),]
-    
-    bounds <- sf::st_bbox(one.lake)
-    
-    df.map.date <- lookup.date %>% dplyr::filter(Date %in% as.Date(image_dates[y]))
-    
-    tif.dir <- paste0("//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/HAB_Shiny_app/data/", df.map.date$Year.dates, "/")
-    file.name <- paste0(df.map.date$CyAN_File_NUM,".tif")
-    
-    if (file.exists(paste0(tif.dir,file.name))){
-      
-      rst <- raster::raster(paste0(tif.dir,file.name))
-      
-      map <- leaflet::leaflet() %>% 
-        leaflet::addControl(title.date, position = "topleft", className="map-date")%>% 
-        leaflet::addProviderTiles("OpenStreetMap",group = "OpenStreetMap") %>% 
-        leaflet::addRasterImage(rst, layerId = "Value", project = FALSE, colors=pal.map, opacity = 1) %>% 
-        #leaflet::addLegend(pal = pal.map, values = thevalues, title = "Cyanobacteria (cells/mL)", position = "bottomright") %>% 
-        leaflet::addPolygons(data = lakes.resolvable, 
-                             color = "blue",
-                             weight = 2,
-                             layer = ~lakes.resolvable$GNISIDNAME,
-                             smoothFactor = 0.5,
-                             opacity = 0.5,
-                             fillColor = "transparent",
-                             fillOpacity = 1.0,
-                             label = ~lakes.resolvable$GNIS_Name,
-                             labelOptions = leaflet::labelOptions(style = list("font-size" = "18px",
-                                                                               "color" = "blue"))) %>% 
-        leaflet::fitBounds(lng1=bounds[[1]], lat1=bounds[[2]], lng2=bounds[[3]], lat2=bounds[[4]])
-    
-      }else{
-      
-      map <- leaflet::leaflet() %>% 
-        leaflet::addControl(title.date, position = "topleft", className="map-date")%>% 
-        leaflet::addProviderTiles("OpenStreetMap",group = "OpenStreetMap") %>% 
-        # leaflet::addRasterImage(rst, layerId = "Value", project = FALSE, colors=pal.map, opacity = 1) %>% 
-        # leaflet::addLegend(pal = pal.map, values = thevalues, title = "Cyanobacteria (cells/mL)", position = "bottomright") %>% 
-        leaflet::addPolygons(data = lakes.resolvable, 
-                             color = "blue",
-                             weight = 2,
-                             layer = ~lakes.resolvable$GNISIDNAME,
-                             smoothFactor = 0.5,
-                             opacity = 0.5,
-                             fillColor = "transparent",
-                             fillOpacity = 1.0,
-                             label = ~lakes.resolvable$GNIS_Name,
-                             labelOptions = leaflet::labelOptions(style = list("font-size" = "18px",
-                                                                               "color" = "blue"))) %>% 
-        leaflet::fitBounds(lng1=bounds[[1]], lat1=bounds[[2]], lng2=bounds[[3]], lat2=bounds[[4]])
-      
-    }
-    
-    # mapview::mapshot(map, file = paste0("./Images/",waterbody.list[x],"-",image_dates[y],".png")) # somehow mapshot stops working
-    
-    htmlwidgets::saveWidget(map, file = paste0("./Images/",waterbody.list[x],"-",image_dates[y],".html"),selfcontained=TRUE)
-    webshot::webshot(url = paste0("./Images/",waterbody.list[x],"-",image_dates[y],".html"), 
-                     file = paste0("./Images/",waterbody.list[x],"-",image_dates[y],".jpg"))
-    
-    map.file.name.y <- paste0("./Images/",waterbody.list[x],"-",image_dates[y],".jpg")
-    
-    map.file.name.x <- map.file.name.x %>% 
-      dplyr::add_row(File_waterbody = waterbody.list[x],
-                     File_name = map.file.name.y,
-                     Date = as.character(image_dates[y]))
-    
-  }
-  
-  map.file.name <- rbind(map.file.name,map.file.name.x)
-  
-}
-
-writexl::write_xlsx(map.file.name,"./data/map_file_name.xlsx")
-
-file.remove(file.path("./Images/",dir(path = "./Images",pattern="*.html")))
-unlink(file.path("./Images/",dir(path = "./Images",pattern="_files")),recursive = TRUE)
-
-# _ report images ----
-library(magick)
-
-map.file.name <- readxl::read_excel("./data/map_file_name.xlsx") %>% 
-  dplyr::filter(Date >= max(as.Date(Date)) - 6 & Date <= max(as.Date(Date))) %>% 
-  dplyr::distinct(File_waterbody,Date, .keep_all = TRUE)
-
-for(i in sort(unique(map.file.name$File_waterbody))){
-  
-  # test: i <- "Aspen Lake_01161255"
-  df.imgs <- map.file.name %>% dplyr::filter(File_waterbody == i)
-  img.files <- c(df.imgs$File_name[1:7],"./Report_Images/legend/legend.png") 
-  imgs <- magick::image_read(img.files)
-  imgs.comb <- magick::image_montage(imgs, tile = '4x2', geometry = "300x200+1+1")
-  magick::image_write(imgs.comb, path = paste0("./Report_Images/",i,".jpg"), format = "jpg")
-  print(paste0("./Report_Images/",i,".jpg"))
-  
-}
+  dplyr::filter(!`7DDMGM (cells/mL)`== "Non-detect") %>% 
+  dplyr::mutate(`7ddmgm` = gsub(",","",`7DDMGM (cells/mL)`)) %>%
+  dplyr::filter(as.numeric(`7ddmgm`) > 100000) %>%
+  dplyr::select(`Waterbody_GNISID*`,Basin,`7DDMGM (cells/mL)`,`7DADM (cells/mL)`,`Date_7DDMGM`,`Days of Data`,-`7ddmgm`)
+  # dplyr::mutate(`7dadm` = gsub(",","",`7DADM (cells/mL)`)) %>% 
+  # dplyr::filter(as.numeric(`7dadm`) > 100000) %>% 
+  # dplyr::select(`Waterbody_GNISID*`,Basin,`7DDMGM (cells/mL)`,`7DADM (cells/mL)`,`Days of Data`,-`7dadm`)
 
 # Save data ----
-#rm(dta1); rm(dta2); rm(dta3)
 save.image(file = "data.RData")
 
 ```
-

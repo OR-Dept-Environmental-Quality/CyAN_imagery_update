@@ -5,9 +5,9 @@ account: l_ygrund
 server: rstudioconnect.deq.state.or.us
 hostUrl: https://rstudioconnect.deq.state.or.us/__api__
 appId: 65
-bundleId: 896
+bundleId: 919
 url: https://rstudioconnect.deq.state.or.us/Oregon-cyanobacteria-satellite-report/
 version: 1
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: data.nb.html|data.Rmd|README.md|data|Images
+ignoredFiles: data.nb.html|data.Rmd|README.md
