@@ -1,6 +1,6 @@
 # Satellite Estimates of Cyanobacteria in Oregon Lakes and Reservoirs
 
-This report provides an update to estimates of cyanobacteria abundance derived from satellite imagery for 49 large Oregon waterbodies. Updates are scheduled to occur weekly from March to October each year. Estimates derive from the Cyanobacteria Assessment Network (CyAN) project. The report is published as an interactive application at https://rstudioconnect.deq.state.or.us/Oregon-cyanobacteria-satellite-report/.
+This report provides an update to estimates of cyanobacteria abundance derived from satellite imagery for 49 large Oregon waterbodies. Updates are scheduled to occur weekly from spring to fall each year. Estimates derive from the Cyanobacteria Assessment Network (CyAN) project. The report is published as an interactive application at https://rstudioconnect.deq.state.or.us/Oregon-cyanobacteria-satellite-report/.
 
 
 
