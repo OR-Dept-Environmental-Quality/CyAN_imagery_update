@@ -1,18 +1,22 @@
 ---
 title: "Prepare data for the HABs weekly report"
 output: html_notebook
+editor_options:
+  chunk_output_type: console
 ---
 
 ## Import data
-```{r}
+```{r initial}
 library(dplyr)
 library(reticulate)
 Sys.setenv(RETICULATE_PYTHON = "C:\\Program Files\\ArcGIS\\Pro\\bin\\Python\\envs\\arcgispro-py3\\python.exe")
 Sys.setenv(PROJ_LIB = "C:\\Users\\ygrund\\AppData\\Local\\R\\win-library\\4.3\\PROJ\\proj")
 # Sys.setlocale(locale = "English_United States.1252")
-Sys.setlocale("LC_ALL", "en_US.UTF-8")
-data_path <- "//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/HAB_Shiny_app/data/"
-data <-  readxl::read_excel(paste0(data_path,"HAB_resolvablelakes_2024.xlsx"))
+# Sys.setlocale("LC_ALL", "en_US.UTF-8")
+data_path <- "//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/CyAN_Weekly_Report/Data/"
+data_ci <-  readxl::read_excel(paste0(data_path,"cyan_ci_2024.xlsx"))
+data_dn <-  readxl::read_excel(paste0(data_path,"cyan_dn_2024.xlsx")) %>% 
+  dplyr::mutate_at(dplyr::vars(dplyr::starts_with("VALUE_")), as.numeric)
 dates <- readxl::read_excel(paste0(data_path,"calendar-dates.xlsx"))
 resolvable_lakes <- readxl::read_excel(paste0(data_path,"Resolvable_Lakes.xlsx"))
 
@@ -109,13 +113,12 @@ resolvable_lakes <- readxl::read_excel(paste0(data_path,"Resolvable_Lakes.xlsx")
 
 ```{r OceanColor}
 # Download rasters from the OceanColor site
-
 baseurl <- "https://oceancolor.gsfc.nasa.gov/CYAN/OLCI/"
 outPath_dn <- "//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/Satellite data/CyAN_Data_V5/Sentinel-3/CI_cyano/raw/"
 
 tiles <- paste0("_", paste(c("1_1","1_2","2_1","2_2"), collapse = "|"), "\\.tif$")
 
-day_start <- paste0(max(data$Year), sprintf("%03d", max(as.numeric(data$Julian_day))+1))
+day_start <- paste0(max(data_ci$Year), sprintf("%03d", max(as.numeric(data_ci$Julian_day))+1))
 day_end <- dates %>% dplyr::filter(as.POSIXlt(Date) == as.POSIXlt(Sys.Date()-1)) %>% dplyr::pull(CyAN_File_NUM)
 year <- substr(day_start, 1, 4)
 hab_days <- as.character(seq(day_start, day_end))
@@ -179,7 +182,7 @@ print("Step 1 completed")
 ```
 
 ## Step 2. Process data.
-```{python}
+```{python python}
 import sys
 import arcpy
 from arcpy.sa import *
@@ -192,10 +195,11 @@ import tempfile
 arcpy.env.overwriteOutput = True
 arcpy.CheckOutExtension("Spatial")
 
-zones = r"\\deqhq1\WQ-Share\Harmful Algal Blooms Coordination Team\HAB_Shiny_app\data\gis\CyAN_Waterbodies.shp"
+zones = r"\\deqhq1\WQ-Share\Harmful Algal Blooms Coordination Team\CyAN_Weekly_Report\CyAN_imagery_update\data\gis\CyAN_Waterbodies.shp"
 base_path = r"\\deqhq1\WQ-Share\Harmful Algal Blooms Coordination Team\Satellite data\CyAN_Data_V5\Sentinel-3\CI_cyano"
 habs_project_path = r"\\deqhq1\WQ-Share\Harmful Algal Blooms Coordination Team\HAB_Shiny_app\data"
-cyan_project_path = r"\\deqhq1\WQ-Share\Harmful Algal Blooms Coordination Team\CyAN_Weekly_Report\CyAN_imagery_update\data"
+# cyan_project_path = r"\\deqhq1\WQ-Share\Harmful Algal Blooms Coordination Team\CyAN_Weekly_Report\CyAN_imagery_update\data"
+cyan_project_path = r"C:\Users\ygrund\ygrund_C_Users\PROJECTS\HABs\CyAN_imagery_update\data\\2024"
 
 print("Create a temporary location to store the temporary output tables.")
 temp_dir = os.path.join(base_path, "temp")
@@ -215,10 +219,10 @@ ci_path = os.path.join(base_path, f"ci\\{year}")
 temp_tabulate = os.path.join(temp_dir, f"tabulate_result_{year}.dbf")
 temp_zonal = os.path.join(temp_dir, f"zonal_result_{year}.dbf")
 
-# r.download_file_list = ['2024096']
+# r.download_file_list = ['2024106', '2024107']
 for raw_name in r.download_file_list:
   arcpy.CheckOutExtension("Spatial")
-  # test: raw_name = '2024096'
+  # test: raw_name = '2024107'
   print(raw_name)
   
   raw_tif_path = os.path.join(raw_path, f"{raw_name}.tif")
@@ -377,8 +381,8 @@ for raw_name in r.download_file_list:
 
 ```
 
-```{r zonaltbl}
-print("...Generate zonal statistics data table")
+```{r zonal_tbl}
+print("...Generate CI zonal statistics data table")
 # download_file_list <- c("2024103","2024104")
 # temp_dir <- "//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/Satellite data/CyAN_Data_V5/Sentinel-3/CI_cyano/temp/"
 zonal_temp_file_names <- paste0("zonal_result_", download_file_list, ".csv")
@@ -402,7 +406,7 @@ for (file in zonal_temp_file_paths) {
   }
 }
 
-data_pre <- data %>% dplyr::mutate(Julian_day = sprintf("%03d", as.numeric(Julian_day))) 
+data_pre_z <- data_ci %>% dplyr::mutate(Julian_day = sprintf("%03d", as.numeric(Julian_day))) 
 zonal_combined <- bind_rows(all_data) %>% 
   dplyr::left_join(resolvable_lakes, by=c("GNISIDNAME"="GNIS_Name_ID")) %>% 
   dplyr::mutate(File_NUM = as.character(File_NUM)) %>% 
@@ -415,7 +419,7 @@ zonal_combined <- bind_rows(all_data) %>%
   dplyr::mutate(`7DDMGM` = as.numeric(NA),
                 `7DADM` = as.numeric(NA),
                 `Days of Data` = as.numeric(NA)) %>% 
-  dplyr::bind_rows(data_pre[which(as.Date(data_pre$Date)>as.Date(max(sort(unique(data_pre$Date))))-14),]) %>% 
+  dplyr::bind_rows(data_pre_z[which(as.Date(data_pre_z$Date)>as.Date(max(sort(unique(data_pre_z$Date))))-14),]) %>% 
   dplyr::select(-c(`7DDMGM`,`7DADM`,`Days of Data`)) 
 
 
@@ -443,22 +447,70 @@ zonal <- zonal_new %>%
   dplyr::arrange(Date,GNISIDNAME)  %>% 
   dplyr::filter(as.Date(Date) %in% as.Date(dates[which(dates$CyAN_File_NUM %in% download_file_list),]$Date))
 
-zonal_update <- dplyr::bind_rows(data,zonal) %>% dplyr::mutate(Date = as.Date(Date))
-writexl::write_xlsx(zonal_update, paste0(data_path,"HAB_resolvablelakes_2024.xlsx"))
+zonal_update <- dplyr::bind_rows(data_ci,zonal) %>% dplyr::mutate(Date = as.Date(Date))
+writexl::write_xlsx(zonal_update, paste0(data_path,"cyan_ci_2024.xlsx"))
+
+```
+
+```{r tabulate_tbl}
+print("...Generate DN tabulate data table")
+tabulate_temp_file_names <- paste0("tabulate_result_", download_file_list, ".csv")
+tabulate_temp_file_paths <- file.path(py$temp_dir, tabulate_temp_file_names)
+
+all_data <- list()
+for (file in tabulate_temp_file_paths) {
+  print(file)
+  result <- tryCatch({
+    read.csv(file)
+  }, error = function(e) {
+    warning(paste("Error reading file:", file, "- Skipping this file"))
+    NULL
+  })
+  
+  if (!is.null(result)) {
+    if ("GNISIDNAME" %in% names(result) && !is.character(result$GNISIDNAME)) {
+      result$GNISIDNAME <- as.character(result$GNISIDNAME)
+    }
+    all_data[[file]] <- result
+  }
+}
+
+data_pre_t <- data_dn %>% dplyr::mutate(Julian_day = sprintf("%03d", as.numeric(Julian_day)))
+tabulate_combined <- bind_rows(all_data) %>% 
+  dplyr::left_join(dplyr::select(resolvable_lakes, GNIS_Name_ID, Area_Total_Cells), by=c("GNISIDNAME"="GNIS_Name_ID")) %>% 
+  dplyr::mutate(File_NUM = as.character(File_NUM)) %>% 
+  dplyr::left_join(dates, by=c("File_NUM"="CyAN_File_NUM")) %>% 
+  dplyr::mutate(Date = as.Date(Date)) %>% 
+  dplyr::select(-Day)
+matched_columns <- dplyr::intersect(colnames(tabulate_combined), colnames(data_pre_t))
+missing_columns <- dplyr::setdiff(colnames(data_pre_t), matched_columns)
+library(rlang)
+for (col in missing_columns) {
+  tabulate_new <- tabulate_combined %>%
+    dplyr::mutate(!!col := NA_real_)
+}
+cols <- colnames(tabulate_new)
+first_cols <- c("GNISIDNAME","Area_Total_Cells","Date","Year","Julian_day","File_NUM")
+num_part <- as.numeric(gsub("VALUE_", "", cols[grepl("^VALUE_", cols)]))
+sorted_num_part <- sort(num_part)
+new_cols <- c(first_cols, paste0("VALUE_", sorted_num_part))
+tabulate <- tabulate_new[, new_cols]
+tabulate_update <- dplyr::bind_rows(data_dn,tabulate) %>% dplyr::mutate(Date = as.Date(Date))
+writexl::write_xlsx(tabulate_update, paste0(data_path,"cyan_dn_2024.xlsx"))
 
 print("Step 2 completed")
 
 ```
 
 ## Step 3. Gether data for the shiny app.
-```{r shinydata_1}
+```{r shiny_data}
 # (1) Timeseries Data Table ----
 dta1 <- resolvable_lakes
 
-dta2 <- readxl::read_excel(paste0(data_path,"HAB_resolvablelakes_2024.xlsx")) %>% 
+dta2 <- readxl::read_excel(paste0(data_path,"cyan_ci_2024.xlsx")) %>% 
   dplyr::filter(GNISIDNAME %in% dta1$inApp) # filter out saline lakes
 
-dta3 <- readxl::read_xlsx(paste0(data_path,"HAB_resolvablelakes_2002-2023.xlsx")) %>% 
+dta3 <- readxl::read_excel(paste0(data_path,"cyan_ci_2002-2023.xlsx")) %>% 
   dplyr::filter(GNISIDNAME %in% dta1$inApp) # filter out saline lakes
 
 dta <- rbind(dta2,dta3) %>% 
@@ -543,11 +595,94 @@ map.tbl.data <- tbl.data %>%
   dplyr::mutate(`7ddmgm` = gsub(",","",`7DDMGM (cells/mL)`)) %>%
   dplyr::filter(as.numeric(`7ddmgm`) > 100000) %>%
   dplyr::select(`Waterbody_GNISID*`,Basin,`7DDMGM (cells/mL)`,`7DADM (cells/mL)`,`Date_7DDMGM`,`Days of Data`,-`7ddmgm`)
-  # dplyr::mutate(`7dadm` = gsub(",","",`7DADM (cells/mL)`)) %>% 
-  # dplyr::filter(as.numeric(`7dadm`) > 100000) %>% 
-  # dplyr::select(`Waterbody_GNISID*`,Basin,`7DDMGM (cells/mL)`,`7DADM (cells/mL)`,`Days of Data`,-`7dadm`)
+
+# (6) 7D Map  ----
+lakes.resolvable.7d <- lakes.resolvable %>% 
+  dplyr::mutate(`7dadm` = ifelse(GNISIDNAME %in% map.tbl.data$`Waterbody_GNISID*`,"Waterbody with high cyanobacteria abundance","Others")) %>% 
+  dplyr::filter(!`7dadm` == "Others")
+
+palette7dadm <- leaflet::colorFactor(palette = c('#006d2c'), 
+                                     domain = unique(sort(lakes.resolvable.7d$`7dadm`)))
+
+palette7dadm_lg <- leaflet::colorFactor(palette = c('#00441b'), 
+                                        domain = unique(sort(lakes.resolvable.7d$`7dadm`)))
+
+tag.map.title <- htmltools::tags$style(htmltools::HTML("
+  .leaflet-control.map-title { 
+    transform: translate(-50%,20%);
+    position: fixed !important;
+    top: 5%;
+    left: 10%;
+    text-align: left;
+    padding-left: 10px; 
+    padding-right: 10px; 
+    background: rgba(255,255,255,0.75);
+    font-weight: bold;
+    font-size: 28px;
+  }
+"))
+
+map.title <- htmltools::tags$div(tag.map.title, htmltools::HTML("Highlighted Waterbodies during the Reporting Period"))
+
+map.7d <- leaflet::leaflet() %>% 
+  leaflet::addControl(map.title, position = "topleft", className="map-title") %>%
+  leaflet::addProviderTiles("OpenStreetMap",group = "OpenStreetMap") %>% 
+  leaflet::setView(lng = -120, lat = 44.4, zoom=7) %>% 
+  leaflet::addPolygons(data = lakes.resolvable.7d, 
+                       color = ~palette7dadm(lakes.resolvable.7d$`7dadm`),
+                       weight = 2,
+                       layer = ~lakes.resolvable.7d$GNISIDNAME,
+                       smoothFactor = 0.5,
+                       opacity = 1,
+                       fillColor = "transparent",
+                       fillOpacity = 0,
+                       label = ~lakes.resolvable.7d$GNIS_Name,
+                       labelOptions = leaflet::labelOptions(
+                         noHide = TRUE,
+                         textOnly = TRUE,
+                         # opacity = 0.75,
+                         direction = "right",
+                         offset = c(15, 5),
+                         style = list("font-size" = "16px","font-style" = "italic","color" = "blue")),
+                       group = "lakes.resolvable.7d") %>% 
+  # leaflegend::addLegendFactor(pal = palette7dadm_lg, 
+  #                             values = lakes.resolvable.7d$`7dadm`,
+  #                             shape = "rect",
+  #                             opacity = 1,
+  #                             fillOpacity = 0,
+  #                             position = "topright") %>% 
+  leaflet::addPolygons(data = state.boundary, 
+                       color = "black",
+                       weight = 2,
+                       fillColor = "transparent",
+                       fillOpacity = 1.0)
+
+mapview::mapshot(map.7d, file = "./www/map_7d.jpg")
+
+# (8) Boxplot Data Table  ----
+# dn_tbl <- readxl::read_excel(paste0(data_path,"cyan_dn_2024.xlsx")) %>% 
+#   dplyr::filter(GNISIDNAME %in% dta1$inApp) %>%  # filter out saline lakes
+#   dplyr::filter(Date >= as.Date("2024-03-01")) %>% 
+#   dplyr::select(-c(VALUE_254,VALUE_255)) %>% 
+#   dplyr::mutate_at(vars(starts_with("VALUE_")), as.numeric) %>% 
+#   dplyr::mutate_all(~replace(., is.na(.), 0)) %>% 
+#   dplyr::mutate(total_counts = rowSums(across(c(VALUE_0:VALUE_253)))) %>% 
+#   dplyr::filter(!total_counts == 0)
 
 # Save data ----
-save.image(file = "data.RData")
+save(#dn_tbl,
+     dta,
+     dta2,
+     huc6,
+     labels,
+     lakes.resolvable,
+     lookup.date,
+     map.tbl.data,
+     missing.dates,
+     pal.huc6,
+     pal.map,
+     state.boundary,
+     thevalues,
+     file = "data.RData")
 
 ```

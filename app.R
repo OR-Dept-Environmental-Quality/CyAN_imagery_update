@@ -95,9 +95,13 @@ shinyApp(
                          a {
                          color: #0000FF;
                          }
+                         /* Adjust the percentage as needed */
+                         .image-zoom {
+                         zoom: 80%; 
+                         }
                          '))
-        ),
-
+      ),
+      
       # _ Header ----
       shinydashboard::box(
         width = 12,
@@ -168,95 +172,111 @@ shinyApp(
         collapsed = FALSE,
         
         # ___ Section Introduction ----
-        tags$h4(p(strong("Waterbodies with high cyanobacteria abundance (>100,000 cells/mL) are identified based on ",
-                         "the maximum value of the 7-Day Daily Maximum Geometric Mean (7DDMGM) during the reporting period, ",
-                         "with the corresponding 'Date_7DDMGM' indicating the date of the maximum 7DDMGM value. ",
-                         "The 7-Day Average Daily Maximum (7DADM) for each highlighted waterbody is reported as a reference. ",
-                         "Both 7DDMGM and 7DADM represent moving averages calculated from the daily maximums from ",
-                         "the most recent available data day within the reporting period to the preceding 7 days. ",
-                         "The 'Days of Data' refers to the number of days within a 7-day moving window for computing both 7DDMGM and 7DADM."),
-                  p("Due to limitations in server capacity, imagery provided is from 2024-03-01 to the present."))),
+        tags$h4(p("Waterbodies with high cyanobacteria abundance (>100,000 cells/mL) are identified based on ",
+                  "the maximum value of the 7-Day Daily Maximum Geometric Mean (7DDMGM) during the reporting period, ",
+                  "with the corresponding 'Date_7DDMGM' indicating the date of the maximum 7DDMGM value. ",
+                  "The 7-Day Average Daily Maximum (7DADM) for each highlighted waterbody is reported as a reference. ",
+                  "Both 7DDMGM and 7DADM represent moving averages calculated from the daily maximums from ",
+                  "the most recent available data day within the reporting period to the preceding 7 days. ",
+                  "The 'Days of Data' refers to the number of days within a 7-day moving window for computing both 7DDMGM and 7DADM.")),
         
+        tags$h4(p(strong(paste0("Reporting Period: ",
+                                ifelse(month(as.Date(max(dta2$Date))-6) %in% c(8,9,10,11,12,1,2),
+                                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%b. %d, %Y')),
+                                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%B %d, %Y'))),
+                                " - ",
+                                ifelse(month(as.Date(max(dta2$Date))) %in% c(8,9,10,11,12,1,2),
+                                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%b. %d, %Y')),
+                                       gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%B %d, %Y'))))))),
+        
+        # ___ 7-Day Table ----
         shinydashboard::box(
-          width = 5,
+          width = 6,
           solidHeader = TRUE,
           
-          # ___ Select a Waterbody ----
-          shinydashboard::box(
-            width = 7,
-            solidHeader = TRUE,
-            
-            shinyWidgets::pickerInput(inputId = "waterbody",
-                                      label = tags$h4("Select waterbody to zoom in on the map:"),
-                                      choices = list("Oregon",
-                                                     "Waterbody Name_GNISID" = sort(unique(lakes.resolvable$GNISIDNAME))),
-                                      multiple = FALSE)
-            
-          ),
+          shinycssloaders::withSpinner(DT::dataTableOutput("tbl7dadm")),
           
-          # ___ Select a Date ----
-          shinydashboard::box(
-            width = 5,
-            solidHeader = TRUE,
-
-            shiny::dateInput(inputId = "date_map",
-                             label = tags$h4("Select date to update imagery:"),
-                             value = as.Date(max(dta2$Date)),
-                             # min = as.Date(max(dta2$Date))-6,
-                             min = as.Date("2024-03-01"),
-                             max = as.Date(max(dta2$Date)),
-                             format = "yyyy-mm-dd",
-                             startview = "month",
-                             weekstart = 0,
-                             datesdisabled = missing.dates$Date),
-            
-            ),
-          
-          # ___ 7-Day Table ----
-          shinydashboard::box(
-            width = 12,
-            solidHeader = TRUE,
-            
-            tags$h4(p(strong(paste0("Reporting Period: ",
-                                    ifelse(month(as.Date(max(dta2$Date))-6) %in% c(8,9,10,11,12,1,2),
-                                           gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%b. %d, %Y')),
-                                           gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date))-6,'%B %d, %Y'))),
-                                    " - ",
-                                    ifelse(month(as.Date(max(dta2$Date))) %in% c(8,9,10,11,12,1,2),
-                                           gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%b. %d, %Y')),
-                                           gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%B %d, %Y'))))))),
-            
-            shinycssloaders::withSpinner(DT::dataTableOutput("tbl7dadm")),
-            
-            tags$br(),
-            tags$em("*GNISID: ",a("USGS Geographic Names Information System Identifier", 
-                                  href="https://www.usgs.gov/faqs/what-geographic-names-information-system-gnis",
-                                  .noWS = "outside",
-                                  target="_blank"),
-                    .noWS = c("after-begin", "before-end"))
-            
-            )
+          tags$br(),
+          tags$em("*GNISID: ",a("USGS Geographic Names Information System Identifier", 
+                                href="https://www.usgs.gov/faqs/what-geographic-names-information-system-gnis",
+                                .noWS = "outside",
+                                target="_blank"),
+                  .noWS = c("after-begin", "before-end"))
           
         ),
-
+        
+        # ___ 7-Day Map ----
         shinydashboard::box(
-          width = 7,
+          width = 6,
           solidHeader = TRUE,
           
-          # ___ Map ----
-          shinydashboard::box(
-            width = 12,
-            solidHeader = TRUE,
-            
-            shinycssloaders::withSpinner(leaflet::leafletOutput("map", height = "800px"))
-            
-          )
+          tags$img(src = "map_7d.jpg", width = "100%")
+          # shinyfullscreen::fullscreen_this(shiny::imageOutput("maps7"))
           
         )
         
       ), # Highlighted Waterbodies End
       
-      # _ 3. Time series data ----
+      # _ 3. Satellite imagery  ----
+      shinydashboardPlus::box(
+        width = 12,
+        title = "Satellite Imagery",
+        status = "primary",
+        solidHeader = TRUE,
+        collapsible = FALSE,
+        collapsed = FALSE,
+        
+        # ___ Section Introduction ----
+        tags$h4(p("Satellite imagery is provided from March 1, 2024 to the present due to limitations in server capacity.")),
+        
+        shinydashboard::box(
+          width = 3,
+          #title = "left",
+          solidHeader = TRUE,
+          
+          # ___ Select a Waterbody ----
+          shinyWidgets::pickerInput(inputId = "waterbody",
+                                    label = tags$h4(strong("Select a Waterbody:")),
+                                    choices = list("Oregon",
+                                                   "Waterbody Name_GNISID" = sort(unique(lakes.resolvable$GNISIDNAME))),
+                                    multiple = FALSE),
+          # ___ Drinking Water Area ----
+          shiny::textOutput("dw"),
+          
+          # ___ Select a Date ----
+          shiny::dateInput(inputId = "date_map",
+                           label = tags$h4(strong("Select a Date:")),
+                           value = as.Date(max(dta2$Date)),
+                           # min = as.Date(max(dta2$Date))-6,
+                           min = as.Date("2024-03-01"),
+                           max = as.Date(max(dta2$Date)),
+                           format = "yyyy-mm-dd",
+                           startview = "month",
+                           weekstart = 0,
+                           datesdisabled = missing.dates$Date)
+          
+          # tags$hr(),
+          
+          # ___ Boxplot ----
+          # tags$h4("Boxplot of cyanobacteria estimates (cells/mL) in waterbody on selected date:"),
+          # 
+          # shinycssloaders::withSpinner(plotlyOutput("boxplot"))
+          
+        ),
+        
+        # ___ Interactive Map ----
+        shinydashboard::box(
+          width = 9,
+          #title = "right",
+          solidHeader = TRUE,
+          
+          shinycssloaders::withSpinner(leaflet::leafletOutput("map", height = "700px"))
+          
+        )
+        
+      ),
+      
+      # _ 4. Time series data ----
       shinydashboardPlus::box(
         width = 12,
         height = "100%",
@@ -267,11 +287,9 @@ shinyApp(
         collapsed = FALSE,
         
         # ___ Section Introduction ----
-        tags$h4(p(
-          # HTML("&nbsp;&nbsp;&nbsp;&nbsp;"),
-          strong("Time series data of cyanobacteria estimates is provided for each of the 49 resolvable waterbodies, according to the methods outlined in the ",
-                 a("CyAN Project", href="https://www.epa.gov/water-research/cyanobacteria-assessment-network-cyan",.noWS = "outside",target="_blank"),
-                 ".",.noWS = c("after-begin", "before-end")))),
+        tags$h4(p("Time series data of cyanobacteria estimates is provided for each of the 49 resolvable waterbodies, according to the methods outlined in the ",
+                  a("CyAN Project", href="https://www.epa.gov/water-research/cyanobacteria-assessment-network-cyan",.noWS = "outside",target="_blank"),
+                  ".",.noWS = c("after-begin", "before-end"))),
         
         # ___ Plot and Table ----
         shinydashboard::box(
@@ -288,7 +306,7 @@ shinyApp(
             
             # ____ Select a Waterbody 2 ----
             shinyWidgets::pickerInput(inputId = "waterbody2",
-                                      label = tags$h4("Select a waterbody:"),
+                                      label = tags$h4(strong("Select a waterbody:")),
                                       choices = list("Oregon",
                                                      "Waterbody Name_GNISID" = sort(unique(lakes.resolvable$GNISIDNAME))),
                                       multiple = FALSE),
@@ -296,7 +314,7 @@ shinyApp(
             # ____ Date range ----
             shiny::radioButtons(
               inputId = "ploty",
-              label = tags$h4("Date Range:"),
+              label = tags$h4(strong("Date Range:")),
               choices = c("Current Year: 2024",
                           "Reset to Complete Data Range",
                           "Select a Date Range"),
@@ -321,7 +339,7 @@ shinyApp(
             # ____ Summary statistics ----
             checkboxGroupInput(
               inputId = "matrix",
-              label = tags$h4("Summary Statistics:"),
+              label = tags$h4(strong("Summary Statistics:")),
               choices = c("7-Day Average Daily Maximum (7DADM)" = "7DADM",
                           "7-Day Daily Maximum Geometric Mean (7DDMGM)" = "7DDMGM",
                           "Daily Maximum" = "Daily Maximum",
@@ -334,7 +352,7 @@ shinyApp(
             # ____ Plot types ----
             checkboxGroupInput(
               inputId = "plot_log",
-              label = tags$h4("y-axis:"),
+              label = tags$h4(strong("y-axis:")),
               choices = c("Log Scale" = "log"))
             
           ),
@@ -378,7 +396,7 @@ shinyApp(
             
           ),
           
-          # _ 4. Copyright and Contacts ----
+          # _ 5. Copyright and Contacts ----
           shinydashboard::box(
             width = 12,
             #title = "copyright",
@@ -590,8 +608,16 @@ shinyApp(
         updatePickerInput(session, "waterbody", selected = selected_waterbody())
       }
     })
-
-    # 2. Time series plot ----
+    
+    # _ highlighted waterbody map ----
+    # output$maps7 <- renderImage({
+    #   
+    #   list(src = paste0("./data/map_7d.jpg"),width = "100%")
+    #   
+    # }, deleteFile = FALSE)
+    
+    # 2. Plots ----
+    # _ Time series plot ----
     pal.plot <- c("brown","blue","orange","green","white","white","white")
     pal.plot <- setNames(pal.plot,unique(sort(dta$`Summary Statistics`)))
     
@@ -683,16 +709,16 @@ shinyApp(
               #                   marker = list(size = 8),
               #                   legendgroup = "sta",
               #                   showlegend = FALSE) %>%
-              plotly::add_trace(data = df_after_gap(), 
-                                x = ~as.Date(Date), 
-                                y = ~`Cyanobacteria (cells/mL)`,
-                                split = ~`Summary Statistics`,
-                                type = "scatter",
-                                mode = "lines+markers",
-                                color = ~`Summary Statistics`,
-                                colors = pal.plot,
-                                marker = list(size = 8),
-                                legendgroup = "sta") %>%
+            plotly::add_trace(data = df_after_gap(), 
+                              x = ~as.Date(Date), 
+                              y = ~`Cyanobacteria (cells/mL)`,
+                              split = ~`Summary Statistics`,
+                              type = "scatter",
+                              mode = "lines+markers",
+                              color = ~`Summary Statistics`,
+                              colors = pal.plot,
+                              marker = list(size = 8),
+                              legendgroup = "sta") %>%
               plotly::layout(xaxis = list(title = "Date", range = c(min(df()$Date),max(df()$Date)+1)),
                              # yaxis = list(title = "Cyanobacteria (cells/mL)"),
                              title = as.character(unique(df()$GNISIDNAME))) %>% 
@@ -745,16 +771,16 @@ shinyApp(
               #                   marker = list(size = 8),
               #                   legendgroup = "sta",
               #                   showlegend = FALSE) %>%
-              plotly::add_trace(data = df_after_gap(), 
-                                x = ~as.Date(Date), 
-                                y = ~`Cyanobacteria (cells/mL)`,
-                                split = ~`Summary Statistics`,
-                                type = "scatter",
-                                mode = "lines+markers",
-                                color = ~`Summary Statistics`,
-                                colors = pal.plot,
-                                marker = list(size = 8),
-                                legendgroup = "sta") %>%
+            plotly::add_trace(data = df_after_gap(), 
+                              x = ~as.Date(Date), 
+                              y = ~`Cyanobacteria (cells/mL)`,
+                              split = ~`Summary Statistics`,
+                              type = "scatter",
+                              mode = "lines+markers",
+                              color = ~`Summary Statistics`,
+                              colors = pal.plot,
+                              marker = list(size = 8),
+                              legendgroup = "sta") %>%
               plotly::layout(xaxis = list(title = "Date", range = c(min(df()$Date),max(df()$Date)+1)),
                              # yaxis = list(title = "Cyanobacteria (cells/mL)"),
                              title = as.character(unique(df()$GNISIDNAME))) %>% 
@@ -855,7 +881,63 @@ shinyApp(
       
     })
     
-    # 2. Tables ----
+    # _ Boxplot ----
+    # df.box <- reactive({
+    #   
+    #   dn_tbl %>%
+    #     dplyr::filter(GNISIDNAME %in% input$waterbody) %>%
+    #     dplyr::filter(as.Date(Date) %in% as.Date(input$date_map))  %>%
+    #     tidyr::pivot_longer(cols = tidyr::all_of(grep("^VALUE_", colnames(dn_tbl), value = TRUE)),
+    #                         names_to = "pixcel_value", values_to = "counts") %>%
+    #     dplyr::mutate(pixcel_value = as.numeric(str_remove(pixcel_value, "VALUE_"))) %>%
+    #     dplyr::filter(!pixcel_value %in% c(254,255)) %>%
+    #     dplyr::filter(!is.na(counts)) %>%
+    #     dplyr::slice(rep(dplyr::row_number(), counts)) %>%
+    #     dplyr::select(-counts) %>%
+    #     dplyr::mutate(`Cyanobacteria (cells/mL)` = (10^(3.0 / 250.0 * pixcel_value - 4.2)) * 100000000)
+    #   
+    # })
+    # 
+    # output$boxplot <- renderPlotly({
+    #   
+    #   plotly::plot_ly(data = df.box(), y = ~`Cyanobacteria (cells/mL)`, type = "box")
+    #   
+    #   plotly::plot_ly(data = df.box(),
+    #                   x = ~as.Date(Date, format= "%Y-%m-%d"),
+    #                   y = ~`Cyanobacteria (cells/mL)`,
+    #                   type = "box",
+    #                   name = ~unique(GNISIDNAME)) %>%
+    #     plotly::add_trace(x = as.Date(input$date_map),
+    #                       y = 100000,
+    #                       line = list(color = "#006d2c")) %>%
+    #     plotly::layout(xaxis = list(title = "",
+    #                                 zeroline = FALSE,
+    #                                 showline = FALSE,
+    #                                 showticklabels = FALSE,
+    #                                 showgrid = FALSE),
+    #                    yaxis = list(type = "log",
+    #                                 title = "",
+    #                                 zeroline = TRUE,
+    #                                 showline = TRUE,
+    #                                 showticklabels = TRUE,
+    #                                 showgrid = FALSE),
+    #                    showlegend = FALSE,
+    #                    annotations = list(x = as.Date(input$date_map),
+    #                                       y = log(100000)/log(10),
+    #                                       #y = 100000,
+    #                                       text = "WHO Threshold",
+    #                                       font = list(size = 8),
+    #                                       xref = "x",
+    #                                       yref = "y",
+    #                                       showarrow = TRUE,
+    #                                       arrowhead = 3,
+    #                                       arrowsize = 1,
+    #                                       ax = 40,
+    #                                       ay = 50))
+    #   
+    # })
+    
+    # 3. Tables ----
     # _ 7-Day Table ----
     output$tbl7dadm <- DT::renderDataTable({
       
@@ -864,7 +946,7 @@ shinyApp(
         style = 'bootstrap',
         extensions = 'Buttons',
         options = list(dom = 'frtilpB',
-                       pageLength = 5,
+                       pageLength = 10,
                        compact = TRUE,
                        nowrap = TRUE,
                        scorllX = TRUE,
