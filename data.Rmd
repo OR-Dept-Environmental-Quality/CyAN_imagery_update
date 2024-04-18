@@ -15,7 +15,7 @@ Sys.setenv(PROJ_LIB = "C:\\Users\\ygrund\\AppData\\Local\\R\\win-library\\4.3\\P
 # Sys.setlocale("LC_ALL", "en_US.UTF-8")
 data_path <- "//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/CyAN_Weekly_Report/Data/"
 data_ci <-  readxl::read_excel(paste0(data_path,"cyan_ci_2024.xlsx"))
-data_dn <-  readxl::read_excel(paste0(data_path,"cyan_dn_2024.xlsx")) %>% 
+data_dn <-  readxl::read_excel(paste0(data_path,"cyan_dn_2024.xlsx")) %>%
   dplyr::mutate_at(dplyr::vars(dplyr::starts_with("VALUE_")), as.numeric)
 dates <- readxl::read_excel(paste0(data_path,"calendar-dates.xlsx"))
 resolvable_lakes <- readxl::read_excel(paste0(data_path,"Resolvable_Lakes.xlsx"))

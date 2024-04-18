@@ -212,6 +212,7 @@ shinyApp(
           
           tags$img(src = "map_7d.jpg", width = "100%")
           # shinyfullscreen::fullscreen_this(shiny::imageOutput("maps7"))
+          # leaflet::leafletOutput("map7d", height = "700px")
           
         )
         
@@ -615,6 +616,38 @@ shinyApp(
     #   list(src = paste0("./data/map_7d.jpg"),width = "100%")
     #   
     # }, deleteFile = FALSE)
+    
+    # output$map7d <- leaflet::renderLeaflet({
+    # 
+    #   leaflet::leaflet() %>%
+    #     leaflet::addControl(map.title, position = "topleft", className="map-title") %>%
+    #     leaflet::addProviderTiles("OpenStreetMap",group = "OpenStreetMap") %>%
+    #     leaflet::setView(lng = -120, lat = 44, zoom=7) %>%
+    #     leaflet.extras::addResetMapButton() %>% 
+    #     leaflet::addPolygons(data = lakes.resolvable.7d,
+    #                          color = ~palette7dadm(lakes.resolvable.7d$`7dadm`),
+    #                          weight = 2,
+    #                          layer = ~lakes.resolvable.7d$GNISIDNAME,
+    #                          smoothFactor = 0.5,
+    #                          opacity = 1,
+    #                          fillColor = "transparent",
+    #                          fillOpacity = 0,
+    #                          label = ~lakes.resolvable.7d$GNIS_Name,
+    #                          labelOptions = leaflet::labelOptions(
+    #                            noHide = TRUE,
+    #                            textOnly = TRUE,
+    #                            # opacity = 0.75,
+    #                            direction = "right",
+    #                            offset = c(15, 5),
+    #                            style = list("font-size" = "16px","font-style" = "italic","color" = "blue")),
+    #                          group = "lakes.resolvable.7d") %>%
+    #     leaflet::addPolygons(data = state.boundary,
+    #                          color = "black",
+    #                          weight = 2,
+    #                          fillColor = "transparent",
+    #                          fillOpacity = 1.0)
+    # 
+    # })
     
     # 2. Plots ----
     # _ Time series plot ----
