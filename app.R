@@ -162,7 +162,7 @@ shinyApp(
         
       ), # Introduction End
       
-      # _ 2. Highlighted Waterbodies ----
+      # _ 2. Highlighted waterbodies ----
       shinydashboardPlus::box(
         width = 12,
         title = "Highlighted Waterbodies",
@@ -228,7 +228,8 @@ shinyApp(
         collapsed = FALSE,
         
         # ___ Section Introduction ----
-        tags$h4(p("Satellite imagery is provided from March 1, 2024 to the present due to limitations in server capacity.")),
+        tags$h4(p("The interactive map provides satellite imagery for 49 Oregon waterbodies. Currently, the imagery is limited to the period ",
+                  "from March 1, 2024 to the present due to server capacity constraints. ")),
         
         shinydashboard::box(
           width = 3,
@@ -236,6 +237,10 @@ shinyApp(
           solidHeader = TRUE,
           
           # ___ Select a Waterbody ----
+          tags$hr(),
+          tags$h4(p("Select a waterbody to zoom in on a specific waterbody on the map. Information about whether this waterbody is ",
+                    "recreational or a public drinking water source will be displayed upon selecting the waterbody. ")),
+          
           shinyWidgets::pickerInput(inputId = "waterbody",
                                     label = tags$h4(strong("Select a Waterbody:")),
                                     choices = list("Oregon",
@@ -244,7 +249,12 @@ shinyApp(
           # ___ Drinking Water Area ----
           shiny::textOutput("dw"),
           
+          tags$br(),
+          tags$hr(),
+          
           # ___ Select a Date ----
+          tags$h4(p("Select a date to update the imagery displayed on the map to the selected date.")),
+          
           shiny::dateInput(inputId = "date_map",
                            label = tags$h4(strong("Select a Date:")),
                            value = as.Date(max(dta2$Date)),
@@ -288,9 +298,10 @@ shinyApp(
         collapsed = FALSE,
         
         # ___ Section Introduction ----
-        tags$h4(p("Time series data of cyanobacteria estimates is provided for each of the 49 resolvable waterbodies, according to the methods outlined in the ",
-                  a("CyAN Project", href="https://www.epa.gov/water-research/cyanobacteria-assessment-network-cyan",.noWS = "outside",target="_blank"),
-                  ".",.noWS = c("after-begin", "before-end"))),
+        tags$h4(p("Time series data of cyanobacteria estimates is provided for each of the 49 Oregon waterbodies, following the methods outlined in the ",
+                  a("CyAN Project", href="https://www.epa.gov/water-research/cyanobacteria-assessment-network-cyan",.noWS = "outside",target="_blank"),", ",
+                  " including data from Sentinel-3A (2016-present) and Sentinel-3B (2018-present).",
+                  .noWS = c("after-begin", "before-end"))),
         
         # ___ Plot and Table ----
         shinydashboard::box(

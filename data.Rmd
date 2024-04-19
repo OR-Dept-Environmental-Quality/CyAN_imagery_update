@@ -195,11 +195,11 @@ import tempfile
 arcpy.env.overwriteOutput = True
 arcpy.CheckOutExtension("Spatial")
 
-zones = r"\\deqhq1\WQ-Share\Harmful Algal Blooms Coordination Team\CyAN_Weekly_Report\CyAN_imagery_update\data\gis\CyAN_Waterbodies.shp"
+zones = r"\\deqhq1\WQ-Share\Harmful Algal Blooms Coordination Team\CyAN_Weekly_Report\Data\gis\CyAN_Waterbodies.shp"
 base_path = r"\\deqhq1\WQ-Share\Harmful Algal Blooms Coordination Team\Satellite data\CyAN_Data_V5\Sentinel-3\CI_cyano"
 habs_project_path = r"\\deqhq1\WQ-Share\Harmful Algal Blooms Coordination Team\HAB_Shiny_app\data"
 # cyan_project_path = r"\\deqhq1\WQ-Share\Harmful Algal Blooms Coordination Team\CyAN_Weekly_Report\CyAN_imagery_update\data"
-cyan_project_path = r"C:\Users\ygrund\ygrund_C_Users\PROJECTS\HABs\CyAN_imagery_update\data\\2024"
+cyan_project_path = r"C:\Users\ygrund\ygrund_C_Users\PROJECTS\HABs\CyAN_imagery_update\data"
 
 print("Create a temporary location to store the temporary output tables.")
 temp_dir = os.path.join(base_path, "temp")
@@ -222,7 +222,7 @@ temp_zonal = os.path.join(temp_dir, f"zonal_result_{year}.dbf")
 # r.download_file_list = ['2024106', '2024107']
 for raw_name in r.download_file_list:
   arcpy.CheckOutExtension("Spatial")
-  # test: raw_name = '2024107'
+  # test: raw_name = '2024108'
   print(raw_name)
   
   raw_tif_path = os.path.join(raw_path, f"{raw_name}.tif")
@@ -313,7 +313,7 @@ for raw_name in r.download_file_list:
     
   print("...Copy the CI raster to the CyAN project folder")
   file_to_copy = os.path.join(ci_path, raw_name + ".tif")
-  copy_ci_path_2 = os.path.join(cyan_project_path, year, raw_name + ".tif")
+  copy_ci_path_2 = os.path.join(cyan_project_path, str(year), raw_name + ".tif")
   shutil.copy(file_to_copy, copy_ci_path_2)
       
   print("...Tabulate Area")
@@ -383,7 +383,7 @@ for raw_name in r.download_file_list:
 
 ```{r zonal_tbl}
 print("...Generate CI zonal statistics data table")
-# download_file_list <- c("2024103","2024104")
+# download_file_list <- c("2024108")
 # temp_dir <- "//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/Satellite data/CyAN_Data_V5/Sentinel-3/CI_cyano/temp/"
 zonal_temp_file_names <- paste0("zonal_result_", download_file_list, ".csv")
 zonal_temp_file_paths <- file.path(py$temp_dir, zonal_temp_file_names)
