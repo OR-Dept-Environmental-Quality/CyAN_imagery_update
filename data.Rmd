@@ -163,7 +163,7 @@ for (i in 1:hab_days_length) {
     file.copy(from = file, to = tile_files_to)
   }
   
-  print("Combine four tiles into a single file")
+  print("Combine four tiles into a single imagery")
   raster1 <- raster::raster(paste0(outPath_dn,"/",year,"/temp/",tile_file_names[1]))
   raster2 <- raster::raster(paste0(outPath_dn,"/",year,"/temp/",tile_file_names[2]))
   raster3 <- raster::raster(paste0(outPath_dn,"/",year,"/temp/",tile_file_names[3]))
@@ -182,7 +182,7 @@ print("Step 1 completed")
 ```
 
 ## Step 2. Process data.
-```{python python}
+```{python}
 import sys
 import arcpy
 from arcpy.sa import *
@@ -219,7 +219,7 @@ ci_path = os.path.join(base_path, f"ci\\{year}")
 temp_tabulate = os.path.join(temp_dir, f"tabulate_result_{year}.dbf")
 temp_zonal = os.path.join(temp_dir, f"zonal_result_{year}.dbf")
 
-# r.download_file_list = ['2024106', '2024107']
+# r.download_file_list = ['2024111', '2024112']
 for raw_name in r.download_file_list:
   arcpy.CheckOutExtension("Spatial")
   # test: raw_name = '2024108'
@@ -601,63 +601,9 @@ lakes.resolvable.7d <- lakes.resolvable %>%
   dplyr::mutate(`7dadm` = ifelse(GNISIDNAME %in% map.tbl.data$`Waterbody_GNISID*`,"Waterbody with high cyanobacteria abundance","Others")) %>% 
   dplyr::filter(!`7dadm` == "Others")
 
-palette7dadm <- leaflet::colorFactor(palette = c('#006d2c'), 
-                                     domain = unique(sort(lakes.resolvable.7d$`7dadm`)))
-
-palette7dadm_lg <- leaflet::colorFactor(palette = c('#00441b'), 
-                                        domain = unique(sort(lakes.resolvable.7d$`7dadm`)))
-
-tag.map.title <- htmltools::tags$style(htmltools::HTML("
-  .leaflet-control.map-title { 
-    transform: translate(-50%,20%);
-    position: fixed !important;
-    top: 5%;
-    left: 10%;
-    text-align: left;
-    padding-left: 10px; 
-    padding-right: 10px; 
-    background: rgba(255,255,255,0.75);
-    font-weight: bold;
-    font-size: 28px;
-  }
-"))
-
-map.title <- htmltools::tags$div(tag.map.title, htmltools::HTML("Highlighted Waterbodies during the Reporting Period"))
-
-map.7d <- leaflet::leaflet() %>% 
-  leaflet::addControl(map.title, position = "topleft", className="map-title") %>%
-  leaflet::addProviderTiles("OpenStreetMap",group = "OpenStreetMap") %>% 
-  leaflet::setView(lng = -120, lat = 44.4, zoom=7) %>% 
-  leaflet::addPolygons(data = lakes.resolvable.7d, 
-                       color = ~palette7dadm(lakes.resolvable.7d$`7dadm`),
-                       weight = 2,
-                       layer = ~lakes.resolvable.7d$GNISIDNAME,
-                       smoothFactor = 0.5,
-                       opacity = 1,
-                       fillColor = "transparent",
-                       fillOpacity = 0,
-                       label = ~lakes.resolvable.7d$GNIS_Name,
-                       labelOptions = leaflet::labelOptions(
-                         noHide = TRUE,
-                         textOnly = TRUE,
-                         # opacity = 0.75,
-                         direction = "right",
-                         offset = c(15, 5),
-                         style = list("font-size" = "16px","font-style" = "italic","color" = "blue")),
-                       group = "lakes.resolvable.7d") %>% 
-  # leaflegend::addLegendFactor(pal = palette7dadm_lg, 
-  #                             values = lakes.resolvable.7d$`7dadm`,
-  #                             shape = "rect",
-  #                             opacity = 1,
-  #                             fillOpacity = 0,
-  #                             position = "topright") %>% 
-  leaflet::addPolygons(data = state.boundary, 
-                       color = "black",
-                       weight = 2,
-                       fillColor = "transparent",
-                       fillOpacity = 1.0)
-
-mapview::mapshot(map.7d, file = "./www/map_7d.jpg")
+arcgisbinding::arc.check_product()
+if(file.exists(file.path(paste0(data_path,"gis/map_7d_pre.jpg")))){file.remove(file.path(paste0(data_path,"gis/map_7d_pre.jpg")))}
+arcgisbinding::arc.write(path = paste0(data_path,"gis/map_7d_pre.jpg"), data = lakes.resolvable.7d)
 
 # (8) Boxplot Data Table  ----
 # dn_tbl <- readxl::read_excel(paste0(data_path,"cyan_dn_2024.xlsx")) %>% 

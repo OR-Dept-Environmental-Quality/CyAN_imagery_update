@@ -228,8 +228,7 @@ shinyApp(
         collapsed = FALSE,
         
         # ___ Section Introduction ----
-        tags$h4(p("The interactive map provides satellite imagery for 49 Oregon waterbodies. Currently, the imagery is limited to the period ",
-                  "from March 1, 2024 to the present due to server capacity constraints. ")),
+        tags$h4(p("The interactive map provides satellite imagery for 49 Oregon waterbodies from March 1, 2024 to the present.")),
         
         shinydashboard::box(
           width = 3,
@@ -253,7 +252,11 @@ shinyApp(
           tags$hr(),
           
           # ___ Select a Date ----
-          tags$h4(p("Select a date to update the imagery displayed on the map to the selected date.")),
+          tags$h4(p("Select a date to update the imagery displayed on the map to the selected date. Imagery is available from March 1, 2024 to ",
+                  ifelse(month(as.Date(max(dta2$Date))) %in% c(8,9,10,11,12,1,2),
+                         gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%b. %d, %Y')),
+                         gsub("(\\D)0", "\\1", format(as.Date(max(dta2$Date)),'%B %d, %Y'))),
+                  ".")),
           
           shiny::dateInput(inputId = "date_map",
                            label = tags$h4(strong("Select a Date:")),
@@ -919,7 +922,10 @@ shinyApp(
                                                          ".")),
                                                "<br/>",
                                                "&nbsp;","&nbsp;","&nbsp;","&nbsp;",
-                                               em("**High (100,000 cells/mL): World Health Organization (WHO) Recreational Use Value (RUV) Guideline for moderate probability of adverse health effects."))))
+                                               em("**High (100,000 cells/mL): World Health Organization (WHO) Recreational Use Value (RUV) Guideline for moderate probability of adverse health effects."),
+                                               "<br/>",
+                                               "&nbsp;","&nbsp;","&nbsp;","&nbsp;",
+                                               em("Cyanobacteria abundance at 6,310 cells/mL is derived from an imagery digital value of zero, indicating non-detection."))))
         
       }
       
@@ -989,7 +995,8 @@ shinyApp(
         data = map.tbl.data,
         style = 'bootstrap',
         extensions = 'Buttons',
-        options = list(dom = 'frtilpB',
+        options = list(#dom = 'frtilpB',
+                       dom = 'rtilpB',
                        pageLength = 10,
                        compact = TRUE,
                        nowrap = TRUE,
