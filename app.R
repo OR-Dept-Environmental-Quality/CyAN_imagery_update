@@ -511,7 +511,7 @@ shinyApp(
     observeEvent(input$date_map,{
       
       progress$value <- 0
-      withProgress(message = 'Updating map, please wait...', value = progress$value, {
+      withProgress(message = 'Updating data, please wait...', value = progress$value, {
         
         df.map.date <- reactive({
           
@@ -990,7 +990,7 @@ shinyApp(
     # 3. Tables ----
     # _ 7-Day Table ----
     output$tbl7dadm <- DT::renderDataTable({
-      
+
       DT::datatable(
         data = map.tbl.data,
         style = 'bootstrap',
@@ -1015,19 +1015,19 @@ shinyApp(
                        )),
         rownames = FALSE,
         filter = 'bottom'
-      ) #%>% 
+      ) #%>%
       #DT::formatDate("Date","toLocaleString")
     }, server = FALSE
-    
+
     )
-    
+
     # _ Data table ----
     df_tbl <- reactive({
       
       df() %>% 
         dplyr::select(GNISIDNAME,Date,`Cyanobacteria (cells/mL)`,`Summary Statistics`) %>% 
-        dplyr::mutate(`Cyanobacteria (cells/mL)` = ifelse(`Cyanobacteria (cells/mL)` <= 6310, "Non-detect",
-                                                          scales::comma(`Cyanobacteria (cells/mL)`))) %>%
+        dplyr::mutate(Note = ifelse(`Cyanobacteria (cells/mL)` == 6310, "Non-detect", "")) %>% 
+        dplyr::mutate(`Cyanobacteria (cells/mL)` = scales::comma(`Cyanobacteria (cells/mL)`)) %>%
         dplyr::rename(Waterbody_GNISID = GNISIDNAME)
     })
     
@@ -1048,7 +1048,7 @@ shinyApp(
         output$caption <- renderUI(HTML(unique((df_tbl()$Waterbody_GNISID))))
         
         output$table <- DT::renderDataTable({
-          
+
           DT::datatable(
             data = df_tbl(),
             style = 'bootstrap',
@@ -1066,6 +1066,10 @@ shinyApp(
             rownames = FALSE,
             filter = 'bottom')
         }, server = FALSE)
+        
+        output$simpleTable <- renderTable({
+          data()
+        })
         
       }
       

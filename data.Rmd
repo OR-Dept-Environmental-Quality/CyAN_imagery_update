@@ -219,7 +219,8 @@ ci_path = os.path.join(base_path, f"ci\\{year}")
 temp_tabulate = os.path.join(temp_dir, f"tabulate_result_{year}.dbf")
 temp_zonal = os.path.join(temp_dir, f"zonal_result_{year}.dbf")
 
-# r.download_file_list = ['2024111', '2024112']
+# update r.download_file_list as needed; also update it in Step 3.
+# r.download_file_list = ['2024115', '2024116']
 for raw_name in r.download_file_list:
   arcpy.CheckOutExtension("Spatial")
   # test: raw_name = '2024108'
@@ -383,7 +384,7 @@ for raw_name in r.download_file_list:
 
 ```{r zonal_tbl}
 print("...Generate CI zonal statistics data table")
-# download_file_list <- c("2024108")
+# download_file_list <- c('2024113', '2024114', '2024115', '2024116')
 # temp_dir <- "//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/Satellite data/CyAN_Data_V5/Sentinel-3/CI_cyano/temp/"
 zonal_temp_file_names <- paste0("zonal_result_", download_file_list, ".csv")
 zonal_temp_file_paths <- file.path(py$temp_dir, zonal_temp_file_names)
@@ -602,8 +603,9 @@ lakes.resolvable.7d <- lakes.resolvable %>%
   dplyr::filter(!`7dadm` == "Others")
 
 arcgisbinding::arc.check_product()
-if(file.exists(file.path(paste0(data_path,"gis/map_7d_pre.jpg")))){file.remove(file.path(paste0(data_path,"gis/map_7d_pre.jpg")))}
-arcgisbinding::arc.write(path = paste0(data_path,"gis/map_7d_pre.jpg"), data = lakes.resolvable.7d)
+files_to_delete <- list.files(paste0(data_path,"gis/"), pattern = "^map_7d_pre.*", full.names = TRUE)
+if (length(files_to_delete) > 0) {file.remove(files_to_delete)}
+arcgisbinding::arc.write(path = paste0(data_path,"gis/map_7d_pre.shp"), data = lakes.resolvable.7d)
 
 # (8) Boxplot Data Table  ----
 # dn_tbl <- readxl::read_excel(paste0(data_path,"cyan_dn_2024.xlsx")) %>% 
