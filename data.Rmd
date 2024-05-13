@@ -223,7 +223,7 @@ temp_zonal = os.path.join(temp_dir, f"zonal_result_{year}.dbf")
 # r.download_file_list = ['2024115', '2024116']
 for raw_name in r.download_file_list:
   arcpy.CheckOutExtension("Spatial")
-  # test: raw_name = '2024108'
+  # test: raw_name = '2024133'
   print(raw_name)
   
   raw_tif_path = os.path.join(raw_path, f"{raw_name}.tif")
