@@ -156,8 +156,10 @@ shinyApp(
            a("Sentinel 2", href="https://browser.dataspace.copernicus.eu/?zoom=7&lat=44.3466&lng=-119.25&themeId=DEFAULT-THEME&visualizationUrl=https%3A%2F%2Fsh.dataspace.copernicus.eu%2Fogc%2Fwms%2F274a990e-7090-4676-8f7d-f1867e8474a7&datasetId=S2_L1C_CDAS&fromTime=2023-07-01T00%3A00%3A00.000Z&toTime=2024-01-01T23%3A59%3A59.999Z&layerId=1_TRUE_COLOR&demSource3D=%22MAPZEN%22&cloudCoverage=100&dateMode=MOSAIC",
              target="_blank"),
            "Satellites, local visual assessments, and/or water quality sampling are needed to provide further information on potential human health ",
-           "and environmental effects of cyanobacteria. Please note that estimates of cyanobacteria abundance presented in this report may be skewed ",
-           "by cloud cover, ice cover, sun glint, water surface roughness, dry lake beds, algal mats, and shoreline effects.",
+           "and environmental effects of cyanobacteria. Please note that cloud cover, ice cover, sun glint, water surface roughness, dry lake beds, algal mats, shoreline effects and/or more may interfere with the estimates in this report.*",
+           .noWS = c("after-begin", "before-end")),
+        
+        h4("*DISCLAIMER: Information is preliminary. Additional data is considered before a cyanobacteria bloom is confirmed.",
            .noWS = c("after-begin", "before-end"))
         
       ), # Introduction End
