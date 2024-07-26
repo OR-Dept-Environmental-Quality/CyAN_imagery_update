@@ -23,7 +23,6 @@ resolvable_lakes <- readxl::read_excel(paste0(data_path,"Resolvable_Lakes.xlsx")
 ```
 
 ## Step 1. Download data from NASA's data site.
-
 ```{r OceanData}
 # # Download data from OceanData site - not working
 # day_start <- "2024081"
@@ -220,10 +219,11 @@ temp_tabulate = os.path.join(temp_dir, f"tabulate_result_{year}.dbf")
 temp_zonal = os.path.join(temp_dir, f"zonal_result_{year}.dbf")
 
 # update r.download_file_list as needed; also update it in Step 3.
-# r.download_file_list = ['2024115', '2024116']
+# r.download_file_list = ['2024183', '2024184', '2024185', '2024186', '2024187', '2024188']
+# r.download_file_list = ['2024188']
 for raw_name in r.download_file_list:
   arcpy.CheckOutExtension("Spatial")
-  # test: raw_name = '2024134'
+  # test: raw_name = '2024188'
   print(raw_name)
   
   raw_tif_path = os.path.join(raw_path, f"{raw_name}.tif")
@@ -417,11 +417,11 @@ zonal_combined <- bind_rows(all_data) %>%
   dplyr::mutate(Date = as.Date(Date)) %>% 
   dplyr::distinct(Date,GNISIDNAME,.keep_all = TRUE) %>% 
   dplyr::select(GNISIDNAME,Area_Total_Cells,Date,MIN,MAX,MEAN,STD,MEDIAN,Year,Month,Day,Julian_day) %>% 
-  dplyr::mutate(`7DDMGM` = as.numeric(NA),
+  dplyr::mutate(`7DGMDM` = as.numeric(NA),
                 `7DADM` = as.numeric(NA),
                 `Days of Data` = as.numeric(NA)) %>% 
   dplyr::bind_rows(data_pre_z[which(as.Date(data_pre_z$Date)>as.Date(max(sort(unique(data_pre_z$Date))))-14),]) %>% 
-  dplyr::select(-c(`7DDMGM`,`7DADM`,`Days of Data`)) 
+  dplyr::select(-c(`7DGMDM`,`7DADM`,`Days of Data`)) 
 
 
 zonal_new <- data.frame()
@@ -434,7 +434,7 @@ for(gnis in sort(unique(zonal_combined$GNISIDNAME))) {
   dta_gnis_7d <- within(dta_gnis, {
     w <- seq_along(as.Date(dta_gnis$Date)) - findInterval(as.Date(dta_gnis$Date) - 7, as.Date(dta_gnis$Date))
     `7DADM` <- zoo::rollapplyr(MAX, w, mean)
-    `7DDMGM` <- zoo::rollapply(MAX, w, FUN = function(x) exp(mean(log(x))), fill = NA, align = "right", partial = TRUE)
+    `7DGMDM` <- zoo::rollapply(MAX, w, FUN = function(x) exp(mean(log(x))), fill = NA, align = "right", partial = TRUE)
   })
   
   zonal_new <- rbind(zonal_new,dta_gnis_7d)
@@ -444,7 +444,7 @@ for(gnis in sort(unique(zonal_combined$GNISIDNAME))) {
 zonal <- zonal_new %>% 
   dplyr::mutate(Date = as.Date(Date)) %>% 
   dplyr::rename(`Days of Data` = w) %>% 
-  dplyr::select(GNISIDNAME,Area_Total_Cells,Date,MIN,MAX,MEAN,STD,MEDIAN,Year,Month,Day,Julian_day,`7DDMGM`,`7DADM`,`Days of Data`) %>% 
+  dplyr::select(GNISIDNAME,Area_Total_Cells,Date,MIN,MAX,MEAN,STD,MEDIAN,Year,Month,Day,Julian_day,`7DGMDM`,`7DADM`,`Days of Data`) %>% 
   dplyr::arrange(Date,GNISIDNAME)  %>% 
   dplyr::filter(as.Date(Date) %in% as.Date(dates[which(dates$CyAN_File_NUM %in% download_file_list),]$Date))
 
@@ -577,25 +577,25 @@ dta_wide <- dta %>%
 
 tbl.data <- dta_wide %>% 
   dplyr::group_by(GNISIDNAME) %>%
-  dplyr::summarise(`7DDMGM` = max(`7DDMGM`)) %>%
-  dplyr::inner_join(dta_wide, by = c("GNISIDNAME", "7DDMGM")) %>%
+  dplyr::summarise(`7DGMDM` = max(`7DGMDM`)) %>%
+  dplyr::inner_join(dta_wide, by = c("GNISIDNAME", "7DGMDM")) %>%
   dplyr::distinct(GNISIDNAME, .keep_all = TRUE) %>% 
   dplyr::left_join(lakes.resolvable, by = "GNISIDNAME") %>% 
   dplyr::mutate(Basin = ifelse(`HU_6_NAME` == "Willamette",`HU_8_NAME`,`HU_6_NAME`)) %>% 
-  dplyr::select(GNISIDNAME,Basin,`7DDMGM`,`7DADM`,Date,`Days of Data`) %>% 
-  dplyr::arrange(desc(`7DDMGM`)) %>% 
-  dplyr::mutate(`7DDMGM` = ifelse(`7DDMGM`<= 6310, "Non-detect",format(round(`7DDMGM`,0),big.mark=",",scientific = FALSE))) %>%
+  dplyr::select(GNISIDNAME,Basin,`7DGMDM`,`7DADM`,Date,`Days of Data`) %>% 
+  dplyr::arrange(desc(`7DGMDM`)) %>% 
+  dplyr::mutate(`7DGMDM` = ifelse(`7DGMDM`<= 6310, "Non-detect",format(round(`7DGMDM`,0),big.mark=",",scientific = FALSE))) %>%
   dplyr::mutate(`7DADM` = ifelse(`7DADM`<= 6310, "Non-detect",format(round(`7DADM`,0),big.mark=",",scientific = FALSE))) %>% 
   dplyr::rename(`Waterbody_GNISID*`= GNISIDNAME,
                 `7DADM (cells/mL)` = `7DADM`,
-                `7DDMGM (cells/mL)` = `7DDMGM`,
-                `Date_7DDMGM` = Date)
+                `7DGMDM (cells/mL)` = `7DGMDM`,
+                `Date_7DGMDM` = Date)
   
 map.tbl.data <- tbl.data %>% 
-  dplyr::filter(!`7DDMGM (cells/mL)`== "Non-detect") %>% 
-  dplyr::mutate(`7ddmgm` = gsub(",","",`7DDMGM (cells/mL)`)) %>%
-  dplyr::filter(as.numeric(`7ddmgm`) > 100000) %>%
-  dplyr::select(`Waterbody_GNISID*`,Basin,`7DDMGM (cells/mL)`,`7DADM (cells/mL)`,`Date_7DDMGM`,`Days of Data`,-`7ddmgm`)
+  dplyr::filter(!`7DGMDM (cells/mL)`== "Non-detect") %>% 
+  dplyr::mutate(`7dgmdm` = gsub(",","",`7DGMDM (cells/mL)`)) %>%
+  dplyr::filter(as.numeric(`7dgmdm`) > 100000) %>%
+  dplyr::select(`Waterbody_GNISID*`,Basin,`7DGMDM (cells/mL)`,`7DADM (cells/mL)`,`Date_7DGMDM`,`Days of Data`,-`7dgmdm`)
 
 # (6) 7D Map  ----
 lakes.resolvable.7d <- lakes.resolvable %>% 
@@ -632,5 +632,31 @@ save(#dn_tbl,
      state.boundary,
      thevalues,
      file = "data.RData")
+
+```
+
+```{r save_7-day_table}
+# Save the 7day table ----
+excel_file <- file.path("//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/CyAN_Weekly_Report/Images/2024", "report7days.xlsx")
+# first time when creating the excel
+# create_excel <- function(data, excel_file) {
+#   wb_7d <- openxlsx::createWorkbook()
+#   openxlsx::addWorksheet(wb_7d, "Sheet1")
+#   data$Date <- Sys.Date()
+#   openxlsx::writeData(wb_7d, "Sheet1", data)
+#   openxlsx::saveWorkbook(wb_7d, excel_file, overwrite = TRUE)
+# }
+# create_excel(map.tbl.data, excel_file) 
+
+wb_7d <- openxlsx::loadWorkbook(excel_file)
+existing_data <- readxl::read_excel(excel_file, sheet = 1) %>% 
+  dplyr::mutate(Date_7DGMDM = as.Date(Date_7DGMDM),
+                Date = as.Date(Date))
+new_data <- map.tbl.data
+new_data$Date <- Sys.Date()
+colnames(new_data) <- colnames(existing_data)
+updated_data <- dplyr::bind_rows(existing_data, new_data)
+openxlsx::writeData(wb_7d, "Sheet1", updated_data, startCol = 1, startRow = 1)
+openxlsx::saveWorkbook(wb_7d, excel_file, overwrite = TRUE)
 
 ```

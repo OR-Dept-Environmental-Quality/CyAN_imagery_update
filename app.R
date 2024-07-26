@@ -159,7 +159,7 @@ shinyApp(
            "and environmental effects of cyanobacteria. Please note that cloud cover, ice cover, sun glint, water surface roughness, dry lake beds, algal mats, shoreline effects and/or more may interfere with the estimates in this report.*",
            .noWS = c("after-begin", "before-end")),
         
-        h4("*DISCLAIMER: Information is preliminary. Additional data is considered before a cyanobacteria bloom is confirmed.",
+        h4("*DISCLAIMER: Information is preliminary. Additional data needs to be considered for confirmation of a cyanobacteria bloom.",
            .noWS = c("after-begin", "before-end"))
         
       ), # Introduction End
@@ -175,12 +175,12 @@ shinyApp(
         
         # ___ Section Introduction ----
         tags$h4(p("Waterbodies with high cyanobacteria abundance (>100,000 cells/mL) are identified based on ",
-                  "the maximum value of the 7-Day Daily Maximum Geometric Mean (7DDMGM) during the reporting period, ",
-                  "with the corresponding 'Date_7DDMGM' indicating the date of the maximum 7DDMGM value. ",
+                  "the maximum value of the 7-Day Geometric Mean Daily Maximum (7DGMDM) during the reporting period, ",
+                  "with the corresponding 'Date_7DGMDM' indicating the date of the maximum 7DGMDM value. ",
                   "The 7-Day Average Daily Maximum (7DADM) for each highlighted waterbody is reported as a reference. ",
-                  "Both 7DDMGM and 7DADM represent moving averages calculated from the daily maximums from ",
+                  "Both 7DGMDM and 7DADM represent moving averages calculated from the daily maximums from ",
                   "the most recent available data day within the reporting period to the preceding 7 days. ",
-                  "The 'Days of Data' refers to the number of days within a 7-day moving window for computing both 7DDMGM and 7DADM.")),
+                  "The 'Days of Data' refers to the number of days within a 7-day moving window for computing both 7DGMDM and 7DADM.")),
         
         tags$h4(p(strong(paste0("Reporting Period: ",
                                 ifelse(month(as.Date(max(dta2$Date))-6) %in% c(8,9,10,11,12,1,2),
@@ -358,10 +358,10 @@ shinyApp(
               inputId = "matrix",
               label = tags$h4(strong("Summary Statistics:")),
               choices = c("7-Day Average Daily Maximum (7DADM)" = "7DADM",
-                          "7-Day Daily Maximum Geometric Mean (7DDMGM)" = "7DDMGM",
+                          "7-Day Daily Maximum Geometric Mean (7DGMDM)" = "7DGMDM",
                           "Daily Maximum" = "Daily Maximum",
                           "Daily Mean" = "Daily Mean"),
-              selected = c("7DDMGM","Daily Maximum")),
+              selected = c("7DGMDM","Daily Maximum")),
             
             tags$br(),
             tags$br(),
