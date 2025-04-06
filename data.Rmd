@@ -10,12 +10,12 @@ editor_options:
 library(dplyr)
 library(reticulate)
 Sys.setenv(RETICULATE_PYTHON = "C:\\Program Files\\ArcGIS\\Pro\\bin\\Python\\envs\\arcgispro-py3\\python.exe")
-Sys.setenv(PROJ_LIB = "C:\\Users\\ygrund\\AppData\\Local\\R\\win-library\\4.3\\PROJ\\proj")
+Sys.setenv(PROJ_LIB = "C:\\Users\\ygrund\\AppData\\Local\\R\\win-library\\4.4\\PROJ\\proj")
 # Sys.setlocale(locale = "English_United States.1252")
 # Sys.setlocale("LC_ALL", "en_US.UTF-8")
 data_path <- "//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/CyAN_Weekly_Report/Data/"
-data_ci <-  readxl::read_excel(paste0(data_path,"cyan_ci_2024.xlsx"))
-data_dn <-  readxl::read_excel(paste0(data_path,"cyan_dn_2024.xlsx")) %>%
+data_ci <-  readxl::read_excel(paste0(data_path,"cyan_ci_2025.xlsx"))
+data_dn <-  readxl::read_excel(paste0(data_path,"cyan_dn_2025.xlsx")) %>%
   dplyr::mutate_at(dplyr::vars(dplyr::starts_with("VALUE_")), as.numeric)
 dates <- readxl::read_excel(paste0(data_path,"calendar-dates.xlsx"))
 resolvable_lakes <- readxl::read_excel(paste0(data_path,"Resolvable_Lakes.xlsx"))
@@ -117,6 +117,7 @@ outPath_dn <- "//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/Satellit
 
 tiles <- paste0("_", paste(c("1_1","1_2","2_1","2_2"), collapse = "|"), "\\.tif$")
 
+# day_start <- "2025001" # when a new year starts
 day_start <- paste0(max(data_ci$Year), sprintf("%03d", max(as.numeric(data_ci$Julian_day))+1))
 day_end <- dates %>% dplyr::filter(as.POSIXlt(Date) == as.POSIXlt(Sys.Date()-1)) %>% dplyr::pull(CyAN_File_NUM)
 year <- substr(day_start, 1, 4)
@@ -223,7 +224,7 @@ temp_zonal = os.path.join(temp_dir, f"zonal_result_{year}.dbf")
 # r.download_file_list = ['2024188']
 for raw_name in r.download_file_list:
   arcpy.CheckOutExtension("Spatial")
-  # test: raw_name = '2024188'
+  # test: raw_name = '2024323'
   print(raw_name)
   
   raw_tif_path = os.path.join(raw_path, f"{raw_name}.tif")
@@ -241,7 +242,7 @@ for raw_name in r.download_file_list:
   outCellsML = (arcpy.sa.Power(10, (3.0 / 250.0 * outSetNull - 4.2))) * 100000000
   
   print("...Check if the output raster files already exists")
-  if arcpy.Exists(output_dn_path):
+  if arcpy.Exists(output_dn_path): 
     arcpy.management.Delete(output_dn_path)
     
   if arcpy.Exists(output_ci_path):
@@ -508,10 +509,10 @@ print("Step 2 completed")
 # (1) Timeseries Data Table ----
 dta1 <- resolvable_lakes
 
-dta2 <- readxl::read_excel(paste0(data_path,"cyan_ci_2024.xlsx")) %>% 
+dta2 <- readxl::read_excel(paste0(data_path,"cyan_ci_2025.xlsx")) %>% 
   dplyr::filter(GNISIDNAME %in% dta1$inApp) # filter out saline lakes
 
-dta3 <- readxl::read_excel(paste0(data_path,"cyan_ci_2002-2023.xlsx")) %>% 
+dta3 <- readxl::read_excel(paste0(data_path,"cyan_ci_2002-2024.xlsx")) %>% 
   dplyr::filter(GNISIDNAME %in% dta1$inApp) # filter out saline lakes
 
 dta <- rbind(dta2,dta3) %>% 

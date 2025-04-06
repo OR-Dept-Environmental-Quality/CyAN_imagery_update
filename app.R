@@ -540,7 +540,7 @@ shinyApp(
           
           leafletProxy("map") %>% 
             leaflet::clearImages() %>% 
-            leaflet::clearControls() %>% 
+            leaflet::clearControls() %>%
             leaflet::addRasterImage(rst(), layerId = "Value", project = FALSE, colors=pal.map, opacity = 1,
                                     group = "Satellite Imagery of cyanobacteria") %>% 
             leaflet::addLegend(pal = pal.map, values = thevalues, title = "Cyanobacteria (cells/mL)", position = "topright",
