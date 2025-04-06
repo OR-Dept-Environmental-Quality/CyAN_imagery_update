@@ -1,126 +1,90 @@
 ---
 title: "Prepare data for the HABs weekly report"
-output: html_notebook
-editor_options:
-  chunk_output_type: console
+output: html_document
 ---
 
-## Import data
-```{r initial}
+## Step 1. Import data
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE) # echo = TRUE means that the R code inside the chunks will be displayed in the final output
 library(dplyr)
 library(reticulate)
 Sys.setenv(RETICULATE_PYTHON = "C:\\Program Files\\ArcGIS\\Pro\\bin\\Python\\envs\\arcgispro-py3\\python.exe")
-Sys.setenv(PROJ_LIB = "C:\\Users\\ygrund\\AppData\\Local\\R\\win-library\\4.4\\PROJ\\proj")
-# Sys.setlocale(locale = "English_United States.1252")
-# Sys.setlocale("LC_ALL", "en_US.UTF-8")
 data_path <- "//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/CyAN_Weekly_Report/Data/"
-data_ci <-  readxl::read_excel(paste0(data_path,"cyan_ci_2025.xlsx"))
-data_dn <-  readxl::read_excel(paste0(data_path,"cyan_dn_2025.xlsx")) %>%
+data_dn <- readxl::read_excel(paste0(data_path,"cyan_dn_2025.xlsx")) %>%
   dplyr::mutate_at(dplyr::vars(dplyr::starts_with("VALUE_")), as.numeric)
+data_ci <- readxl::read_excel(paste0(data_path,"cyan_ci_2025.xlsx"))
+data_chla <- readxl::read_excel(paste0(data_path,"cyan_chla_2025.xlsx"))
 dates <- readxl::read_excel(paste0(data_path,"calendar-dates.xlsx"))
 resolvable_lakes <- readxl::read_excel(paste0(data_path,"Resolvable_Lakes.xlsx"))
+```
+
+### - Set up for the beginning of a new year.
+```{r new}
+# # starting a new file, the column types need to be set before binding any new data
+# data_dn <- data_dn %>%
+#   dplyr::mutate(
+#     GNISIDNAME = as.character(GNISIDNAME),  # Convert logical to character
+#     Area_Total_Cells = as.numeric(Area_Total_Cells),
+#     Date = as.Date(Date),
+#     Year = as.numeric(Year),
+#     Julian_day = sprintf("%03d", as.numeric(Julian_day)),
+#     File_NUM = as.character(File_NUM)
+#   )
+# 
+# data_ci <- data_ci %>%
+#   dplyr::mutate(
+#     GNISIDNAME = as.character(GNISIDNAME),  # Convert logical to character
+#     Area_Total_Cells = as.numeric(Area_Total_Cells),
+#     Date = as.Date(Date),
+#     MIN = as.numeric(MIN),
+#     MAX = as.numeric(MAX),
+#     MEAN = as.numeric(MEAN),
+#     STD = as.numeric(STD),
+#     MEDIAN = as.numeric(MEDIAN),
+#     Year = as.numeric(Year),
+#     Month = as.numeric(Month),
+#     Day = as.numeric(Day),
+#     Julian_day = sprintf("%03d", as.numeric(Julian_day)),
+#     `7DGMDM` = as.numeric(`7DGMDM`),
+#     `7DADM` = as.numeric(`7DADM`),
+#     `Days of Data` = as.numeric(`Days of Data`)
+#   )
+# 
+# data_chla <- data_chla %>%
+#   dplyr::mutate(
+#     GNISIDNAME = as.character(GNISIDNAME),  # Convert logical to character
+#     Area_Total_Cells = as.numeric(Area_Total_Cells),
+#     Date = as.Date(Date),
+#     MIN = as.numeric(MIN),
+#     MAX = as.numeric(MAX),
+#     MEAN = as.numeric(MEAN),
+#     STD = as.numeric(STD),
+#     MEDIAN = as.numeric(MEDIAN),
+#     Year = as.numeric(Year),
+#     Month = as.numeric(Month),
+#     Day = as.numeric(Day),
+#     Julian_day = sprintf("%03d", as.numeric(Julian_day)),
+#     `7DGMDM` = as.numeric(`7DGMDM`),
+#     `7DADM` = as.numeric(`7DADM`),
+#     `Days of Data` = as.numeric(`Days of Data`)
+#   )
+# 
+# # the first day 
+# day_start <- "2025001"
 
 ```
 
-## Step 1. Download data from NASA's data site.
+## Step 2. Download data from [NASA's data site].
+[NASA's data site]: https://oceandata.sci.gsfc.nasa.gov/directdataaccess/Level-3%20Mapped%20with%20GEO/Merged-S3-CYAN/
 ```{r OceanData}
-# # Download data from OceanData site - not working
-# day_start <- "2024081"
-# 
-# library(httr)
-# 
-# # Function to create a custom session for authentication
-# session <- function(username, password) {
-#   httr::authenticate(username, password)
-# }
-# 
-# # Define username and password
-# username <- "ygrund"
-# password <- "XXX" (Not-disclosed)
-# 
-# # Create the session
-# my_session <- session(username, password)
-# 
-# dates <- readxl::read_excel("./data/calendar-dates.xlsx")
-# day_end <- dates %>% dplyr::filter(as.POSIXlt(Date) == as.POSIXlt(Sys.Date()-1)) %>% dplyr::pull(CyAN_File_NUM)
-# hab_days <- as.character(seq(day_start, day_end))
-# hab_days <- substr(hab_days, nchar(hab_days) - 2, nchar(hab_days))
-# hab_days_length <- length(hab_days)
-# print(paste0("Day State: ",dates[which(dates$CyAN_File_NUM == day_start),]$Date, " | ",day_start))
-# print(paste0("Day End: ",dates[which(dates$CyAN_File_NUM == day_end),]$Date, " | ",day_end))
-# print(paste0("Total Days | ",hab_days_length))
-# 
-# file_num <- dates %>% dplyr::filter(as.numeric(CyAN_File_NUM) >= as.numeric(day_start) &
-#                                       as.numeric(CyAN_File_NUM) <= as.numeric(day_end))
-# tiles <- c("1_1","1_2","2_1","2_2")
-# 
-# outPath_dn <- "//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/Satellite data/CyAN_Data_V5/Sentinel-3/CI_cyano/raw/"
-# 
-# for(fileNum in file_num$CyAN_File_NUM) {
-# 
-#   # test: fileNum = "2024081"
-#   year <- file_num %>% dplyr::filter(CyAN_File_NUM == fileNum) %>% dplyr::pull(Year)
-#   filename_list <- list()
-# 
-#   folder_path <- paste0(outPath_dn, year, "/temp/")
-#   if(!file.exists(folder_path)) {dir.create(folder_path, showWarnings = TRUE, recursive = FALSE)}else{}
-# 
-#   for(tile in tiles){
-# 
-#     # test: tile = "1_1"
-#     url <- paste0("https://oceandata.sci.gsfc.nasa.gov/getfile/L",fileNum,".L3m_DAY_CYAN_CI_cyano_CYAN_CONUS_300m_",tile,".tif")
-#     filename <- sub(".*/", "", url)
-# 
-#     tryCatch({
-#       # Submit the request using the configured session
-#       response <- httr::GET(
-#         url,
-#         httr::progress(),
-#         # httr::add_headers(`User-Agent` = "Mozilla/5.0"),
-#         httr::authenticate(username, password)
-#       )
-# 
-#       # Check for successful response
-#       if (httr::status_code(response) == 200) {
-#         # Save the file
-#         content <- httr::content(response, as = "raw")
-#         writeBin(content, paste0(outPath_dn,year,"/temp/",filename))
-#         print(paste0("File downloaded successfully: ",fileNum))
-#       } else {
-#         stop(paste0("Failed to download the file: ",filename))
-#       }
-#     }, error = function(e) {
-#       # Handle any errors here
-#       print(paste("Error:", e$message, " ", filename))
-#     })
-#     filename_list <- c(filename_list,filename)
-#   }
-# 
-#   # combine four tif flies into a single file
-#   raster1 <- raster::raster(paste0(outPath_dn,"/",year,"/temp/",filename_list[1]))
-#   raster2 <- raster::raster(paste0(outPath_dn,"/",year,"/temp/",filename_list[2]))
-#   raster3 <- raster::raster(paste0(outPath_dn,"/",year,"/temp/",filename_list[3]))
-#   raster4 <- raster::raster(paste0(outPath_dn,"/",year,"/temp/",filename_list[4]))
-#   raster_list <- list(raster1, raster2, raster3, raster4)
-#   merged_raster <- raster::merge(raster1, raster2, raster3, raster4)
-#   raster::writeRaster(merged_raster,
-#                       filename = paste0(outPath_dn,year,"/",stringr::str_sub(filename, start = 1, end = 8)),
-#                       format = "GTiff", overwrite = TRUE)
-# }
+library(curl)
+# https://oceandata.sci.gsfc.nasa.gov/appkey/
+appkey = "cfebcbdad707ba0f0f427b7dc36b3f9e506e5725"
 
-```
+downloadPath_raw <- paste0("//deqhq1/wq-share/Harmful Algal Blooms Coordination Team/Satellite data/CyAN_Data_V6/OLCI/raw/")
 
-```{r OceanColor}
-# Download rasters from the OceanColor site
-baseurl <- "https://oceancolor.gsfc.nasa.gov/CYAN/OLCI/"
-outPath_dn <- "//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/Satellite data/CyAN_Data_V5/Sentinel-3/CI_cyano/raw/"
-
-tiles <- paste0("_", paste(c("1_1","1_2","2_1","2_2"), collapse = "|"), "\\.tif$")
-
-# day_start <- "2025001" # when a new year starts
 day_start <- paste0(max(data_ci$Year), sprintf("%03d", max(as.numeric(data_ci$Julian_day))+1))
 day_end <- dates %>% dplyr::filter(as.POSIXlt(Date) == as.POSIXlt(Sys.Date()-1)) %>% dplyr::pull(CyAN_File_NUM)
-year <- substr(day_start, 1, 4)
 hab_days <- as.character(seq(day_start, day_end))
 hab_days <- substr(hab_days, nchar(hab_days) - 2, nchar(hab_days))
 hab_days_length <- length(hab_days)
@@ -128,60 +92,46 @@ print(paste0("Day State: ",dates[which(dates$CyAN_File_NUM == day_start),]$Date,
 print(paste0("Day End: ",dates[which(dates$CyAN_File_NUM == day_end),]$Date, " | ",day_end))
 print(paste0("Total Days | ",hab_days_length))
 
-download_tgz_path <- paste0(outPath_dn, year, "/temp/tgz/")
-download_tgz <- paste0('L', year, hab_days, '.L3m_DAY_CYAN_CI_cyano_CYAN_CONUS_300m.tgz')
-url <- paste0(baseurl, year, '/', hab_days, '/', download_tgz)
+fileNums <- dates %>% 
+  dplyr::filter (as.numeric(CyAN_File_NUM)>=as.numeric(day_start) & as.numeric(CyAN_File_NUM)<=as.numeric(day_end)) %>% 
+  dplyr::pull(CyAN_File_NUM)
+
+tiles = c("1_1","1_2","2_1","2_2")
 
 download_file_list <- list()
-retry <- FALSE
-for (i in 1:hab_days_length) {
-  
-  # test: i=1
-  retry <- FALSE
-  cat(url[i], "\n")
-  
-  tryCatch(
-    {
-      utils::download.file(url[i], destfile = paste0(download_tgz_path, download_tgz[i]))
-      utils::untar(paste0(download_tgz_path, download_tgz[i]), exdir = download_tgz_path)
-      print("Tiles download completed")
-    },
-    error = function(e) {
-      cat("Error:", conditionMessage(e), "\n")
-      retry <<- TRUE
-    }
-  )
-  
-  if(retry){next}
-  
-  download_folder <- sub("\\.tgz$", "", file.path(paste0(download_tgz_path, download_tgz[i])))
-  downloaded_files <- list.files(download_folder, full.names = TRUE)
-  tile_files_from <- grep(tiles, downloaded_files, value = TRUE)
-  tile_file_names <- sub(".*/", "", tile_files_from)
-  for (file in tile_files_from) {
-    tile_files_to <- gsub(paste0("/tgz/",substr(download_tgz[i],1, nchar(download_tgz[i]) - 4)), "", file)
-    file.copy(from = file, to = tile_files_to)
+for (i in 1:length(fileNums)) {
+  year <- substr(fileNums[i], 1, 4)
+  tile_rasters <- list()
+  for (j in 1:length(tiles)) {
+    file_name <- paste0("L", fileNums[i], ".L3m_DAY_CYAN_CI_cyano_CYAN_CONUS_300m_", tiles[j], ".tif")
+    output_path <- file.path(paste0(downloadPath_raw, year, "/temp/"), file_name)
+    
+    url <- paste0("http://oceandata.sci.gsfc.nasa.gov/getfile/", file_name, "?appkey=", appkey)
+    
+    download.file(url, output_path, mode = "wb", method = "curl")
+    system(paste("curl -o", shQuote(output_path), "-L", shQuote(url)))
+    
+    print(paste("------Downloaded:", file_name))
+    
+    tile_rasters[[j]] <- raster::raster(output_path)
   }
   
-  print("Combine four tiles into a single imagery")
-  raster1 <- raster::raster(paste0(outPath_dn,"/",year,"/temp/",tile_file_names[1]))
-  raster2 <- raster::raster(paste0(outPath_dn,"/",year,"/temp/",tile_file_names[2]))
-  raster3 <- raster::raster(paste0(outPath_dn,"/",year,"/temp/",tile_file_names[3]))
-  raster4 <- raster::raster(paste0(outPath_dn,"/",year,"/temp/",tile_file_names[4]))
-  raster_list <- list(raster1, raster2, raster3, raster4)
-  merged_raster <- raster::merge(raster1, raster2, raster3, raster4)
-  raster::writeRaster(merged_raster,
-                      filename = paste0(outPath_dn,year,"/",stringr::str_sub(tile_file_names[1], start = 2, end = 8)),
-                      format = "GTiff", overwrite = TRUE)
+  merged_raster <- do.call(raster::merge, tile_rasters)
+  merged_file_name <- paste0(fileNums[i], ".tif")
+  output_merged_path <- paste0(downloadPath_raw, year, "/", merged_file_name)
+  if (file.exists(output_merged_path)){file.remove(output_merged_path)}
+  raster::writeRaster(merged_raster, filename = output_merged_path, format = "GTiff", overwrite = TRUE)
+  print("------Combined four tiles into a single imagery")
   
-  download_file_list <- c(download_file_list, stringr::str_sub(tile_file_names[1], start = 2, end = 8))
+  download_file_list <- c(download_file_list, stringr::str_sub(merged_file_name,start = 1, end = 7))
 }
 
-print("Step 1 completed")
+print("Step 2 - download is completed")
 
 ```
 
-## Step 2. Process data.
+## Step 3. Process data.
+### - 3.1 Convert raw data-DN-CI-Chla
 ```{python}
 import sys
 import arcpy
@@ -196,10 +146,10 @@ arcpy.env.overwriteOutput = True
 arcpy.CheckOutExtension("Spatial")
 
 zones = r"\\deqhq1\WQ-Share\Harmful Algal Blooms Coordination Team\CyAN_Weekly_Report\Data\gis\CyAN_Waterbodies.shp"
-base_path = r"\\deqhq1\WQ-Share\Harmful Algal Blooms Coordination Team\Satellite data\CyAN_Data_V5\Sentinel-3\CI_cyano"
-habs_project_path = r"\\deqhq1\WQ-Share\Harmful Algal Blooms Coordination Team\HAB_Shiny_app\data"
+base_path = r"\\deqhq1\wq-share\Harmful Algal Blooms Coordination Team\Satellite data\CyAN_Data_V6\OLCI"
+habs_project_path = r"\\deqhq1\WQ-Share\Harmful Algal Blooms Coordination Team\HAB_Shiny_app_chl\data"
 # cyan_project_path = r"\\deqhq1\WQ-Share\Harmful Algal Blooms Coordination Team\CyAN_Weekly_Report\CyAN_imagery_update\data"
-cyan_project_path = r"C:\Users\ygrund\ygrund_C_Users\PROJECTS\HABs\CyAN_imagery_update\data"
+cyan_project_path = r"C:\Users\ygrund\OneDrive - Oregon\ygrund_oneDrive\PROJECTS\HABs\HABs_Dashboard\GitHub\ORHABsDashboard\data"
 
 print("Create a temporary location to store the temporary output tables.")
 temp_dir = os.path.join(base_path, "temp")
@@ -207,7 +157,8 @@ os.makedirs(temp_dir, exist_ok=True)
 
 print("Initialize empty dataframes to store tabulate and zonal results.")
 tabulate_result_df = pd.DataFrame(dtype='object')
-zonal_result_df = pd.DataFrame(dtype='object')
+zonal_ci_df = pd.DataFrame(dtype='object')
+zonal_chl_df = pd.DataFrame(dtype='object')
 
 extent = arcpy.Extent(-2315637.32, 2919264.13, -1566307.49, 2284415.24)
 
@@ -215,21 +166,24 @@ year = r.year
 raw_path = os.path.join(base_path, f"raw\\{year}")
 dn_path = os.path.join(base_path, f"dn\\{year}")
 ci_path = os.path.join(base_path, f"ci\\{year}")
+chl_path = os.path.join(base_path, f"chl\\{year}")
 
 temp_tabulate = os.path.join(temp_dir, f"tabulate_result_{year}.dbf")
-temp_zonal = os.path.join(temp_dir, f"zonal_result_{year}.dbf")
+temp_zonal_ci = os.path.join(temp_dir, f"zonal_ci_{year}.dbf")
+temp_zonal_chl = os.path.join(temp_dir, f"zonal_chl_{year}.dbf")
 
 # update r.download_file_list as needed; also update it in Step 3.
-# r.download_file_list = ['2024183', '2024184', '2024185', '2024186', '2024187', '2024188']
-# r.download_file_list = ['2024188']
+# r.download_file_list = ['2025001']
+
 for raw_name in r.download_file_list:
-  arcpy.CheckOutExtension("Spatial")
-  # test: raw_name = '2024323'
+
+  # test: raw_name = '2024180'
   print(raw_name)
   
   raw_tif_path = os.path.join(raw_path, f"{raw_name}.tif")
   output_dn_path = os.path.join(dn_path, f"{raw_name}.tif")
   output_ci_path = os.path.join(ci_path, f"{raw_name}.tif")
+  output_chl_path = os.path.join(chl_path, f"{raw_name}.tif")
   
   raw_tif = arcpy.Raster(raw_tif_path)
   print("...Clip the raster for Oregon's extent")
@@ -240,6 +194,10 @@ for raw_name in r.download_file_list:
   outSetNull = arcpy.sa.SetNull(raw_tif_int,raw_tif_int,"Value = 254 Or Value = 255") # 255=no_data 254=land
   print("...Convert DN to CI cells/ml")
   outCellsML = (arcpy.sa.Power(10, (3.0 / 250.0 * outSetNull - 4.2))) * 100000000
+  print("...Convert CI to Chl-a ug/L")
+  outchla = (outCellsML/100000000)*6620-3.07
+  # outchla_corrected = Con(outchla < 0, 0, outchla)
+  # outchla_corrected_int = arcpy.sa.Int(outchla_corrected)
   
   print("...Check if the output raster files already exists")
   if arcpy.Exists(output_dn_path): 
@@ -247,6 +205,9 @@ for raw_name in r.download_file_list:
     
   if arcpy.Exists(output_ci_path):
     arcpy.management.Delete(output_ci_path)
+    
+  if arcpy.Exists(output_chl_path):
+    arcpy.management.Delete(output_chl_path)
     
   print("...Reproject and save the output rasters")
   out_coor_system = (
@@ -303,20 +264,50 @@ for raw_name in r.download_file_list:
     Registration_Point="",
     in_coor_system=in_coor_system
     )
+
+  arcpy.management.ProjectRaster(
+    # in_raster=outchla_corrected_int,
+    in_raster=outchla,
+    out_raster=output_chl_path,
+    out_coor_system=out_coor_system,
+    resampling_type="NEAREST",
+    cell_size="300 300",
+    geographic_transform="WGS_1984_(ITRF00)_To_NAD_1983",
+    Registration_Point="",
+    in_coor_system=in_coor_system
+    )
     
-  print("...Copy the CI raster to the HABs project folder")
-  pattern = os.path.join(ci_path, raw_name + ".*")
-  files_to_copy = glob.glob(pattern)
-  for file_path in files_to_copy:
-    file_name = os.path.basename(file_path)
-    base_name, extension = file_name.rsplit('.', 1)
-    copy_ci_path_1 = os.path.join(habs_project_path, str(year), str(file_name))
-    shutil.copy(file_path, copy_ci_path_1)
+  # print("...Copy the CI raster to the HABs project folder")
+  # pattern = os.path.join(ci_path, raw_name + ".*")
+  # files_to_copy = glob.glob(pattern)
+  # for file_path in files_to_copy:
+  #   file_name = os.path.basename(file_path)
+  #   base_name, extension = file_name.rsplit('.', 1)
+  #   copy_ci_path_1 = os.path.join(habs_project_path, str(year), str(file_name))
+  #   shutil.copy(file_path, copy_ci_path_1)
+  #   
+  # print("...Copy the CI raster to the CyAN project folder")
+  # file_to_copy = os.path.join(ci_path, raw_name + ".tif")
+  # copy_ci_path_2 = os.path.join(cyan_project_path, str(year), raw_name + ".tif")
+  # shutil.copy(file_to_copy, copy_ci_path_2)
+  
+  print("...Copy the Chl-a raster to the HABs project folder")
+  file_to_copy = os.path.join(chl_path, raw_name + ".tif")
+  copy_chl_path_1 = os.path.join(habs_project_path, str(year), raw_name + ".tif")
+  shutil.copy(file_to_copy, copy_chl_path_1)
+  # 
+  # pattern = os.path.join(chl_path, raw_name + ".*")
+  # files_to_copy = glob.glob(pattern)
+  # for file_path in files_to_copy:
+  #   file_name = os.path.basename(file_path)habs_project_path
+  #   base_name, extension = file_name.rsplit('.', 1)
+  #   copy_chl_path_1 = os.path.join(, str(year), str(file_name))
+  #   shutil.copy(file_path, copy_chl_path_1)
     
-  print("...Copy the CI raster to the CyAN project folder")
-  file_to_copy = os.path.join(ci_path, raw_name + ".tif")
-  copy_ci_path_2 = os.path.join(cyan_project_path, str(year), raw_name + ".tif")
-  shutil.copy(file_to_copy, copy_ci_path_2)
+  print("...Copy the Chl-a raster to the CyAN project folder")
+  file_to_copy = os.path.join(chl_path, raw_name + ".tif")
+  copy_chl_path_2 = os.path.join(cyan_project_path, str(year), raw_name + ".tif")
+  shutil.copy(file_to_copy, copy_chl_path_2)
       
   print("...Tabulate Area")
   tabulate_result = arcpy.sa.TabulateArea(
@@ -342,12 +333,12 @@ for raw_name in r.download_file_list:
     tabulate_df = tabulate_df.drop(columns=['OID'])
   tabulate_result_df = pd.concat([tabulate_result_df, tabulate_df], ignore_index=True)
     
-  print("...Zonal Statistics")
+  print("...Zonal Statistics: CI")
   arcpy.sa.ZonalStatisticsAsTable(
     in_zone_data=zones,
     zone_field="GNISIDNAME",
     in_value_raster=outCellsML,
-    out_table=temp_zonal,
+    out_table=temp_zonal_ci,
     ignore_nodata="DATA",
     statistics_type="ALL",
     process_as_multidimensional="CURRENT_SLICE",
@@ -359,103 +350,68 @@ for raw_name in r.download_file_list:
     )
       
   print("...Add File_NUM")
-  if "File_NUM" not in [f.name for f in arcpy.ListFields(temp_zonal)]:
-    arcpy.AddField_management(temp_zonal, "File_NUM", "TEXT")
+  if "File_NUM" not in [f.name for f in arcpy.ListFields(temp_zonal_ci)]:
+    arcpy.AddField_management(temp_zonal_ci, "File_NUM", "TEXT")
     
-  with arcpy.da.UpdateCursor(temp_zonal, ["File_NUM"]) as cursor:
+  with arcpy.da.UpdateCursor(temp_zonal_ci, ["File_NUM"]) as cursor:
     for row in cursor:
       row[0] = raw_name
       cursor.updateRow(row)
     
   print("...Convert zonal statistics result to dataframe and append to the final dataframe")
-  zonal_df = pd.DataFrame(arcpy.da.TableToNumPyArray(temp_zonal, '*'))
+  zonal_df = pd.DataFrame(arcpy.da.TableToNumPyArray(temp_zonal_ci, '*'))
   if "OID" in zonal_df.columns:
     zonal_df = zonal_df.drop(columns=['OID'])
-  zonal_result_df = pd.concat([zonal_result_df, zonal_df], ignore_index=True)
+  zonal_ci_df = pd.concat([zonal_ci_df, zonal_df], ignore_index=True)
     
+  print("...Zonal Statistics: Chl-a")
+  arcpy.sa.ZonalStatisticsAsTable(
+    in_zone_data=zones,
+    zone_field="GNISIDNAME",
+    # in_value_raster=outchla_corrected,
+    in_value_raster=outchla,
+    out_table=temp_zonal_chl,
+    ignore_nodata="DATA",
+    statistics_type="ALL",
+    process_as_multidimensional="CURRENT_SLICE",
+    percentile_values=[100],
+    percentile_interpolation_type="AUTO_DETECT",
+    circular_calculation="ARITHMETIC",
+    circular_wrap_value=360,
+    out_join_layer=None
+    )
+      
+  print("...Add File_NUM")
+  if "File_NUM" not in [f.name for f in arcpy.ListFields(temp_zonal_chl)]:
+    arcpy.AddField_management(temp_zonal_chl, "File_NUM", "TEXT")
+    
+  with arcpy.da.UpdateCursor(temp_zonal_chl, ["File_NUM"]) as cursor:
+    for row in cursor:
+      row[0] = raw_name
+      cursor.updateRow(row)
+    
+  print("...Convert zonal statistics result to dataframe and append to the final dataframe")
+  zonal_df = pd.DataFrame(arcpy.da.TableToNumPyArray(temp_zonal_chl, '*'))
+  if "OID" in zonal_df.columns:
+    zonal_df = zonal_df.drop(columns=['OID'])
+  zonal_chl_df = pd.concat([zonal_chl_df, zonal_df], ignore_index=True)
+
   print("...Save intermediate results to CSV after each raw_name")
   tabulate_result_df.to_csv(os.path.join(temp_dir, f"tabulate_result_{raw_name}.csv"), index=False)
-  zonal_result_df.to_csv(os.path.join(temp_dir, f"zonal_result_{raw_name}.csv"), index=False)
+  zonal_ci_df.to_csv(os.path.join(temp_dir, f"zonal_ci_{raw_name}.csv"), index=False)
+  zonal_chl_df.to_csv(os.path.join(temp_dir, f"zonal_chl_{raw_name}.csv"), index=False)
     
   print("...Clear dataframes for the next iteration")
   tabulate_result_df = pd.DataFrame(dtype='object')
-  zonal_result_df = pd.DataFrame(dtype='object')
+  zonal_ci_df = pd.DataFrame(dtype='object')
+  zonal_chl_df = pd.DataFrame(dtype='object')
+
+print("Step 3.1 - conversion is completed")
 
 ```
 
-```{r zonal_tbl}
-print("...Generate CI zonal statistics data table")
-# download_file_list <- c('2024113', '2024114', '2024115', '2024116')
-# temp_dir <- "//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/Satellite data/CyAN_Data_V5/Sentinel-3/CI_cyano/temp/"
-zonal_temp_file_names <- paste0("zonal_result_", download_file_list, ".csv")
-zonal_temp_file_paths <- file.path(py$temp_dir, zonal_temp_file_names)
-# zonal_temp_file_paths <- file.path(temp_dir, zonal_temp_file_names)
-all_data <- list()
-for (file in zonal_temp_file_paths) {
-  print(file)
-  result <- tryCatch({
-    read.csv(file)
-  }, error = function(e) {
-    warning(paste("Error reading file:", file, "- Skipping this file"))
-    NULL
-  })
-  
-  if (!is.null(result)) {
-    if ("GNISIDNAME" %in% names(result) && !is.character(result$GNISIDNAME)) {
-      result$GNISIDNAME <- as.character(result$GNISIDNAME)
-    }
-    all_data[[file]] <- result
-  }
-}
-
-data_pre_z <- data_ci %>% dplyr::mutate(Julian_day = sprintf("%03d", as.numeric(Julian_day))) 
-zonal_combined <- bind_rows(all_data) %>% 
-  dplyr::left_join(resolvable_lakes, by=c("GNISIDNAME"="GNIS_Name_ID")) %>% 
-  dplyr::mutate(File_NUM = as.character(File_NUM)) %>% 
-  dplyr::left_join(dates, by=c("File_NUM"="CyAN_File_NUM")) %>% 
-  dplyr::mutate(Month = lubridate::month(Date)) %>% 
-  dplyr::mutate(Day = lubridate::day(Date)) %>% 
-  dplyr::mutate(Date = as.Date(Date)) %>% 
-  dplyr::distinct(Date,GNISIDNAME,.keep_all = TRUE) %>% 
-  dplyr::select(GNISIDNAME,Area_Total_Cells,Date,MIN,MAX,MEAN,STD,MEDIAN,Year,Month,Day,Julian_day) %>% 
-  dplyr::mutate(`7DGMDM` = as.numeric(NA),
-                `7DADM` = as.numeric(NA),
-                `Days of Data` = as.numeric(NA)) %>% 
-  dplyr::bind_rows(data_pre_z[which(as.Date(data_pre_z$Date)>as.Date(max(sort(unique(data_pre_z$Date))))-14),]) %>% 
-  dplyr::select(-c(`7DGMDM`,`7DADM`,`Days of Data`)) 
-
-
-zonal_new <- data.frame()
-for(gnis in sort(unique(zonal_combined$GNISIDNAME))) {
-  # test: gnis = "Siltcoos Lake_01158483"
-  print(gnis)
-  
-  dta_gnis <- zonal_combined %>% dplyr::filter(GNISIDNAME == gnis) %>% dplyr::arrange(Date) 
-  
-  dta_gnis_7d <- within(dta_gnis, {
-    w <- seq_along(as.Date(dta_gnis$Date)) - findInterval(as.Date(dta_gnis$Date) - 7, as.Date(dta_gnis$Date))
-    `7DADM` <- zoo::rollapplyr(MAX, w, mean)
-    `7DGMDM` <- zoo::rollapply(MAX, w, FUN = function(x) exp(mean(log(x))), fill = NA, align = "right", partial = TRUE)
-  })
-  
-  zonal_new <- rbind(zonal_new,dta_gnis_7d)
-  
-}
-
-zonal <- zonal_new %>% 
-  dplyr::mutate(Date = as.Date(Date)) %>% 
-  dplyr::rename(`Days of Data` = w) %>% 
-  dplyr::select(GNISIDNAME,Area_Total_Cells,Date,MIN,MAX,MEAN,STD,MEDIAN,Year,Month,Day,Julian_day,`7DGMDM`,`7DADM`,`Days of Data`) %>% 
-  dplyr::arrange(Date,GNISIDNAME)  %>% 
-  dplyr::filter(as.Date(Date) %in% as.Date(dates[which(dates$CyAN_File_NUM %in% download_file_list),]$Date))
-
-zonal_update <- dplyr::bind_rows(data_ci,zonal) %>% dplyr::mutate(Date = as.Date(Date))
-writexl::write_xlsx(zonal_update, paste0(data_path,"cyan_ci_2024.xlsx"))
-
-```
-
+### - 3.2 Generate DN tabulate data table
 ```{r tabulate_tbl}
-print("...Generate DN tabulate data table")
 tabulate_temp_file_names <- paste0("tabulate_result_", download_file_list, ".csv")
 tabulate_temp_file_paths <- file.path(py$temp_dir, tabulate_temp_file_names)
 
@@ -497,47 +453,256 @@ num_part <- as.numeric(gsub("VALUE_", "", cols[grepl("^VALUE_", cols)]))
 sorted_num_part <- sort(num_part)
 new_cols <- c(first_cols, paste0("VALUE_", sorted_num_part))
 tabulate <- tabulate_new[, new_cols]
-tabulate_update <- dplyr::bind_rows(data_dn,tabulate) %>% dplyr::mutate(Date = as.Date(Date))
-writexl::write_xlsx(tabulate_update, paste0(data_path,"cyan_dn_2024.xlsx"))
+tabulate_update <- dplyr::bind_rows(data_dn,tabulate) %>% dplyr::mutate(Date = as.Date(Date)) %>% 
+  dplyr::mutate(Julian_day = sprintf("%03d", as.numeric(Julian_day)))
+writexl::write_xlsx(tabulate_update, paste0(data_path,"cyan_dn_2025.xlsx"))
 
-print("Step 2 completed")
+print("Step 3.2 - DN table is completed")
 
 ```
 
-## Step 3. Gether data for the shiny app.
+### - 3.3 Generate CI zonal statistics data table
+```{r zonal_ci_tbl}
+# download_file_list <- c('2024113', '2024114', '2024115', '2024116')
+# temp_dir <- "//deqhq1/wq-share/Harmful Algal Blooms Coordination Team/Satellite data/CyAN_Data_V6/OLCI/temp/"
+zonal_temp_file_names <- paste0("zonal_ci_", download_file_list, ".csv")
+zonal_temp_file_paths <- file.path(py$temp_dir, zonal_temp_file_names)
+# zonal_temp_file_paths <- file.path(temp_dir, zonal_temp_file_names)
+all_data <- list()
+for (file in zonal_temp_file_paths) {
+  print(file)
+  result <- tryCatch({
+    read.csv(file)
+  }, error = function(e) {
+    warning(paste("Error reading file:", file, "- Skipping this file"))
+    NULL
+  })
+  
+  if (!is.null(result)) {
+    if ("GNISIDNAME" %in% names(result) && !is.character(result$GNISIDNAME)) {
+      result$GNISIDNAME <- as.character(result$GNISIDNAME)
+    }
+    all_data[[file]] <- result
+  }
+}
+
+data_pre_z <- data_ci %>% dplyr::mutate(Julian_day = sprintf("%03d", as.numeric(Julian_day)))
+zonal_combined <- bind_rows(all_data) %>% 
+  dplyr::left_join(resolvable_lakes, by=c("GNISIDNAME"="GNIS_Name_ID")) %>% 
+  dplyr::mutate(File_NUM = as.character(File_NUM)) %>% 
+  dplyr::left_join(dates, by=c("File_NUM"="CyAN_File_NUM")) %>% 
+  dplyr::mutate(Month = lubridate::month(Date)) %>% 
+  dplyr::mutate(Day = lubridate::day(Date)) %>% 
+  dplyr::mutate(Date = as.Date(Date)) %>% 
+  dplyr::distinct(Date,GNISIDNAME,.keep_all = TRUE) %>% 
+  dplyr::select(GNISIDNAME,Area_Total_Cells,Date,MIN,MAX,MEAN,STD,MEDIAN,Year,Month,Day,Julian_day) %>% 
+  dplyr::mutate(
+    `7DGMDM` = as.numeric(NA),
+    `7DADM` = as.numeric(NA),
+    `Days of Data` = as.numeric(NA)) %>% 
+  dplyr::bind_rows(data_pre_z[which(as.Date(data_pre_z$Date)>as.Date(max(sort(unique(data_pre_z$Date))))-14),]) %>% 
+  dplyr::select(-c(`7DGMDM`,`7DADM`,`Days of Data`)) 
+
+
+zonal_new <- data.frame()
+for(gnis in sort(unique(zonal_combined$GNISIDNAME))) {
+  # test: gnis = "Siltcoos Lake_01158483"
+  print(gnis)
+  
+  dta_gnis <- zonal_combined %>% dplyr::filter(GNISIDNAME == gnis) %>% dplyr::arrange(Date) 
+  
+  dta_gnis_7d <- within(dta_gnis, {
+    w <- seq_along(as.Date(dta_gnis$Date)) - findInterval(as.Date(dta_gnis$Date) - 7, as.Date(dta_gnis$Date))
+    `7DADM` <- zoo::rollapplyr(MAX, w, mean)
+    `7DGMDM` <- zoo::rollapply(MAX, w, FUN = function(x) exp(mean(log(x))), fill = NA, align = "right", partial = TRUE)
+  })
+  
+  zonal_new <- rbind(zonal_new,dta_gnis_7d)
+  
+}
+
+zonal <- zonal_new %>% 
+  dplyr::mutate(Date = as.Date(Date)) %>% 
+  dplyr::rename(`Days of Data` = w) %>% 
+  dplyr::select(GNISIDNAME,Area_Total_Cells,Date,MIN,MAX,MEAN,STD,MEDIAN,Year,Month,Day,Julian_day,`7DGMDM`,`7DADM`,`Days of Data`) %>% 
+  dplyr::arrange(Date,GNISIDNAME)  %>% 
+  dplyr::filter(as.Date(Date) %in% as.Date(dates[which(dates$CyAN_File_NUM %in% download_file_list),]$Date))
+
+zonal_update <- dplyr::bind_rows(data_ci,zonal) %>% dplyr::mutate(Date = as.Date(Date)) %>% 
+  dplyr::mutate(Julian_day = sprintf("%03d", as.numeric(Julian_day)))
+writexl::write_xlsx(zonal_update, paste0(data_path,"cyan_ci_2025.xlsx"))
+
+print("Step 3.3 - CI table is completed")
+
+```
+
+### - 3.4 Generate Chla zonal statistics data table
+```{r zonal_chl_tbl}
+# download_file_list <- c('2024113', '2024114', '2024115', '2024116')
+# temp_dir <- "//deqhq1/wq-share/Harmful Algal Blooms Coordination Team/Satellite data/CyAN_Data_V6/OLCI/temp/"
+zonal_temp_file_names <- paste0("zonal_chl_", download_file_list, ".csv")
+zonal_temp_file_paths <- file.path(py$temp_dir, zonal_temp_file_names)
+# zonal_temp_file_paths <- file.path(temp_dir, zonal_temp_file_names)
+all_data <- list()
+for (file in zonal_temp_file_paths) {
+  print(file)
+  result <- tryCatch({
+    read.csv(file)
+  }, error = function(e) {
+    warning(paste("Error reading file:", file, "- Skipping this file"))
+    NULL
+  })
+  
+  if (!is.null(result)) {
+    if ("GNISIDNAME" %in% names(result) && !is.character(result$GNISIDNAME)) {
+      result$GNISIDNAME <- as.character(result$GNISIDNAME)
+    }
+    all_data[[file]] <- result
+  }
+}
+
+data_pre_z <- data_chla %>% dplyr::mutate(Julian_day = sprintf("%03d", as.numeric(Julian_day)))
+zonal_combined <- bind_rows(all_data) %>% 
+  dplyr::left_join(resolvable_lakes, by=c("GNISIDNAME"="GNIS_Name_ID")) %>% 
+  dplyr::mutate(File_NUM = as.character(File_NUM)) %>% 
+  dplyr::left_join(dates, by=c("File_NUM"="CyAN_File_NUM")) %>% 
+  dplyr::mutate(Month = lubridate::month(Date)) %>% 
+  dplyr::mutate(Day = lubridate::day(Date)) %>% 
+  dplyr::mutate(Date = as.Date(Date)) %>% 
+  dplyr::distinct(Date,GNISIDNAME,.keep_all = TRUE) %>% 
+  dplyr::mutate(
+    MIN = if_else(MIN < 0, 0, MIN),
+    MAX = if_else(MAX < 0, 0, MAX),
+    MEAN = if_else(MEAN < 0, 0, MEAN),
+    MEDIAN = if_else(MEDIAN < 0, 0, MEDIAN)) %>% 
+  dplyr::select(GNISIDNAME,Area_Total_Cells,Date,MIN,MAX,MEAN,STD,MEDIAN,Year,Month,Day,Julian_day) %>% 
+  dplyr::mutate(
+    `7DGMDM` = as.numeric(NA),
+    `7DADM` = as.numeric(NA),
+    `Days of Data` = as.numeric(NA)) %>% 
+  dplyr::bind_rows(data_pre_z[which(as.Date(data_pre_z$Date)>as.Date(max(sort(unique(data_pre_z$Date))))-14),]) %>%
+  dplyr::select(-c(`7DGMDM`,`7DADM`,`Days of Data`))
+
+zonal_new <- data.frame()
+for(gnis in sort(unique(zonal_combined$GNISIDNAME))) {
+  # test: gnis = "Siltcoos Lake_01158483"
+  print(gnis)
+  
+  dta_gnis <- zonal_combined %>% dplyr::filter(GNISIDNAME == gnis) %>% dplyr::arrange(Date) 
+  
+  dta_gnis_7d <- within(dta_gnis, {
+    w <- seq_along(as.Date(dta_gnis$Date)) - findInterval(as.Date(dta_gnis$Date) - 7, as.Date(dta_gnis$Date))
+    `7DADM` <- zoo::rollapplyr(MAX, w, mean)
+    `7DGMDM` <- zoo::rollapply(MAX, w, FUN = function(x) exp(mean(log(x))), fill = NA, align = "right", partial = TRUE)
+  })
+  
+  zonal_new <- rbind(zonal_new,dta_gnis_7d)
+  
+}
+
+zonal <- zonal_new %>% 
+  dplyr::mutate(Date = as.Date(Date)) %>% 
+  dplyr::rename(`Days of Data` = w) %>% 
+  dplyr::select(GNISIDNAME,Area_Total_Cells,Date,MIN,MAX,MEAN,STD,MEDIAN,Year,Month,Day,Julian_day,`7DGMDM`,`7DADM`,`Days of Data`) %>% 
+  dplyr::arrange(Date,GNISIDNAME)  %>% 
+  dplyr::filter(as.Date(Date) %in% as.Date(dates[which(dates$CyAN_File_NUM %in% download_file_list),]$Date))
+
+zonal_update <- dplyr::bind_rows(data_chla,zonal) %>% dplyr::mutate(Date = as.Date(Date)) %>% 
+  dplyr::mutate(Julian_day = sprintf("%03d", as.numeric(Julian_day)))
+writexl::write_xlsx(zonal_update, paste0(data_path,"cyan_chla_2025.xlsx"))
+
+print("Step 3.4 - Chl-a table is completed")
+
+```
+
+## Step 4. Gether data for the shiny app.
 ```{r shiny_data}
 # (1) Timeseries Data Table ----
 dta1 <- resolvable_lakes
 
-dta2 <- readxl::read_excel(paste0(data_path,"cyan_ci_2025.xlsx")) %>% 
+dta2 <- readxl::read_excel(paste0(data_path,"cyan_chla_2025.xlsx")) %>% 
   dplyr::filter(GNISIDNAME %in% dta1$inApp) # filter out saline lakes
 
-dta3 <- readxl::read_excel(paste0(data_path,"cyan_ci_2002-2024.xlsx")) %>% 
+dta3 <- readxl::read_excel(paste0(data_path,"cyan_chla_2016-2024.xlsx")) %>% 
   dplyr::filter(GNISIDNAME %in% dta1$inApp) # filter out saline lakes
 
-dta <- rbind(dta2,dta3) %>% 
-  dplyr::rename(`Daily Mean` = MEAN,
-                `Daily Maximum` = MAX) %>% 
-  tidyr::gather(`Summary Statistics`, `Cyanobacteria (cells/mL)`, 
-                -GNISIDNAME,-Area_Total_Cells,-Date,-Year,-Month,-Day,-Julian_day,-`Days of Data`) %>% 
+dta_field <- readxl::read_excel(paste0(data_path,"field_data.xlsx")) %>% 
+  dplyr::select(MLocID,StationDes,Lat_DD,Long_DD,SampleStartDate,Char_Name,Result_status,Result_Numeric,Result_Unit,GNIS_Name_ID) %>% 
+  dplyr::mutate(
+    GNISIDNAME = GNIS_Name_ID,
+    Date = lubridate::ymd(SampleStartDate),
+    Month = lubridate::month(SampleStartDate),
+    `Days of Data` ="",
+    Parameter = Char_Name,
+    Value = Result_Numeric,
+    Unit = Result_Unit,
+    `Result Status` = Result_status,
+    `Data Source` = paste0("Station: ",StationDes," (",MLocID,")"),
+    wi_DWSA = ifelse(GNISIDNAME %in% dta1$wi_DWSA, "Yes", "No")) %>% 
+  dplyr::mutate(Unit = dplyr::case_when(
+    Unit == "mg/m3" ~ "µg/L",
+    Unit == "ppb" ~ "µg/L",
+    Unit == "None" ~ "µg/L",
+    TRUE ~ Unit )) %>% 
+  dplyr::left_join(dates,by="Date") %>% 
+  dplyr::select(GNISIDNAME,Date,Year,Month,Day,Julian_day,`Days of Data`,Parameter,Value,Unit,`Result Status`,`Data Source`,Lat_DD,Long_DD,wi_DWSA) %>% 
+  dplyr::filter(Year > 2015)
+
+field_stations <- readxl::read_excel(paste0(data_path,"field_data.xlsx")) %>% 
+  dplyr::select(MLocID,StationDes,Lat_DD,Long_DD,SampleStartDate,Char_Name,Result_status,Result_Numeric,Result_Unit,GNIS_Name_ID) %>% 
+  dplyr::filter(!Char_Name %in% "Pheophytin a") %>% 
+  dplyr::group_by(MLocID, StationDes, Lat_DD, Long_DD, Char_Name) %>%
+  dplyr::summarize(
+    StartDate = min(SampleStartDate, na.rm = TRUE),
+    EndDate = max(SampleStartDate, na.rm = TRUE),
+    DataCount = n(),
+    .groups = 'drop') %>%
+  ungroup() %>% 
+  dplyr::group_by(MLocID, StationDes, Lat_DD, Long_DD) %>%
+  summarize(
+    CharData = paste0(Char_Name, " (", StartDate," ~ ", EndDate,"): ", DataCount, collapse = "<br>"),
+    .groups = 'drop'
+  )
+
+dta_cyan <- rbind(dta2,dta3) %>% 
+  dplyr::rename(`Daily Mean` = MEAN, `Daily Maximum` = MAX) %>% 
+  tidyr::gather(`Parameter`, `Value`, 
+    -GNISIDNAME,-Area_Total_Cells,-Date,-Year,-Month,-Day,-Julian_day,-`Days of Data`) %>% 
   tidyr::separate(GNISIDNAME,c("GNISNAME","GNISID"), sep="_") %>% 
   dplyr::mutate(GNISIDNAME = paste0(GNISNAME,"_",GNISID)) %>% 
   dplyr::mutate(Date = lubridate::ymd(Date)) %>% 
   dplyr::arrange(desc(Date)) %>% 
-  dplyr::mutate(wi_DWSA = ifelse(GNISIDNAME %in% dta1$wi_DWSA, "Yes", "No")) %>% 
+  dplyr::mutate(
+    Unit = "µg/L",
+    `Result Status` = "Estimate",
+    `Data Source` = "CyAN - Sentinel 3A & 3B",
+    Lat_DD = "",
+    Long_DD = "",
+    wi_DWSA = ifelse(GNISIDNAME %in% dta1$wi_DWSA, "Yes", "No")) %>% 
+  dplyr::select(GNISIDNAME,Date,Year,Month,Day,Julian_day,`Days of Data`,Parameter,Value,Unit,`Result Status`,`Data Source`,Lat_DD,Long_DD,wi_DWSA) %>% 
   dplyr::filter(Year > 2015)
+
+dta <- rbind(dta_cyan,dta_field)
+
+advisories <- readxl::read_excel(paste0(data_path,"OHA_advisories.xlsx")) %>% 
+  dplyr::filter(GNIS_Name_ID %in% sort(unique(dta$GNISIDNAME))) %>%
+  dplyr::mutate(
+    Issued = lubridate::ymd(Issued),
+    Lifted = lubridate::ymd(Lifted),
+    Year = lubridate::year(Issued)) %>%
+  dplyr::select(GNIS_Name_ID,Issued, Lifted,`Dominant genus/toxin`,`Cell Count/Toxin`,Unit)
 
 # (2) Date Lookup Table ----
 dates <- dates %>% dplyr::mutate(Date = lubridate::ymd(Date))
 
-lookup.date <- dta %>% 
+lookup.date <- dta_cyan %>% 
   dplyr::group_by(Date, Year, Day) %>% 
   dplyr::summarise(n=n()) %>% 
   dplyr::right_join(dates, by="Date") %>% 
   dplyr::rename(Year.dta = Year.x,
-                Day.dta = Day.x,
-                Year.dates = Year.y,
-                JDay.dates = Day.y) %>% 
+    Day.dta = Day.x,
+    Year.dates = Year.y,
+    JDay.dates = Day.y) %>% 
   dplyr::ungroup()
 
 missing.dates <- lookup.date %>% 
@@ -555,26 +720,26 @@ huc6 <- sf::st_read(dsn = paste0(data_path,"gis/WBD_HU6.shp"), layer = "WBD_HU6"
   sf::st_transform(crs = sf::st_crs("+init=EPSG:4326"))
 
 pal.huc6 <- leaflet::colorFactor(palette = c(RColorBrewer::brewer.pal(name="BrBG", n = 9), 
-                                             RColorBrewer::brewer.pal(name="Paired", n = 9)), 
-                                 domain = unique(sort(huc6$HU_6_NAME)))
+  RColorBrewer::brewer.pal(name="Paired", n = 9)), 
+  domain = unique(sort(huc6$HU_6_NAME)))
 
 # (4) Map: raster ----
 # Raster color 
-thevalues <- c(0,6310,20000,100000,7000000)
+thevalues <- c(0,3,12,24,465)
 
 palette <- c('#bdbdbd','#66c2a4','#2ca25f','#006d2c')
 
 pal.map <- leaflet::colorBin(palette = palette,
-                             bins = c(0,6310,20000,100000,7000000),
-                             domain = c(0,6310,20000,100000,7000000),
-                             na.color = "transparent")
+  bins = c(0,3,12,24,465),
+  domain = c(0,3,12,24,465),
+  na.color = "transparent")
 # Legend labels
-labels = c("Non-detect","Low: 6,311 - 20,000","Moderate: 20,000 - 100,000","High: >100,000")
+labels = c("Non-detect","Low: 3-12","Moderate: 12-24","High: >24")
 
 # (5) 7D Table  ----
-dta_wide <- dta %>% 
+dta_wide <- dta_cyan %>% 
   dplyr::filter((as.Date(Date) <= as.Date(max(dta2$Date))) & (as.Date(Date) >= as.Date(max(dta2$Date))-6)) %>% 
-  tidyr::pivot_wider(names_from = `Summary Statistics`, values_from = `Cyanobacteria (cells/mL)`)
+  tidyr::pivot_wider(names_from = `Parameter`, values_from = Value)
 
 tbl.data <- dta_wide %>% 
   dplyr::group_by(GNISIDNAME) %>%
@@ -585,28 +750,32 @@ tbl.data <- dta_wide %>%
   dplyr::mutate(Basin = ifelse(`HU_6_NAME` == "Willamette",`HU_8_NAME`,`HU_6_NAME`)) %>% 
   dplyr::select(GNISIDNAME,Basin,`7DGMDM`,`7DADM`,Date,`Days of Data`) %>% 
   dplyr::arrange(desc(`7DGMDM`)) %>% 
-  dplyr::mutate(`7DGMDM` = ifelse(`7DGMDM`<= 6310, "Non-detect",format(round(`7DGMDM`,0),big.mark=",",scientific = FALSE))) %>%
-  dplyr::mutate(`7DADM` = ifelse(`7DADM`<= 6310, "Non-detect",format(round(`7DADM`,0),big.mark=",",scientific = FALSE))) %>% 
+  dplyr::mutate(`7DGMDM` = ifelse(`7DGMDM`<= 0, "Non-detect",format(round(`7DGMDM`,0),big.mark=",",scientific = FALSE))) %>%
+  dplyr::mutate(`7DADM` = ifelse(`7DADM`<= 0, "Non-detect",format(round(`7DADM`,0),big.mark=",",scientific = FALSE))) %>% 
   dplyr::rename(`Waterbody_GNISID*`= GNISIDNAME,
-                `7DADM (cells/mL)` = `7DADM`,
-                `7DGMDM (cells/mL)` = `7DGMDM`,
-                `Date_7DGMDM` = Date)
-  
+    `7DADM (μg/L)` = `7DADM`,
+    `7DGMDM (μg/L)` = `7DGMDM`,
+    `Date_7DGMDM` = Date)
+
 map.tbl.data <- tbl.data %>% 
-  dplyr::filter(!`7DGMDM (cells/mL)`== "Non-detect") %>% 
-  dplyr::mutate(`7dgmdm` = gsub(",","",`7DGMDM (cells/mL)`)) %>%
-  dplyr::filter(as.numeric(`7dgmdm`) > 100000) %>%
-  dplyr::select(`Waterbody_GNISID*`,Basin,`7DGMDM (cells/mL)`,`7DADM (cells/mL)`,`Date_7DGMDM`,`Days of Data`,-`7dgmdm`)
+  dplyr::filter(!`7DGMDM (μg/L)`== "Non-detect") %>% 
+  dplyr::mutate(`7dgmdm` = gsub(",","",`7DGMDM (μg/L)`)) %>%
+  dplyr::filter(as.numeric(`7dgmdm`) > 24) %>%
+  dplyr::select(`Waterbody_GNISID*`,Basin,`7DGMDM (μg/L)`,`7DADM (μg/L)`,`Date_7DGMDM`,`Days of Data`,-`7dgmdm`)
 
 # (6) 7D Map  ----
 lakes.resolvable.7d <- lakes.resolvable %>% 
-  dplyr::mutate(`7dadm` = ifelse(GNISIDNAME %in% map.tbl.data$`Waterbody_GNISID*`,"Waterbody with high cyanobacteria abundance","Others")) %>% 
+  dplyr::mutate(`7dadm` = ifelse(GNISIDNAME %in% map.tbl.data$`Waterbody_GNISID*`,
+    "Waterbody with high Chlorophyll-a with dominance of cyanobacteria",
+    "Others")) %>% 
   dplyr::filter(!`7dadm` == "Others")
 
 arcgisbinding::arc.check_product()
 files_to_delete <- list.files(paste0(data_path,"gis/"), pattern = "^map_7d_pre.*", full.names = TRUE)
 if (length(files_to_delete) > 0) {file.remove(files_to_delete)}
-arcgisbinding::arc.write(path = paste0(data_path,"gis/map_7d_pre.shp"), data = lakes.resolvable.7d)
+if(nrow(lakes.resolvable.7d)>0) {
+  arcgisbinding::arc.write(path = paste0(data_path,"gis/map_7d_pre.shp"), data = lakes.resolvable.7d)
+  } else {print("No highlighted waterbodies")}
 
 # (8) Boxplot Data Table  ----
 # dn_tbl <- readxl::read_excel(paste0(data_path,"cyan_dn_2024.xlsx")) %>% 
@@ -620,44 +789,21 @@ arcgisbinding::arc.write(path = paste0(data_path,"gis/map_7d_pre.shp"), data = l
 
 # Save data ----
 save(#dn_tbl,
-     dta,
-     dta2,
-     huc6,
-     labels,
-     lakes.resolvable,
-     lookup.date,
-     map.tbl.data,
-     missing.dates,
-     pal.huc6,
-     pal.map,
-     state.boundary,
-     thevalues,
-     file = "data.RData")
+  dta,
+  dta2,
+  huc6,
+  labels,
+  lakes.resolvable,
+  field_stations,
+  advisories,
+  lookup.date,
+  map.tbl.data,
+  missing.dates,
+  pal.huc6,
+  pal.map,
+  state.boundary,
+  thevalues,
+  file = "data.RData")
 
 ```
 
-```{r save_7-day_table}
-# Save the 7day table ----
-excel_file <- file.path("//deqhq1/WQ-Share/Harmful Algal Blooms Coordination Team/CyAN_Weekly_Report/Images/2024", "report7days.xlsx")
-# first time when creating the excel
-# create_excel <- function(data, excel_file) {
-#   wb_7d <- openxlsx::createWorkbook()
-#   openxlsx::addWorksheet(wb_7d, "Sheet1")
-#   data$Date <- Sys.Date()
-#   openxlsx::writeData(wb_7d, "Sheet1", data)
-#   openxlsx::saveWorkbook(wb_7d, excel_file, overwrite = TRUE)
-# }
-# create_excel(map.tbl.data, excel_file) 
-
-wb_7d <- openxlsx::loadWorkbook(excel_file)
-existing_data <- readxl::read_excel(excel_file, sheet = 1) %>% 
-  dplyr::mutate(Date_7DGMDM = as.Date(Date_7DGMDM),
-                Date = as.Date(Date))
-new_data <- map.tbl.data
-new_data$Date <- Sys.Date()
-colnames(new_data) <- colnames(existing_data)
-updated_data <- dplyr::bind_rows(existing_data, new_data)
-openxlsx::writeData(wb_7d, "Sheet1", updated_data, startCol = 1, startRow = 1)
-openxlsx::saveWorkbook(wb_7d, excel_file, overwrite = TRUE)
-
-```
