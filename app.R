@@ -10,14 +10,12 @@ library(raster)
 library(leaflet)
 library(leaflet.extras)
 library(leaflegend)
-#library(mapview)
 library(scales)
 library(plotly)
 library(DT)
 library(lubridate)
 
 source("path.R")
-setwd(app_path)
 load("data.RData")
 
 format_report_date <- function(date) {
@@ -153,21 +151,22 @@ shinyApp(
         collapsible = FALSE,
         collapsed = FALSE,
         
-        h4("This report provides an update on satellite estimates of chlorophyll-a concentrations during the bloom season for 49 large waterbodies in Oregon. ",
-           "Estimates are derived from satellite imagery from the ", 
+        h4("This report presents recent and historical estimates of chlorophyll-a concentrations for 49 large waterbodies in Oregon. ",
+           "These estimates are derived from satellite imagery provided by the  ", 
            a("Cyanobacteria Assessment Network (CyAN)", href="https://www.epa.gov/water-research/cyanobacteria-assessment-network-cyan",target="_blank"),
-           " project. Updates are scheduled to occur weekly from spring to fall each year. ",
-           "The report presents Version 6 (V6) data reprocessed by NASA in February 2025.",
+           " project. The Oregon DEQ updates the estimates weekly from spring through fall each year. ",
+           "The current report presents Version 6 (V6) data reprocessed by NASA in February 2025. ",
            "The V6 dataset includes updated calibration for Sentinel 3A and 3B, an enhanced filter for turbid water, and atmospheric correction for water vapor. ",
-           "For more details on V6 data, please refer to the ",
+           "Additional information about the V6 dataset can be found on the ",
            a("NASA Ocean Color website", href="https://oceancolor.gsfc.nasa.gov/data/reprocessing/projects/cyan/version/6/",.noWS = "outside",target="_blank"),
-           ". This report also includes available field measurements and historical cyanobacteria advisories issued by the Oregon Health Authority.",
+           ". This report also includes available field measurements collected by the Oregon DEQ and other entities, ",
+           "as well as recreational health advisories for cyanobacterial bloom issued by the Oregon Health Authority.",
            .noWS = c("after-begin", "before-end")),
         
-        h4("This report illustrates the concentrations of chlorophyll-a (μg/L) with cyanobacteria dominance in three levels: Low: 3-12 μg/L, Moderate: 12-24 μg/L, and High: >24 μg/L. ",
-           "The levels correspond to the World Health Organization (WHO) exposure guideline values for recreational waters ",
+        h4("Concentrations of chlorophyll-a (μg/L) associated with cyanobacteria dominance are shown at three levels: Low: 3-12 μg/L, Moderate: 12-24 μg/L, and High: >24 μg/L. ",
+           "These levels correspond to the World Health Organization (WHO) exposure guideline values for recreational waters ",
            "(",a("WHO, 2021", href="https://www.who.int/publications/m/item/toxic-cyanobacteria-in-water---second-edition",.noWS = "outside",target="_blank"),"). ",
-           "This report also includes ",
+           "Also included are ",
            a("EPA’s seven-day forecasts", href="https://www.epa.gov/water-research/cyanobacterial-harmful-algal-blooms-forecasting-research",.noWS = "outside",target="_blank"), 
            " from the experimental CyanoHAB forecasting model based on CyAN satellite data. ",
            "The model provides weekly probabilities that the median surface chlorophyll-a concentration is ≥12 µg/L. ",
@@ -179,7 +178,7 @@ shinyApp(
            .noWS = c("after-begin", "before-end")),
         
         h4("All data presented in this report are provisional and subject to change. Satellite-derived estimates do not ",
-           "imply the presence of cyanotoxins or other water quality impairments and do not have regulatory implications. ",
+           "confirm the presence of cyanotoxins or other water quality impairments and do not have regulatory implications. ",
            tags$b("Visit the ",
                   a("Oregon Health Authority", href="https://www.oregon.gov/oha/ph/healthyenvironments/recreation/harmfulalgaeblooms/pages/blue-greenalgaeadvisories.aspx",.noWS = "outside",target="_blank"),
                   " to learn about recreational use and drinking water advisories related to cyanobacteria blooms. "),
@@ -187,10 +186,10 @@ shinyApp(
            a("Sentinel 2", href="https://browser.dataspace.copernicus.eu/?zoom=7&lat=44.3466&lng=-119.25&themeId=DEFAULT-THEME&visualizationUrl=https%3A%2F%2Fsh.dataspace.copernicus.eu%2Fogc%2Fwms%2F274a990e-7090-4676-8f7d-f1867e8474a7&datasetId=S2_L1C_CDAS&fromTime=2023-07-01T00%3A00%3A00.000Z&toTime=2024-01-01T23%3A59%3A59.999Z&layerId=1_TRUE_COLOR&demSource3D=%22MAPZEN%22&cloudCoverage=100&dateMode=MOSAIC",
              target="_blank"),
            "imagery, local visual assessments, and/or water quality sampling are needed to provide further information on potential human health ",
-           "and environmental effects of cyanobacteria. Factors such as cloud cover, ice, sun glint, water surface roughness, dry lake beds, algal mats, and shoreline effects can interfere with satellite imagery and estimation accuracy.*",
+           "and environmental effects of cyanobacteria. Factors such as cloud cover, ice, sun glint, water surface roughness, dry lake beds, algal mats, and shoreline effects can interfere with satellite imagery and estimation accuracy.",
            .noWS = c("after-begin", "before-end")),
         
-        h4("*DISCLAIMER: Information is preliminary. Additional data are needed to confirm the presence of cyanobacteria blooms.",
+        h4("DISCLAIMER: Information is preliminary. Additional data are needed to confirm the presence of cyanobacteria blooms.",
            .noWS = c("after-begin", "before-end"))
         
       ), # Introduction End
@@ -207,19 +206,19 @@ shinyApp(
         # ___ Section Introduction ----
         tags$h4(p(tags$strong(report_start_fmt), " - ", tags$strong(report_end_fmt), "- ",
                   "Waterbodies with high chlorophyll-a concentration (≥24 μg/L) are identified based on ",
-                  "the maximum value of the 7-Day Geometric Mean Daily Maximum '",tags$strong("7DGMDM"),"'.",
-                  "The corresponding '", tags$strong("Date_7DGMDM"), "' indicates the date on which this maximum value occurred. ",
-                  "The 7-Day Average Daily Maximum '",tags$strong("7DADM"),"' is also reported for each highlighted waterbody. ",
+                  "the maximum value of the weekly means of daily maximums (",tags$strong("'Weekly Mean Daily Max'"),").",
+                  "The weekly median of daily maximums (",tags$strong("'Weekly Median Daily Max'"),") is also reported for each highlighted waterbody. ",
                   "Both metrics represent 7-day moving averages calculated using daily maximum values from ",
                   "the most recent available data date and the preceding six days. ",
-                  "The '",tags$strong("Days of Data"), "' field indicates the number of valid observation days within ",
-                  "each 7-day window used for computing both 7DGMDM and 7DADM. ")),
+                  "The", tags$strong("'Days of Data'"), "field indicates the number of valid observation days within ",
+                  "each 7-day window used for computing both Weekly Mean Daily Max and Weekly Median Daily Max.",
+                  "The", tags$strong("'Date of Daily Max'"), "indicates the date on which the daily maximum value occurred.")),
         
         tags$h4(p(tags$strong(forecast_start_fmt), " - ", tags$strong(forecast_end_fmt), "- ",
-                  "Modeled probabilities of chlorophyll-a concentrations ≥12µg/L are shown in the '",tags$strong("% Chance of CyanoHAB"), "' column.",
+                  "Modeled probabilities of chlorophyll-a concentrations ≥12 µg/L are shown in the '",tags$strong("% Chance of CyanoHAB"), "' column.",
                   "These probabilities are presented for all highlighted waterbodies and for any other waterbodies ",
                   "where the modeled probabilities are ≥50%.")),
-
+        
         # tags$h4(p(strong("Reporting Period: ", report_start_fmt, " - ", report_end_fmt))),
         
         # ___ 7-Day Table ----
@@ -261,12 +260,13 @@ shinyApp(
         collapsed = FALSE,
         
         # ___ Section Introduction ----
-        tags$h4(p("The interactive map provides satellite imagery for 49 Oregon waterbodies from July 1, 2024 to the present.")),
+        tags$h4(p("The interactive map provides satellite imagery for 49 Oregon waterbodies from April 1, 2025 to the present.")),
         
         shinydashboard::box(
           width = 3,
           #title = "left",
           solidHeader = TRUE,
+          
           
           # ___ Select a Waterbody ----
           tags$hr(),
@@ -285,25 +285,26 @@ shinyApp(
           tags$hr(),
           
           # ___ Select a Date ----
-          tags$h4(p("Select a date to update the map with satellite imagery from that day. Imagery is available from July 1, 2024 to ", report_end_fmt, ".")),
+          tags$h4(p(paste0("Select a date to update the map with satellite imagery from that day. Imagery is available from April 1, 2025 to ", report_end_fmt, "."))),
           
           shiny::dateInput(inputId = "date_map",
                            label = tags$h4(strong("Select a Date:")),
                            value = as.Date(max(dta2$Date)),
                            # min = as.Date(max(dta2$Date))-6,
-                           min = as.Date("2024-07-01"),
+                           min = as.Date("2025-04-01"),
                            max = as.Date(max(dta2$Date)),
                            format = "yyyy-mm-dd",
                            startview = "month",
                            weekstart = 0,
                            datesdisabled = missing.dates$Date),
           
+          tags$br(),
           tags$hr(),
           
           # ___ Select Layers ----
           tags$h4(p("Select layers to display satellite imagery (selected by default), forecasting data, HABs monitoring stations, ",
                     "and/or watersheds delineated using the USGS 6-digit Hydrologic Unit Code (HUC6).")),
-
+          
           tags$h4(strong("Select Layers:")),
           tags$br(),
           
@@ -399,31 +400,44 @@ shinyApp(
             uiOutput("dataDate"),
             
             tags$br(),
-            tags$br(),
+            tags$hr(),
             
             # ____ Parameters ----
             tagList(
               tags$h4(strong("Parameters:")),
               
-              tags$br(),
+              tags$hr(style = "margin-top: 5px; margin-bottom: 5px; border: none;"),
               
               # Checkbox group
-              checkboxGroupInput(
-                inputId = "matrix",
-                label = NULL,
-                choices = c(
-                  "CyAN-Chlorophyll-a: 7DADM" = "7DADM",
-                  "CyAN-Chlorophyll-a: 7DGMDM" = "7DGMDM",
-                  "CyAN-Chlorophyll-a: Daily Maximum" = "Daily Maximum",
-                  "CyAN-Chlorophyll-a: Daily Mean" = "Daily Mean",
-                  "Field data: Chlorophyll-a" = "Chlorophyll a",
-                  "Field data: Anatoxin-A" = "Anatoxin-A",
-                  "Field data: Cylindrospermopsin" = "Cylindrospermopsin",
-                  "Field data: Microcystins" = "Microcystins",
-                  "Field data: Saxitoxin" = "Saxitoxin"#,
-                  # "Field data: Pheophytin-a" = "Pheophytin a"
+              tagList(
+                tags$h5(tags$i(tags$strong("CyAN Chlorophyll-a Estimates:"))),
+                tags$hr(style = "margin-top: 5px; margin-bottom: 5px; border: none;"),
+                checkboxGroupInput(
+                  inputId = "matrix_cyan",
+                  label = NULL,
+                  choices = c(
+                    "Weekly Mean Daily Max" = "Weekly Mean Daily Max",
+                    "Weekly Median Daily Max" = "Weekly Median Daily Max",
+                    "Daily Maximum" = "Daily Maximum",
+                    "Daily Mean" = "Daily Mean"
+                  ),
+                  selected = c("Weekly Mean Daily Max", "Daily Maximum")
                 ),
-                selected = c("7DGMDM", "Daily Maximum")
+                
+                tags$h5(tags$i(tags$strong("Field data:"))),
+                tags$hr(style = "margin-top: 5px; margin-bottom: 5px; border: none;"),
+                checkboxGroupInput(
+                  inputId = "matrix_field",
+                  label = NULL,
+                  choices = c(
+                    "Chlorophyll-a" = "Chlorophyll a",
+                    "Anatoxin-A" = "Anatoxin-A",
+                    "Cylindrospermopsin" = "Cylindrospermopsin",
+                    "Microcystins" = "Microcystins",
+                    "Saxitoxin" = "Saxitoxin"
+                    # "Pheophytin-a" = "Pheophytin a"
+                  )
+                )
               ),
               
               tags$br(),
@@ -440,10 +454,16 @@ shinyApp(
             tags$br(),
             
             # ____ Plot types ----
+            #   checkboxGroupInput(
+            #     inputId = "plot_log",
+            #     label = tags$h4(strong("y-axis:")),
+            #     choices = c("Log Scale" = "log"))
+            #   
+            # ),
+            
             checkboxGroupInput(
               inputId = "plot_log",
-              label = tags$h4(strong("y-axis:")),
-              choices = c("Log Scale" = "log"))
+              label = tags$h4(strong("")))
             
           ),
           
@@ -590,17 +610,17 @@ shinyApp(
         leaflet::addCircleMarkers(data = forecast,
                                   group = "Forecast: % chance of Chl-a ≥12 μg/L",
                                   ~as.numeric(Longitude), ~as.numeric(Latitiude),
+                                  radius = ~(`% Chance of CyanoHAB_map`/100)*50,
+                                  color = ~ifelse(`% Chance of CyanoHAB_map` >= 50, "red", "orange"),
+                                  fillOpacity = 0.7,
+                                  layerId = ~GNIS_Name,
                                   popup = ~paste0(
                                     "<div style='font-size:14px;'>",
                                     "<b>",GNIS_Name,"</b>", "<br>",
-                                    "Probability of Chl-a ≥12 μg/L: ", "<b>",`% Chance of CyanoHAB`, "%","</b><br>",
+                                    "Probability of Chl-a ≥12 μg/L: ", "<b>",`% Chance of CyanoHAB_map`, "%","</b><br>",
                                     "Date range of forecast: ", "<br>",
                                     "<b>",`Date Range of Forecast`,"</b><br>",
                                     "</div>"),
-                                  radius = ~(`% Chance of CyanoHAB`/100)*20,
-                                  color = ~ifelse(`% Chance of CyanoHAB` >= 50, "red", "orange"),
-                                  fillOpacity = 0.7,
-                                  layerId = ~GNIS_Name,
                                   options = leaflet::pathOptions(pane = "forecasting")) %>% 
         leaflet::addLayersControl(
           baseGroups = c("OpenStreetMap", "National Geographic World Map"),
@@ -671,10 +691,10 @@ shinyApp(
           addLegend(pal = pal.map, values = thevalues, title = "Chlorophyll-a (μg/L)", position = "topright",
                     labFormat = function(type, cuts, p) { paste0(labels) }, opacity = 1) %>%
           addLegend(position = "topright",
-                             colors = c("orange", "red"),
-                             labels = c("<50% chance", "≥50% chance"),
-                             title = "Forecast<br><small>(Circle size ~ % chance)</small>",
-                             opacity = 0.7) %>% 
+                    colors = c("orange", "red"),
+                    labels = c("<50% chance", "≥50% chance"),
+                    title = "Forecast<br><small>(Circle size ~ % chance)</small>",
+                    opacity = 0.7) %>% 
           addLayersControl(
             baseGroups = c("OpenStreetMap", "National Geographic World Map"),
             position = "topleft",
@@ -755,21 +775,25 @@ shinyApp(
     # 2. Plots ----
     # _ Time series plot ----
     parameters <- c(
-      "7DADM", "7DGMDM", "Daily Maximum", "Daily Mean", 
+      "Weekly Mean Daily Max", "Weekly Median Daily Max", "Daily Maximum", "Daily Mean", 
       "Chlorophyll a", "Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin", "Pheophytin a")
     
     parameter_colors <- c(
-      "brown", "blue", "orange", "green", 
+      "blue", "brown", "orange", "green", 
       "purple", "#17becf", "gold", "red", "pink", "gray")
     
     pal.plot <- setNames(parameter_colors, parameters)
     
+    selected_matrix <- reactive({
+      c(input$matrix_cyan, input$matrix_field)
+    })
+    
     observeEvent(input$select_all, {
       updateCheckboxGroupInput(
         session,
-        inputId = "matrix",
+        inputId = selected_matrix(),
         selected = c(
-          "7DADM", "7DGMDM", "Daily Maximum", "Daily Mean",
+          "Weekly Mean Daily Max", "Weekly Median Daily Max", "Daily Maximum", "Daily Mean",
           "Chlorophyll a", "Anatoxin-A", "Cylindrospermopsin",
           "Microcystins", "Saxitoxin", "Pheophytin a"
         )
@@ -779,7 +803,7 @@ shinyApp(
     observeEvent(input$clear_all, {
       updateCheckboxGroupInput(
         session,
-        inputId = "matrix",
+        inputId = selected_matrix(),
         selected = character(0)
       )
     })
@@ -796,7 +820,7 @@ shinyApp(
         
         dta %>% 
           dplyr::filter(GNISIDNAME %in% input$waterbody) %>% 
-          dplyr::filter(Parameter %in% input$matrix) %>% 
+          dplyr::filter(Parameter %in% selected_matrix()) %>% 
           dplyr::filter(Year %in% c(yr())) %>% 
           dplyr::mutate(Value = round(Value,2))
         
@@ -804,14 +828,14 @@ shinyApp(
         
         dta %>% 
           dplyr::filter(GNISIDNAME %in% input$waterbody) %>% 
-          dplyr::filter(Parameter %in% input$matrix) %>%
+          dplyr::filter(Parameter %in% selected_matrix()) %>%
           dplyr::mutate(Value = round(Value,2))
         
       } else {
         
         dta %>% 
           dplyr::filter(GNISIDNAME %in% input$waterbody) %>% 
-          dplyr::filter(Parameter %in% input$matrix) %>% 
+          dplyr::filter(Parameter %in% selected_matrix()) %>% 
           dplyr::filter(Year %in% c(yr())) %>%
           dplyr::mutate(Value = round(Value,2)) %>%
           dplyr::filter(Date >= input$date_plot[1],Date <= input$date_plot[2])
@@ -870,25 +894,7 @@ shinyApp(
               )
             })
         })
-        
-        # advisory_labels <- reactive({
-        #   advisories %>%
-        #   dplyr::filter(GNIS_Name_ID == input$waterbody) %>%
-        #   dplyr::filter(Issued <= max(df()$Date), Lifted >= min(df()$Date)) %>% 
-        #   tidyr::drop_na() %>% 
-        #   purrr::pmap(function(Issued, Lifted, ...) {
-        #     list(
-        #       x = as.Date(Lifted),
-        #       y = max(df()$Value, na.rm = TRUE) * 1.05,
-        #       text = paste0("Advisory<br>", format(Issued, "%b %d"), "–", format(Lifted, "%b %d")),
-        #       font = list(size = 10, color = "red"),
-        #       xref = "x", yref = "y",
-        #       showarrow = FALSE,
-        #       align = "right"
-        #     )
-        #   })
-        # })
-        
+
         advisory_hover_markers <- reactive({
           req(df())
           
@@ -954,7 +960,7 @@ shinyApp(
             
             plotly::plot_ly() %>%
               plotly::add_trace(
-                data = df_after_gap() %>% dplyr::filter(Parameter %in% c("7DADM", "7DGMDM", "Daily Maximum", "Daily Mean")),
+                data = df_after_gap() %>% dplyr::filter(Parameter %in% c("Weekly Mean Daily Max", "Weekly Median Daily Max", "Daily Maximum", "Daily Mean")),
                 x = ~as.Date(Date), 
                 y = ~Value,
                 split = ~Parameter,
@@ -1024,14 +1030,14 @@ shinyApp(
                              title = yaxis(),
                              range = c(
                                -0.5,
-                               max(max(df_after_gap()$Value[df_after_gap()$Parameter %in% input$matrix], na.rm = TRUE) * 1.1,25)
+                               max(max(df_after_gap()$Value[df_after_gap()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,25)
                              )))
             
           } else if (input$ploty == "Reset to Complete Data Range") {
             
             plotly::plot_ly() %>%
               plotly::add_trace(
-                data = df_after_gap() %>% dplyr::filter(Parameter %in% c("7DADM", "7DGMDM", "Daily Maximum", "Daily Mean")),
+                data = df_after_gap() %>% dplyr::filter(Parameter %in% c("Weekly Mean Daily Max", "Weekly Median Daily Max", "Daily Maximum", "Daily Mean")),
                 x = ~as.Date(Date), 
                 y = ~Value,
                 split = ~Parameter,
@@ -1095,7 +1101,6 @@ shinyApp(
                 xaxis = list(
                   title = "Date", 
                   range = c(min(df()$Date),max(df()$Date)+1)),
-                # yaxis = list(title = "Cyanobacteria (cells/mL)"),
                 title = as.character(unique(df()$GNISIDNAME)),
                 shapes = all_shapes(),
                 annotations = all_annotations()) %>% 
@@ -1105,7 +1110,7 @@ shinyApp(
                              range = c(
                                -0.5,
                                max(
-                                 max(df_after_gap()$Value[df_after_gap()$Parameter %in% input$matrix], na.rm = TRUE) * 1.1,
+                                 max(df_after_gap()$Value[df_after_gap()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
                                  25
                                )
                              )))
@@ -1114,7 +1119,7 @@ shinyApp(
             
             plotly::plot_ly() %>%
               plotly::add_trace(
-                data = df_after_gap() %>% dplyr::filter(Parameter %in% c("7DADM", "7DGMDM", "Daily Maximum", "Daily Mean")),
+                data = df_after_gap() %>% dplyr::filter(Parameter %in% c("Weekly Mean Daily Max", "Weekly Median Daily Max", "Daily Maximum", "Daily Mean")),
                 x = ~as.Date(Date), 
                 y = ~Value,
                 split = ~Parameter,
@@ -1176,7 +1181,6 @@ shinyApp(
                 showlegend = FALSE) %>% 
               plotly::layout(
                 xaxis = list(title = "Date", range = c(min(df()$Date),max(df()$Date)+1)),
-                # yaxis = list(title = "Cyanobacteria (cells/mL)"),
                 title = as.character(unique(df()$GNISIDNAME)),
                 shapes = all_shapes(),
                 annotations = all_annotations()) %>% 
@@ -1186,7 +1190,7 @@ shinyApp(
                              range = c(
                                -0.5,
                                max(
-                                 max(df_after_gap()$Value[df_after_gap()$Parameter %in% input$matrix], na.rm = TRUE) * 1.1,
+                                 max(df_after_gap()$Value[df_after_gap()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
                                  25
                                )
                              )))
@@ -1287,11 +1291,16 @@ shinyApp(
           scorllX = TRUE,
           scorllY = TRUE,
           autoWidth = TRUE,
-          columnDefs = list(list(targets = 0:3, className = "dt-left"),
-                            list(targets = (0), width = "50%"),
-                            list(targets = (1), width = "50%"),
-                            list(targets = (2), width = "10%"),
-                            list(targets = (3), width = "10%")),
+          columnDefs = list(
+            list(targets = 0:6, className = "dt-left"),
+            list(targets = 0, width = "50%"),
+            list(targets = 1, width = "50%"),
+            list(targets = 2, width = "10%"),
+            list(targets = 3, width = "10%"),
+            list(targets = 4, width = "10%"),  
+            list(targets = 5, className = "dt-nowrap"), # no wrap for "Date of Max"
+            list(targets = 6, width = "10%")
+          ),
           buttons = list(#'print',
             list(extend = 'collection',
                  buttons = c('csv','excel'),

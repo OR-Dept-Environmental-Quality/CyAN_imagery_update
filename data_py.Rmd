@@ -9,77 +9,21 @@ This script is a modified version based on data.Rmd. When arcpy cannot be used w
 ```{r setup}
 knitr::opts_chunk$set(echo = TRUE) # echo = TRUE means that the R code inside the chunks will be displayed in the final output
 library(dplyr)
-source("path.R")
-data_dn <- readxl::read_excel(paste0(data_path,"cyan_dn_2025.xlsx")) %>%
-  dplyr::mutate_at(dplyr::vars(dplyr::starts_with("VALUE_")), as.numeric)
-data_ci <- readxl::read_excel(paste0(data_path,"cyan_ci_2025.xlsx"))
+source("path.R") # path.R is not provided to the public because 
+# data_dn <- readxl::read_excel(paste0(data_path,"cyan_dn_2025.xlsx")) %>%
+#   dplyr::mutate_at(dplyr::vars(dplyr::starts_with("VALUE_")), as.numeric)
+# data_ci <- readxl::read_excel(paste0(data_path,"cyan_ci_2025.xlsx"))
 data_chla <- readxl::read_excel(paste0(data_path,"cyan_chla_2025.xlsx"))
 dates <- readxl::read_excel(paste0(data_path,"calendar-dates.xlsx"))
 resolvable_lakes <- readxl::read_excel(paste0(data_path,"Resolvable_Lakes.xlsx"), sheet = "cyan_resolvable_lakes")
 forecast_lakes <- readxl::read_excel(paste0(data_path,"Resolvable_Lakes.xlsx"), sheet = "forecast")
 ```
 
-### - Set up for the beginning of a new year.
-```{r new}
-# # starting a new file, the column types need to be set before binding any new data
-# data_dn <- data_dn %>%
-#   dplyr::mutate(
-#     GNISIDNAME = as.character(GNISIDNAME),  # Convert logical to character
-#     Area_Total_Cells = as.numeric(Area_Total_Cells),
-#     Date = as.Date(Date),
-#     Year = as.numeric(Year),
-#     Julian_day = sprintf("%03d", as.numeric(Julian_day)),
-#     File_NUM = as.character(File_NUM)
-#   )
-# 
-# data_ci <- data_ci %>%
-#   dplyr::mutate(
-#     GNISIDNAME = as.character(GNISIDNAME),  # Convert logical to character
-#     Area_Total_Cells = as.numeric(Area_Total_Cells),
-#     Date = as.Date(Date),
-#     MIN = as.numeric(MIN),
-#     MAX = as.numeric(MAX),
-#     MEAN = as.numeric(MEAN),
-#     STD = as.numeric(STD),
-#     MEDIAN = as.numeric(MEDIAN),
-#     Year = as.numeric(Year),
-#     Month = as.numeric(Month),
-#     Day = as.numeric(Day),
-#     Julian_day = sprintf("%03d", as.numeric(Julian_day)),
-#     `7DGMDM` = as.numeric(`7DGMDM`),
-#     `7DADM` = as.numeric(`7DADM`),
-#     `Days of Data` = as.numeric(`Days of Data`)
-#   )
-# 
-# data_chla <- data_chla %>%
-#   dplyr::mutate(
-#     GNISIDNAME = as.character(GNISIDNAME),  # Convert logical to character
-#     Area_Total_Cells = as.numeric(Area_Total_Cells),
-#     Date = as.Date(Date),
-#     MIN = as.numeric(MIN),
-#     MAX = as.numeric(MAX),
-#     MEAN = as.numeric(MEAN),
-#     STD = as.numeric(STD),
-#     MEDIAN = as.numeric(MEDIAN),
-#     Year = as.numeric(Year),
-#     Month = as.numeric(Month),
-#     Day = as.numeric(Day),
-#     Julian_day = sprintf("%03d", as.numeric(Julian_day)),
-#     `7DGMDM` = as.numeric(`7DGMDM`),
-#     `7DADM` = as.numeric(`7DADM`),
-#     `Days of Data` = as.numeric(`Days of Data`)
-#   )
-# 
-# # the first day 
-# day_start <- "2025001"
-
-```
-
 ## Step 2. Download data from [NASA's data site].
 [NASA's data site]: https://oceandata.sci.gsfc.nasa.gov/directdataaccess/Level-3%20Mapped%20with%20GEO/Merged-S3-CYAN/
 ```{r OceanData}
 library(curl)
-day_start <- paste0(max(data_ci$Year), sprintf("%03d", max(as.numeric(data_ci$Julian_day))+1))
+day_start <- paste0(max(data_chla$Year), sprintf("%03d", max(as.numeric(data_chla$Julian_day))+1))
 day_end <- dates %>% dplyr::filter(as.POSIXlt(Date) == as.POSIXlt(Sys.Date()-1)) %>% dplyr::pull(CyAN_File_NUM)
 hab_days <- as.character(seq(day_start, day_end))
 hab_days <- substr(hab_days, nchar(hab_days) - 2, nchar(hab_days))
@@ -146,52 +90,52 @@ system2(python_path, args = shQuote(script_path))
 ```{r tabulate_tbl}
 # download_file_list <- c("2025132")
 
-tabulate_temp_file_names <- paste0("tabulate_result_", download_file_list, ".csv")
-tabulate_temp_file_paths <- file.path(temp_dir, tabulate_temp_file_names)
-
-all_data <- list()
-for (file in tabulate_temp_file_paths) {
-  print(file)
-  result <- tryCatch({
-    read.csv(file)
-  }, error = function(e) {
-    warning(paste("Error reading file:", file, "- Skipping this file"))
-    NULL
-  })
-  
-  if (!is.null(result)) {
-    if ("GNISIDNAME" %in% names(result) && !is.character(result$GNISIDNAME)) {
-      result$GNISIDNAME <- as.character(result$GNISIDNAME)
-    }
-    all_data[[file]] <- result
-  }
-}
-
-data_pre_t <- data_dn %>% dplyr::mutate(Julian_day = sprintf("%03d", as.numeric(Julian_day)))
-tabulate_combined <- bind_rows(all_data) %>% 
-  dplyr::left_join(dplyr::select(resolvable_lakes, GNIS_Name_ID, Area_Total_Cells), by=c("GNISIDNAME"="GNIS_Name_ID")) %>% 
-  dplyr::mutate(File_NUM = as.character(File_NUM)) %>% 
-  dplyr::left_join(dates, by=c("File_NUM"="CyAN_File_NUM")) %>% 
-  dplyr::mutate(Date = as.Date(Date)) %>% 
-  dplyr::select(-Day)
-matched_columns <- dplyr::intersect(colnames(tabulate_combined), colnames(data_pre_t))
-missing_columns <- dplyr::setdiff(colnames(data_pre_t), matched_columns)
-library(rlang)
-for (col in missing_columns) {
-  tabulate_new <- tabulate_combined %>%
-    dplyr::mutate(!!col := NA_real_)
-}
-cols <- colnames(tabulate_new)
-first_cols <- c("GNISIDNAME","Area_Total_Cells","Date","Year","Julian_day","File_NUM")
-num_part <- as.numeric(gsub("VALUE_", "", cols[grepl("^VALUE_", cols)]))
-sorted_num_part <- sort(num_part)
-new_cols <- c(first_cols, paste0("VALUE_", sorted_num_part))
-tabulate <- tabulate_new[, new_cols]
-tabulate_update <- dplyr::bind_rows(data_dn,tabulate) %>% dplyr::mutate(Date = as.Date(Date)) %>% 
-  dplyr::mutate(Julian_day = sprintf("%03d", as.numeric(Julian_day)))
-writexl::write_xlsx(tabulate_update, paste0(data_path,"cyan_dn_2025.xlsx"))
-
-print("Step 3.2 - DN table is completed")
+# tabulate_temp_file_names <- paste0("tabulate_result_", download_file_list, ".csv")
+# tabulate_temp_file_paths <- file.path(temp_dir, tabulate_temp_file_names)
+# 
+# all_data <- list()
+# for (file in tabulate_temp_file_paths) {
+#   print(file)
+#   result <- tryCatch({
+#     read.csv(file)
+#   }, error = function(e) {
+#     warning(paste("Error reading file:", file, "- Skipping this file"))
+#     NULL
+#   })
+#   
+#   if (!is.null(result)) {
+#     if ("GNISIDNAME" %in% names(result) && !is.character(result$GNISIDNAME)) {
+#       result$GNISIDNAME <- as.character(result$GNISIDNAME)
+#     }
+#     all_data[[file]] <- result
+#   }
+# }
+# 
+# data_pre_t <- data_dn %>% dplyr::mutate(Julian_day = sprintf("%03d", as.numeric(Julian_day)))
+# tabulate_combined <- bind_rows(all_data) %>% 
+#   dplyr::left_join(dplyr::select(resolvable_lakes, GNIS_Name_ID, Area_Total_Cells), by=c("GNISIDNAME"="GNIS_Name_ID")) %>% 
+#   dplyr::mutate(File_NUM = as.character(File_NUM)) %>% 
+#   dplyr::left_join(dates, by=c("File_NUM"="CyAN_File_NUM")) %>% 
+#   dplyr::mutate(Date = as.Date(Date)) %>% 
+#   dplyr::select(-Day)
+# matched_columns <- dplyr::intersect(colnames(tabulate_combined), colnames(data_pre_t))
+# missing_columns <- dplyr::setdiff(colnames(data_pre_t), matched_columns)
+# library(rlang)
+# for (col in missing_columns) {
+#   tabulate_new <- tabulate_combined %>%
+#     dplyr::mutate(!!col := NA_real_)
+# }
+# cols <- colnames(tabulate_new)
+# first_cols <- c("GNISIDNAME","Area_Total_Cells","Date","Year","Julian_day","File_NUM")
+# num_part <- as.numeric(gsub("VALUE_", "", cols[grepl("^VALUE_", cols)]))
+# sorted_num_part <- sort(num_part)
+# new_cols <- c(first_cols, paste0("VALUE_", sorted_num_part))
+# tabulate <- tabulate_new[, new_cols]
+# tabulate_update <- dplyr::bind_rows(data_dn,tabulate) %>% dplyr::mutate(Date = as.Date(Date)) %>% 
+#   dplyr::mutate(Julian_day = sprintf("%03d", as.numeric(Julian_day)))
+# writexl::write_xlsx(tabulate_update, paste0(data_path,"cyan_dn_2025.xlsx"))
+# 
+# print("Step 3.2 - DN table is completed")
 
 ```
 
@@ -199,84 +143,83 @@ print("Step 3.2 - DN table is completed")
 ```{r zonal_ci_tbl}
 # download_file_list <- c('2024113', '2024114', '2024115', '2024116')
 
-zonal_temp_file_names <- paste0("zonal_ci_", download_file_list, ".csv")
-zonal_temp_file_paths <- file.path(temp_dir, zonal_temp_file_names)
+# zonal_temp_file_names <- paste0("zonal_ci_", download_file_list, ".csv")
 # zonal_temp_file_paths <- file.path(temp_dir, zonal_temp_file_names)
-all_data <- list()
-for (file in zonal_temp_file_paths) {
-  print(file)
-  result <- tryCatch({
-    read.csv(file)
-  }, error = function(e) {
-    warning(paste("Error reading file:", file, "- Skipping this file"))
-    NULL
-  })
-  
-  if (!is.null(result)) {
-    if ("GNISIDNAME" %in% names(result) && !is.character(result$GNISIDNAME)) {
-      result$GNISIDNAME <- as.character(result$GNISIDNAME)
-    }
-    all_data[[file]] <- result
-  }
-}
-
-data_pre_z <- data_ci %>% dplyr::mutate(Julian_day = sprintf("%03d", as.numeric(Julian_day)))
-zonal_combined <- bind_rows(all_data) %>% 
-  dplyr::left_join(resolvable_lakes, by=c("GNISIDNAME"="GNIS_Name_ID")) %>% 
-  dplyr::mutate(File_NUM = as.character(File_NUM)) %>% 
-  dplyr::left_join(dates, by=c("File_NUM"="CyAN_File_NUM")) %>% 
-  dplyr::mutate(Month = lubridate::month(Date)) %>% 
-  dplyr::mutate(Day = lubridate::day(Date)) %>% 
-  dplyr::mutate(Date = as.Date(Date)) %>% 
-  dplyr::distinct(Date,GNISIDNAME,.keep_all = TRUE) %>% 
-  dplyr::select(GNISIDNAME,Area_Total_Cells,Date,MIN,MAX,MEAN,STD,MEDIAN,Year,Month,Day,Julian_day) %>% 
-  dplyr::mutate(
-    `7DGMDM` = as.numeric(NA),
-    `7DADM` = as.numeric(NA),
-    `Days of Data` = as.numeric(NA)) %>% 
-  dplyr::bind_rows(data_pre_z[which(as.Date(data_pre_z$Date)>as.Date(max(sort(unique(data_pre_z$Date))))-14),]) %>% 
-  dplyr::select(-c(`7DGMDM`,`7DADM`,`Days of Data`)) 
-
-
-zonal_new <- data.frame()
-for(gnis in sort(unique(zonal_combined$GNISIDNAME))) {
-  # test: gnis = "Siltcoos Lake_01158483"
-  print(gnis)
-  
-  dta_gnis <- zonal_combined %>% dplyr::filter(GNISIDNAME == gnis) %>% dplyr::arrange(Date) 
-  
-  dta_gnis_7d <- within(dta_gnis, {
-    w <- seq_along(as.Date(dta_gnis$Date)) - findInterval(as.Date(dta_gnis$Date) - 7, as.Date(dta_gnis$Date))
-    `7DADM` <- zoo::rollapplyr(MAX, w, mean)
-    `7DGMDM` <- zoo::rollapply(MAX, w, FUN = function(x) exp(mean(log(x))), fill = NA, align = "right", partial = TRUE)
-  })
-  
-  zonal_new <- rbind(zonal_new,dta_gnis_7d)
-  
-}
-
-zonal <- zonal_new %>% 
-  dplyr::mutate(Date = as.Date(Date)) %>% 
-  dplyr::rename(`Days of Data` = w) %>% 
-  dplyr::select(GNISIDNAME,Area_Total_Cells,Date,MIN,MAX,MEAN,STD,MEDIAN,Year,Month,Day,Julian_day,`7DGMDM`,`7DADM`,`Days of Data`) %>% 
-  dplyr::arrange(Date,GNISIDNAME)  %>% 
-  dplyr::filter(as.Date(Date) %in% as.Date(dates[which(dates$CyAN_File_NUM %in% download_file_list),]$Date))
-
-zonal_update <- dplyr::bind_rows(data_ci,zonal) %>% dplyr::mutate(Date = as.Date(Date)) %>% 
-  dplyr::mutate(Julian_day = sprintf("%03d", as.numeric(Julian_day)))
-writexl::write_xlsx(zonal_update, paste0(data_path,"cyan_ci_2025.xlsx"))
-
-print("Step 3.3 - CI table is completed")
+# 
+# all_data <- list()
+# for (file in zonal_temp_file_paths) {
+#   print(file)
+#   result <- tryCatch({
+#     read.csv(file)
+#   }, error = function(e) {
+#     warning(paste("Error reading file:", file, "- Skipping this file"))
+#     NULL
+#   })
+#   
+#   if (!is.null(result)) {
+#     if ("GNISIDNAME" %in% names(result) && !is.character(result$GNISIDNAME)) {
+#       result$GNISIDNAME <- as.character(result$GNISIDNAME)
+#     }
+#     all_data[[file]] <- result
+#   }
+# }
+# 
+# data_pre_z <- data_ci %>% dplyr::mutate(Julian_day = sprintf("%03d", as.numeric(Julian_day)))
+# zonal_combined <- bind_rows(all_data) %>% 
+#   dplyr::left_join(resolvable_lakes, by=c("GNISIDNAME"="GNIS_Name_ID")) %>% 
+#   dplyr::mutate(File_NUM = as.character(File_NUM)) %>% 
+#   dplyr::left_join(dates, by=c("File_NUM"="CyAN_File_NUM")) %>% 
+#   dplyr::mutate(Month = lubridate::month(Date)) %>% 
+#   dplyr::mutate(Day = lubridate::day(Date)) %>% 
+#   dplyr::mutate(Date = as.Date(Date)) %>% 
+#   dplyr::distinct(Date,GNISIDNAME,.keep_all = TRUE) %>% 
+#   dplyr::select(GNISIDNAME,Area_Total_Cells,Date,MIN,MAX,MEAN,STD,MEDIAN,Year,Month,Day,Julian_day) %>% 
+#   dplyr::mutate(
+#     `7DGMDM` = as.numeric(NA),
+#     `7DADM` = as.numeric(NA),
+#     `Days of Data` = as.numeric(NA)) %>% 
+#   dplyr::bind_rows(data_pre_z[which(as.Date(data_pre_z$Date)>as.Date(max(sort(unique(data_pre_z$Date))))-14),]) %>% 
+#   dplyr::select(-c(`7DGMDM`,`7DADM`,`Days of Data`))
+# 
+# zonal_new <- data.frame()
+# for(gnis in sort(unique(zonal_combined$GNISIDNAME))) {
+#   # test: gnis = "Siltcoos Lake_01158483"
+#   print(gnis)
+#   
+#   dta_gnis <- zonal_combined %>% dplyr::filter(GNISIDNAME == gnis) %>% dplyr::arrange(Date) 
+#   
+#   dta_gnis_7d <- within(dta_gnis, {
+#     w <- seq_along(as.Date(dta_gnis$Date)) - findInterval(as.Date(dta_gnis$Date) - 7, as.Date(dta_gnis$Date))
+#     `7DADM` <- zoo::rollapplyr(MAX, w, mean)
+#     `7DGMDM` <- zoo::rollapply(MAX, w, FUN = function(x) exp(mean(log(x))), fill = NA, align = "right", partial = TRUE)
+#   })
+#   
+#   zonal_new <- rbind(zonal_new,dta_gnis_7d)
+#   
+# }
+# 
+# zonal <- zonal_new %>% 
+#   dplyr::mutate(Date = as.Date(Date)) %>% 
+#   dplyr::rename(`Days of Data` = w) %>% 
+#   dplyr::select(GNISIDNAME,Area_Total_Cells,Date,MIN,MAX,MEAN,STD,MEDIAN,Year,Month,Day,Julian_day,`7DGMDM`,`7DADM`,`Days of Data`) %>% 
+#   dplyr::arrange(Date,GNISIDNAME)  %>% 
+#   dplyr::filter(as.Date(Date) %in% as.Date(dates[which(dates$CyAN_File_NUM %in% download_file_list),]$Date))
+# 
+# zonal_update <- dplyr::bind_rows(data_ci,zonal) %>% dplyr::mutate(Date = as.Date(Date)) %>% 
+#   dplyr::mutate(Julian_day = sprintf("%03d", as.numeric(Julian_day)))
+# writexl::write_xlsx(zonal_update, paste0(data_path,"cyan_ci_2025.xlsx"))
+# 
+# print("Step 3.3 - CI table is completed")
 
 ```
 
 ### - 3.4 Generate Chla zonal statistics data table
 ```{r zonal_chl_tbl}
-# download_file_list <- c('2024113', '2024114', '2024115', '2024116')
+# download_file_list <- c(paste0("2025", sprintf("%03d", 1:153)))
 
 zonal_temp_file_names <- paste0("zonal_chl_", download_file_list, ".csv")
 zonal_temp_file_paths <- file.path(temp_dir, zonal_temp_file_names)
-# zonal_temp_file_paths <- file.path(temp_dir, zonal_temp_file_names)
+
 all_data <- list()
 for (file in zonal_temp_file_paths) {
   print(file)
@@ -303,7 +246,6 @@ zonal_combined <- bind_rows(all_data) %>%
   dplyr::mutate(Month = lubridate::month(Date)) %>% 
   dplyr::mutate(Day = lubridate::day(Date)) %>% 
   dplyr::mutate(Date = as.Date(Date)) %>% 
-  dplyr::distinct(Date,GNISIDNAME,.keep_all = TRUE) %>% 
   dplyr::mutate(
     MIN = if_else(MIN < 0, 0, MIN),
     MAX = if_else(MAX < 0, 0, MAX),
@@ -311,15 +253,16 @@ zonal_combined <- bind_rows(all_data) %>%
     MEDIAN = if_else(MEDIAN < 0, 0, MEDIAN)) %>% 
   dplyr::select(GNISIDNAME,Area_Total_Cells,Date,MIN,MAX,MEAN,STD,MEDIAN,Year,Month,Day,Julian_day) %>% 
   dplyr::mutate(
-    `7DGMDM` = as.numeric(NA),
     `7DADM` = as.numeric(NA),
+    `7DMDM` = as.numeric(NA),
     `Days of Data` = as.numeric(NA)) %>% 
   dplyr::bind_rows(data_pre_z[which(as.Date(data_pre_z$Date)>as.Date(max(sort(unique(data_pre_z$Date))))-14),]) %>%
-  dplyr::select(-c(`7DGMDM`,`7DADM`,`Days of Data`))
+  dplyr::distinct(Date,GNISIDNAME,.keep_all = TRUE) %>% 
+  dplyr::select(-c(`7DADM`,`7DMDM`,`Days of Data`))
 
 zonal_new <- data.frame()
 for(gnis in sort(unique(zonal_combined$GNISIDNAME))) {
-  # test: gnis = "Siltcoos Lake_01158483"
+  # test: gnis = "Sturgeon Lake_01127681"
   print(gnis)
   
   dta_gnis <- zonal_combined %>% dplyr::filter(GNISIDNAME == gnis) %>% dplyr::arrange(Date) 
@@ -327,7 +270,7 @@ for(gnis in sort(unique(zonal_combined$GNISIDNAME))) {
   dta_gnis_7d <- within(dta_gnis, {
     w <- seq_along(as.Date(dta_gnis$Date)) - findInterval(as.Date(dta_gnis$Date) - 7, as.Date(dta_gnis$Date))
     `7DADM` <- zoo::rollapplyr(MAX, w, mean)
-    `7DGMDM` <- zoo::rollapply(MAX, w, FUN = function(x) exp(mean(log(x))), fill = NA, align = "right", partial = TRUE)
+    `7DMDM` <- zoo::rollapplyr(MAX, w, median)
   })
   
   zonal_new <- rbind(zonal_new,dta_gnis_7d)
@@ -337,12 +280,13 @@ for(gnis in sort(unique(zonal_combined$GNISIDNAME))) {
 zonal <- zonal_new %>% 
   dplyr::mutate(Date = as.Date(Date)) %>% 
   dplyr::rename(`Days of Data` = w) %>% 
-  dplyr::select(GNISIDNAME,Area_Total_Cells,Date,MIN,MAX,MEAN,STD,MEDIAN,Year,Month,Day,Julian_day,`7DGMDM`,`7DADM`,`Days of Data`) %>% 
+  dplyr::select(GNISIDNAME,Area_Total_Cells,Date,MIN,MAX,MEAN,STD,MEDIAN,Year,Month,Day,Julian_day,`7DADM`,`7DMDM`,`Days of Data`) %>% 
   dplyr::arrange(Date,GNISIDNAME)  %>% 
   dplyr::filter(as.Date(Date) %in% as.Date(dates[which(dates$CyAN_File_NUM %in% download_file_list),]$Date))
 
 zonal_update <- dplyr::bind_rows(data_chla,zonal) %>% dplyr::mutate(Date = as.Date(Date)) %>% 
   dplyr::mutate(Julian_day = sprintf("%03d", as.numeric(Julian_day)))
+
 writexl::write_xlsx(zonal_update, paste0(data_path,"cyan_chla_2025.xlsx"))
 
 print("Step 3.4 - Chl-a table is completed")
@@ -352,6 +296,7 @@ print("Step 3.4 - Chl-a table is completed")
 ## Step 4. Gether data for the shiny app.
 ```{r shiny_data}
 # (1) Timeseries Data Table ----
+
 dta1 <- resolvable_lakes
 
 dta2 <- readxl::read_excel(paste0(data_path,"cyan_chla_2025.xlsx")) %>% 
@@ -401,12 +346,13 @@ field_stations <- readxl::read_excel(paste0(data_path,"field_data.xlsx")) %>%
 dta_cyan <- rbind(dta2,dta3) %>% 
   dplyr::rename(`Daily Mean` = MEAN, `Daily Maximum` = MAX) %>% 
   tidyr::gather(`Parameter`, `Value`, 
-    -GNISIDNAME,-Area_Total_Cells,-Date,-Year,-Month,-Day,-Julian_day,-`Days of Data`) %>% 
+                -GNISIDNAME,-Area_Total_Cells,-Date,-Year,-Month,-Day,-Julian_day,-`Days of Data`) %>% 
   tidyr::separate(GNISIDNAME,c("GNISNAME","GNISID"), sep="_") %>% 
   dplyr::mutate(GNISIDNAME = paste0(GNISNAME,"_",GNISID)) %>% 
   dplyr::mutate(Date = lubridate::ymd(Date)) %>% 
   dplyr::arrange(desc(Date)) %>% 
   dplyr::mutate(
+    Value = as.numeric(Value),
     Unit = "µg/L",
     `Result Status` = "Estimate",
     `Data Source` = "CyAN - Sentinel 3A & 3B",
@@ -416,7 +362,9 @@ dta_cyan <- rbind(dta2,dta3) %>%
   dplyr::select(GNISIDNAME,Date,Year,Month,Day,Julian_day,`Days of Data`,Parameter,Value,Unit,`Result Status`,`Data Source`,Lat_DD,Long_DD,wi_DWSA) %>% 
   dplyr::filter(Year > 2015)
 
-dta <- rbind(dta_cyan,dta_field)
+dta <- rbind(dta_cyan,dta_field) %>% 
+  dplyr::mutate(Parameter = ifelse(Parameter == "7DADM","Weekly Mean Daily Max",Parameter)) %>% 
+  dplyr::mutate(Parameter = ifelse(Parameter == "7DMDM","Weekly Median Daily Max",Parameter))
 
 advisories <- readxl::read_excel(paste0(data_path,"OHA_advisories.xlsx"), sheet = "Advisories") %>% 
   dplyr::filter(GNIS_Name_ID %in% sort(unique(dta$GNISIDNAME))) %>%
@@ -432,10 +380,15 @@ advisories <- readxl::read_excel(paste0(data_path,"OHA_advisories.xlsx"), sheet 
 
 forecast <- readxl::read_excel(paste0(data_path,"forecast.xlsx")) %>% 
   dplyr::left_join(forecast_lakes, by = "Lake Name") %>% 
-  dplyr::mutate(`% Chance of CyanoHAB` = as.numeric(`% Chance of CyanoHAB`)) %>% 
+  dplyr::mutate(`% Chance of CyanoHAB` = as.numeric(`% Chance of CyanoHAB`)) %>%
+  dplyr::mutate(`% Chance of CyanoHAB_map` = as.numeric(`% Chance of CyanoHAB`)) %>%
   dplyr::group_by(`GNIS_Name_ID`) %>%
   dplyr::slice_max(`% Chance of CyanoHAB`, n = 1, with_ties = FALSE) %>%
-  dplyr::ungroup()
+  dplyr::ungroup() %>%
+  dplyr::mutate(
+    `% Chance of CyanoHAB` = ifelse(
+      `% Chance of CyanoHAB` < 1, "< 1",
+      format(round(`% Chance of CyanoHAB`, 0), big.mark = ",", scientific = FALSE)))
 
 # (2) Date Lookup Table ----
 dates <- dates %>% dplyr::mutate(Date = lubridate::ymd(Date))
@@ -445,9 +398,9 @@ lookup.date <- dta_cyan %>%
   dplyr::summarise(n=n()) %>% 
   dplyr::right_join(dates, by="Date") %>% 
   dplyr::rename(Year.dta = Year.x,
-    Day.dta = Day.x,
-    Year.dates = Year.y,
-    JDay.dates = Day.y) %>% 
+                Day.dta = Day.x,
+                Year.dates = Year.y,
+                JDay.dates = Day.y) %>% 
   dplyr::ungroup()
 
 missing.dates <- lookup.date %>% 
@@ -465,8 +418,8 @@ huc6 <- sf::st_read(dsn = paste0(data_path,"gis/WBD_HU6.shp"), layer = "WBD_HU6"
   sf::st_transform(crs = sf::st_crs("+init=EPSG:4326"))
 
 pal.huc6 <- leaflet::colorFactor(palette = c(RColorBrewer::brewer.pal(name="BrBG", n = 9), 
-  RColorBrewer::brewer.pal(name="Paired", n = 9)), 
-  domain = unique(sort(huc6$HU_6_NAME)))
+                                             RColorBrewer::brewer.pal(name="Paired", n = 9)), 
+                                 domain = unique(sort(huc6$HU_6_NAME)))
 
 # (4) Map: raster ----
 # Raster color 
@@ -475,45 +428,57 @@ thevalues <- c(0,3,12,24,465)
 palette <- c('#bdbdbd','#66c2a4','#2ca25f','#006d2c')
 
 pal.map <- leaflet::colorBin(palette = palette,
-  bins = c(0,3,12,24,465),
-  domain = c(0,3,12,24,465),
-  na.color = "transparent")
+                             bins = c(0,3,12,24,465),
+                             domain = c(0,3,12,24,465),
+                             na.color = "transparent")
 # Legend labels
 labels = c("Non-detect","Low: 3-12","Moderate: 12-24","High: >24")
 
 # (5) 7D Table  ----
 dta_wide <- dta_cyan %>% 
-  dplyr::filter((as.Date(Date) <= as.Date(max(dta2$Date))) & (as.Date(Date) >= as.Date(max(dta2$Date))-6)) %>% 
+  dplyr::filter((as.Date(Date) <= as.Date(max(Date))) & (as.Date(Date) >= as.Date(max(Date))-13)) %>% 
   tidyr::pivot_wider(names_from = `Parameter`, values_from = Value)
 
-tbl.data <- dta_wide %>% 
+dta_max <- dta_wide %>% 
   dplyr::group_by(GNISIDNAME) %>%
-  dplyr::summarise(`7DGMDM` = max(`7DGMDM`)) %>%
-  dplyr::inner_join(dta_wide, by = c("GNISIDNAME", "7DGMDM")) %>%
-  dplyr::distinct(GNISIDNAME, .keep_all = TRUE) %>% 
-  dplyr::left_join(lakes.resolvable, by = "GNISIDNAME") %>% 
-  dplyr::mutate(Basin = ifelse(`HU_6_NAME` == "Willamette",`HU_8_NAME`,`HU_6_NAME`)) %>% 
-  dplyr::select(GNISIDNAME,Basin,`7DGMDM`,`7DADM`,Date,`Days of Data`) %>% 
-  dplyr::arrange(desc(`7DGMDM`)) %>% 
-  dplyr::mutate(`7DGMDM` = ifelse(`7DGMDM`<= 0, "Non-detect",format(round(`7DGMDM`,0),big.mark=",",scientific = FALSE))) %>%
-  dplyr::mutate(`7DADM` = ifelse(`7DADM`<= 0, "Non-detect",format(round(`7DADM`,0),big.mark=",",scientific = FALSE))) %>% 
-  dplyr::rename(`Waterbody_GNISID*`= GNISIDNAME,
-    `7DADM (μg/L)` = `7DADM`,
-    `7DGMDM (μg/L)` = `7DGMDM`,
-    `Date_7DGMDM` = Date)
+  dplyr::summarise(`Date of Daily Max` = Date[which.max(`Daily Maximum`)],
+                   `Date of 7DADM Max` = Date[which.max(`7DADM`)],
+                   `7DADM` = max(`7DADM`, na.rm = TRUE),
+                   `7DMDM` = max(`7DMDM`, na.rm = TRUE),
+                   .groups = "drop") %>%
+  dplyr::filter(`7DADM` >= 24)
 
-map.tbl.data <- tbl.data %>% 
-  dplyr::filter(!`7DGMDM (μg/L)`== "Non-detect") %>% 
-  dplyr::mutate(`7dgmdm` = gsub(",","",`7DGMDM (μg/L)`)) %>%
-  dplyr::left_join(forecast, by = c("Waterbody_GNISID*"="GNIS_Name_ID")) %>% 
-  dplyr::filter(as.numeric(`7dgmdm`) >= 24 | `% Chance of CyanoHAB` >= 12) %>%
-  dplyr::select(`Waterbody_GNISID*`,Basin,`7DGMDM (μg/L)`,`7DADM (μg/L)`,`Date_7DGMDM`,`Days of Data`,-`7dgmdm`,`% Chance of CyanoHAB`)
+map.tbl.data <- dta_wide %>% 
+  dplyr::filter((as.Date(Date) <= as.Date(max(Date))) & (as.Date(Date) >= as.Date(max(Date))-6)) %>% 
+  dplyr::filter(`7DADM` >= 24) %>% 
+  dplyr::group_by(GNISIDNAME) %>%
+  dplyr::summarise(`7DADM` = max(`7DADM`, na.rm = TRUE),
+                   `7DMDM` = max(`7DMDM`, na.rm = TRUE),
+                   .groups = "drop") %>%
+  dplyr::left_join(dta_max %>% dplyr::select(-`7DADM`, -`7DMDM`), by = "GNISIDNAME") %>%
+  dplyr::left_join(lakes.resolvable %>% dplyr::select(GNISIDNAME,HU_6_NAME,HU_8_NAME), by = "GNISIDNAME") %>% 
+  dplyr::mutate(Basin = ifelse(`HU_6_NAME` == "Willamette", `HU_8_NAME`, `HU_6_NAME`)) %>% 
+  dplyr::left_join(dta_wide %>% dplyr::select(GNISIDNAME,Date,`Days of Data`), by = c("GNISIDNAME", "Date of 7DADM Max"="Date")) %>% 
+  dplyr::arrange(desc(`7DADM`)) %>% 
+  dplyr::mutate(`7DADM` = format(round(`7DADM`, 0), big.mark = ",", scientific = FALSE),
+                `7DMDM` = format(round(`7DMDM`, 0), big.mark = ",", scientific = FALSE)) %>%
+  dplyr::select(GNISIDNAME, Basin, `7DADM`, `7DMDM`, `Days of Data`, `Date of Daily Max`) %>% 
+  dplyr::rename(`Waterbody_GNISID*` = GNISIDNAME,
+                `Weekly Mean Daily Max (μg/L)` = `7DADM`,
+                `Weekly Median Daily Max (μg/L)` = `7DMDM`) %>%
+  dplyr::left_join(forecast %>% dplyr::select(GNIS_Name_ID,`% Chance of CyanoHAB`,`% Chance of CyanoHAB_map`), 
+                   by = c("Waterbody_GNISID*" = "GNIS_Name_ID")) %>%
+  dplyr::filter(as.numeric(`Weekly Mean Daily Max (μg/L)`) >= 24 | as.numeric(`% Chance of CyanoHAB_map`) >= 50) %>%
+  dplyr::select(`Waterbody_GNISID*`, Basin, `Weekly Mean Daily Max (μg/L)`,
+                `Weekly Median Daily Max (μg/L)`, `Days of Data`, `Date of Daily Max`,
+                `% Chance of CyanoHAB`) %>%
+  dplyr::filter(!`Waterbody_GNISID*` %in% c("Crater Lake_01163669", "Waldo Lake_01151818"))
 
 # (6) 7D Map  ----
 lakes.resolvable.7d <- lakes.resolvable %>% 
   dplyr::mutate(`7dadm` = ifelse(GNISIDNAME %in% map.tbl.data$`Waterbody_GNISID*`,
-    "Waterbody with high Chlorophyll-a with dominance of cyanobacteria",
-    "Others")) %>% 
+                                 "Waterbody with high Chlorophyll-a with dominance of cyanobacteria",
+                                 "Others")) %>% 
   dplyr::filter(!`7dadm` == "Others")
 
 sf::st_write(lakes.resolvable.7d, dsn = paste0(data_path, "gis/map_7d_pre.shp"), delete_layer = TRUE)
@@ -548,4 +513,3 @@ save(#dn_tbl,
   file = "data.RData")
 
 ```
-
