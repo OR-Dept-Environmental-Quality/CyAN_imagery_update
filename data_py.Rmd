@@ -80,7 +80,6 @@ python_list <- paste0("download_file_list = [",
                       "]")
 writeLines(python_list, "download_list.py")
 
-python_path <- "C:/Program Files/ArcGIS/Pro/bin/Python/envs/arcgispro-py3/python.exe"
 script_path <- "dn_ci_chla.py"
 system2(python_path, args = shQuote(script_path))
 
@@ -364,7 +363,8 @@ dta_cyan <- rbind(dta2,dta3) %>%
 
 dta <- rbind(dta_cyan,dta_field) %>% 
   dplyr::mutate(Parameter = ifelse(Parameter == "7DADM","Weekly Mean Daily Max",Parameter)) %>% 
-  dplyr::mutate(Parameter = ifelse(Parameter == "7DMDM","Weekly Median Daily Max",Parameter))
+  dplyr::mutate(Parameter = ifelse(Parameter == "7DMDM","Weekly Median Daily Max",Parameter)) %>% 
+  dplyr::mutate(Value = round(Value,2))
 
 advisories <- readxl::read_excel(paste0(data_path,"OHA_advisories.xlsx"), sheet = "Advisories") %>% 
   dplyr::filter(GNIS_Name_ID %in% sort(unique(dta$GNISIDNAME))) %>%

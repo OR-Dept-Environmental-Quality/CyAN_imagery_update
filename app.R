@@ -273,11 +273,14 @@ shinyApp(
           tags$h4(p("Select a waterbody to zoom in on its location on the map. ",
                     "Once selected, information will be displayed indicating whether the waterbody is used for recreation or as a public drinking water source.")),
           
-          shinyWidgets::pickerInput(inputId = "waterbody",
-                                    label = tags$h4(strong("Select a Waterbody:")),
-                                    choices = list("Oregon",
-                                                   "Waterbody Name_GNISID" = sort(unique(lakes.resolvable$GNISIDNAME))),
-                                    multiple = FALSE),
+          # shinyWidgets::pickerInput(inputId = "waterbody",
+          #                           label = tags$h4(strong("Select a Waterbody:")),
+          #                           choices = c("Oregon", sort(as.character(unique(lakes.resolvable$GNISIDNAME)))),
+          #                           selected = "Oregon",
+          #                           multiple = FALSE),
+          selectInput("waterbody", "Select a waterbody:",
+                      choices = c("Oregon", sort(as.character(unique(lakes.resolvable$GNISIDNAME)))),
+                      selected = "Oregon"),
           # ___ Drinking Water Area ----
           shiny::textOutput("dw"),
           
@@ -371,11 +374,14 @@ shinyApp(
             # h3("Time Series Plot and Data:"),
             
             # ____ Select a Waterbody 2 ----
-            shinyWidgets::pickerInput(inputId = "waterbody2",
-                                      label = tags$h4(strong("Select a waterbody:")),
-                                      choices = list("Oregon",
-                                                     "Waterbody Name_GNISID" = sort(unique(lakes.resolvable$GNISIDNAME))),
-                                      multiple = FALSE),
+            # shinyWidgets::pickerInput(inputId = "waterbody2",
+            #                           label = tags$h4(strong("Select a waterbody:")),
+            #                           choices = c("Oregon", sort(as.character(unique(lakes.resolvable$GNISIDNAME)))),
+            #                           selected = "Oregon",
+            #                           multiple = FALSE),
+            selectInput("waterbody2", "Select a waterbody:",
+                        choices = c("Oregon", sort(as.character(unique(lakes.resolvable$GNISIDNAME)))),
+                        selected = "Oregon"),
             
             # ____ Date range ----
             shiny::radioButtons(
@@ -706,6 +712,7 @@ shinyApp(
     
     # _ map reactive @ waterbody picker ----
     selected_waterbody <- reactiveVal(NULL)
+    
     observeEvent(input$waterbody,{
       
       if (input$waterbody == input$waterbody2) {
@@ -736,7 +743,8 @@ shinyApp(
       }else{
         
         selected_waterbody(input$waterbody)
-        updatePickerInput(session, "waterbody2", selected = selected_waterbody())
+        # shinyWidgets::updatePickerInput(session, "waterbody2", selected = selected_waterbody())
+        shiny::updateSelectInput(session, "waterbody2", selected = selected_waterbody())
         
         if(input$waterbody == c("Oregon")) {
           
@@ -768,7 +776,8 @@ shinyApp(
     observeEvent(input$waterbody2, {
       if (input$waterbody != input$waterbody2) {
         selected_waterbody(input$waterbody2)
-        updatePickerInput(session, "waterbody", selected = selected_waterbody())
+        # shinyWidgets::updatePickerInput(session, "waterbody", selected = selected_waterbody())
+        shiny::updateSelectInput(session, "waterbody", selected = selected_waterbody())
       }
     })
     
@@ -791,21 +800,19 @@ shinyApp(
     observeEvent(input$select_all, {
       updateCheckboxGroupInput(
         session,
-        inputId = selected_matrix(),
-        selected = c(
-          "Weekly Mean Daily Max", "Weekly Median Daily Max", "Daily Maximum", "Daily Mean",
-          "Chlorophyll a", "Anatoxin-A", "Cylindrospermopsin",
-          "Microcystins", "Saxitoxin", "Pheophytin a"
-        )
+        inputId = "matrix_cyan",
+        selected = c("Weekly Mean Daily Max", "Weekly Median Daily Max", "Daily Maximum", "Daily Mean")
+      )
+      updateCheckboxGroupInput(
+        session,
+        inputId = "matrix_field",
+        selected = c("Chlorophyll a", "Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin")
       )
     })
     
     observeEvent(input$clear_all, {
-      updateCheckboxGroupInput(
-        session,
-        inputId = selected_matrix(),
-        selected = character(0)
-      )
+      updateCheckboxGroupInput(session, inputId = "matrix_cyan", selected = character(0))
+      updateCheckboxGroupInput(session, inputId = "matrix_field", selected = character(0))
     })
     
     yr <- reactive({ 
@@ -894,7 +901,7 @@ shinyApp(
               )
             })
         })
-
+        
         advisory_hover_markers <- reactive({
           req(df())
           
@@ -1320,7 +1327,7 @@ shinyApp(
       df() %>% 
         dplyr::select(GNISIDNAME,Date,Parameter,Value,Unit,`Result Status`,`Data Source`) %>% 
         dplyr::mutate(Note = ifelse(Value == 0, "Non-detect", "")) %>% 
-        dplyr::mutate(Value = scales::comma(Value)) %>%
+        # dplyr::mutate(Value = scales::comma(Value)) %>%
         dplyr::rename(Waterbody_GNISID = GNISIDNAME)
     })
     
