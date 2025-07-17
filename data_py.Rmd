@@ -14,9 +14,11 @@ source("path.R") # path.R is not provided to the public because
 #   dplyr::mutate_at(dplyr::vars(dplyr::starts_with("VALUE_")), as.numeric)
 # data_ci <- readxl::read_excel(paste0(data_path,"cyan_ci_2025.xlsx"))
 data_chla <- readxl::read_excel(paste0(data_path,"cyan_chla_2025.xlsx"))
+data_field <- readxl::read_excel(paste0(data_path,"field_data_2025.xlsx"))
 dates <- readxl::read_excel(paste0(data_path,"calendar-dates.xlsx"))
 resolvable_lakes <- readxl::read_excel(paste0(data_path,"Resolvable_Lakes.xlsx"), sheet = "cyan_resolvable_lakes")
 forecast_lakes <- readxl::read_excel(paste0(data_path,"Resolvable_Lakes.xlsx"), sheet = "forecast")
+field_lakes <- readxl::read_excel(paste0(data_path,"Resolvable_Lakes.xlsx"), sheet = "field")
 ```
 
 ## Step 2. Download data from [NASA's data site].
@@ -70,7 +72,7 @@ print("Step 2 - download is completed")
 
 ```
 
-## Step 3. Process data.
+## Step 3. Process satellite data.
 ### - 3.1 Convert raw data-DN-CI-Chla
 ```{r dn-ci-chla}
 
@@ -292,55 +294,59 @@ print("Step 3.4 - Chl-a table is completed")
 
 ```
 
-## Step 4. Gether data for the shiny app.
+## Step 4. Download AWQMS data.
+```{r awqms_data}
+field_data <- AWQMSdata::AWQMS_Data(
+  Char_Name = c(
+    'Anatoxin-A',
+    'Chlorophyll a',
+    'Cylindrospermopsin',
+    'Microcystins',
+    'Pheophytin a',
+    'Saxitoxin'
+  ),
+  startdate = '2025-01-01', 
+  enddate = Sys.Date())
+
+writexl::write_xlsx(field_data, paste0(data_path,"field_data_all_2025.xlsx"))
+
+field_data_clean <- field_data %>%
+  dplyr::left_join(field_lakes, by = "AU_ID") %>%
+  dplyr::select(MLocID,StationDes,Lat_DD,Long_DD,SampleStartDate,Char_Name,Result_Numeric,Result_Unit,GNIS_Name_ID,
+                Result_status,DQL,QualifierAbbr,Result_Type,MonLocType,`Project1`) %>% 
+  dplyr::filter(!is.na(GNIS_Name_ID)) %>% 
+  dplyr::filter(Result_status %in% c("Final","Accepted","Validated")) %>% # excluded: "Preliminary" and "Rejected" 
+  dplyr::filter(DQL %in% c("A","B","E",NA)) %>% # excluded: "C" and "D" 
+  dplyr::filter(is.na(QualifierAbbr)) %>% # excluded: "FQC", "SUS", "H" and "Q"     
+  dplyr::filter(Result_Type %in% "Actual") %>% # excluded: "Estimated"
+  dplyr::filter(`Project1` %in% c(
+    "Harmful Algal Bloom Monitoring",
+    "Drinking Water Source Monitoring",
+    "ODEQVolMonWQProgram",
+    "Surface Water Ambient Monitoring",
+    "Total Maximum Daily Load Sampling",
+    "Water Quality Response Monitoring",
+    "Unknown"
+  ))
+
+writexl::write_xlsx(field_data_clean, paste0(data_path,"field_data_2025.xlsx"))
+
+print("Step 4 - AWQMS is completed")
+
+```
+
+
+## Step 5. Gether data for the shiny app.
 ```{r shiny_data}
 # (1) Timeseries Data Table ----
-
 dta1 <- resolvable_lakes
 
+# CyAN Chla ----
 dta2 <- readxl::read_excel(paste0(data_path,"cyan_chla_2025.xlsx")) %>% 
   dplyr::filter(GNISIDNAME %in% dta1$inApp) # filter out saline lakes
 
 dta3 <- readxl::read_excel(paste0(data_path,"cyan_chla_2016-2024.xlsx")) %>% 
   dplyr::filter(GNISIDNAME %in% dta1$inApp) # filter out saline lakes
-
-dta_field <- readxl::read_excel(paste0(data_path,"field_data.xlsx")) %>% 
-  dplyr::select(MLocID,StationDes,Lat_DD,Long_DD,SampleStartDate,Char_Name,Result_status,Result_Numeric,Result_Unit,GNIS_Name_ID) %>% 
-  dplyr::mutate(
-    GNISIDNAME = GNIS_Name_ID,
-    Date = lubridate::ymd(SampleStartDate),
-    Month = lubridate::month(SampleStartDate),
-    `Days of Data` ="",
-    Parameter = Char_Name,
-    Value = Result_Numeric,
-    Unit = Result_Unit,
-    `Result Status` = Result_status,
-    `Data Source` = paste0("Station: ",StationDes," (",MLocID,")"),
-    wi_DWSA = ifelse(GNISIDNAME %in% dta1$wi_DWSA, "Yes", "No")) %>% 
-  dplyr::mutate(Unit = dplyr::case_when(
-    Unit == "mg/m3" ~ "µg/L",
-    Unit == "ppb" ~ "µg/L",
-    Unit == "None" ~ "µg/L",
-    TRUE ~ Unit )) %>% 
-  dplyr::left_join(dates,by="Date") %>% 
-  dplyr::select(GNISIDNAME,Date,Year,Month,Day,Julian_day,`Days of Data`,Parameter,Value,Unit,`Result Status`,`Data Source`,Lat_DD,Long_DD,wi_DWSA) %>% 
-  dplyr::filter(Year > 2015)
-
-field_stations <- readxl::read_excel(paste0(data_path,"field_data.xlsx")) %>% 
-  dplyr::select(MLocID,StationDes,Lat_DD,Long_DD,SampleStartDate,Char_Name,Result_status,Result_Numeric,Result_Unit,GNIS_Name_ID) %>% 
-  dplyr::filter(!Char_Name %in% "Pheophytin a") %>% 
-  dplyr::group_by(MLocID, StationDes, Lat_DD, Long_DD, Char_Name) %>%
-  dplyr::summarize(
-    StartDate = min(SampleStartDate, na.rm = TRUE),
-    EndDate = max(SampleStartDate, na.rm = TRUE),
-    DataCount = n(),
-    .groups = 'drop') %>%
-  ungroup() %>% 
-  dplyr::group_by(MLocID, StationDes, Lat_DD, Long_DD) %>%
-  summarize(
-    CharData = paste0(Char_Name, " (", StartDate," ~ ", EndDate,"): ", DataCount, collapse = "<br>"),
-    .groups = 'drop'
-  )
 
 dta_cyan <- rbind(dta2,dta3) %>% 
   dplyr::rename(`Daily Mean` = MEAN, `Daily Maximum` = MAX) %>% 
@@ -361,12 +367,64 @@ dta_cyan <- rbind(dta2,dta3) %>%
   dplyr::select(GNISIDNAME,Date,Year,Month,Day,Julian_day,`Days of Data`,Parameter,Value,Unit,`Result Status`,`Data Source`,Lat_DD,Long_DD,wi_DWSA) %>% 
   dplyr::filter(Year > 2015)
 
+# Field data ----
+dta_field_1 <- readxl::read_excel(paste0(data_path,"field_data_2025.xlsx"))
+
+dta_field_2 <- readxl::read_excel(paste0(data_path,"field_data_1999-2024.xlsx"))
+
+dta_field <- rbind(dta_field_1,dta_field_2) %>% 
+  dplyr::select(MLocID,StationDes,Lat_DD,Long_DD,SampleStartDate,Char_Name,Result_status,Result_Numeric,Result_Unit,GNIS_Name_ID) %>% 
+  dplyr::filter(!Char_Name %in% "Pheophytin a") %>% 
+  dplyr::mutate(
+    GNISIDNAME = GNIS_Name_ID,
+    Date = lubridate::ymd(SampleStartDate),
+    Month = lubridate::month(SampleStartDate),
+    `Days of Data` ="",
+    Parameter = Char_Name,
+    Value = Result_Numeric,
+    Unit = Result_Unit,
+    `Result Status` = Result_status,
+    `Data Source` = paste0("Station: ",StationDes," (",MLocID,")"),
+    wi_DWSA = ifelse(GNISIDNAME %in% dta1$wi_DWSA, "Yes", "No")) %>% 
+  dplyr::mutate(Unit = dplyr::case_when(
+    Unit == "mg/m3" ~ "µg/L",
+    Unit == "ppb" ~ "µg/L",
+    Unit == "None" ~ "µg/L",
+    TRUE ~ Unit )) %>% 
+  dplyr::left_join(dates,by="Date") %>% 
+  dplyr::select(GNISIDNAME,Date,Year,Month,Day,Julian_day,`Days of Data`,Parameter,Value,Unit,`Result Status`,`Data Source`,Lat_DD,Long_DD,wi_DWSA) %>% 
+  dplyr::filter(Year > 2015)
+
+field_stations <- rbind(dta_field_1,dta_field_2) %>% 
+  dplyr::select(MLocID,StationDes,Lat_DD,Long_DD,SampleStartDate,Char_Name,Result_status,Result_Numeric,Result_Unit,GNIS_Name_ID) %>% 
+  dplyr::filter(!Char_Name %in% "Pheophytin a") %>% 
+  dplyr::group_by(MLocID, StationDes, Lat_DD, Long_DD, Char_Name) %>%
+  dplyr::summarize(
+    StartDate = min(SampleStartDate, na.rm = TRUE),
+    EndDate = max(SampleStartDate, na.rm = TRUE),
+    DataCount = n(),
+    .groups = 'drop') %>%
+  dplyr::ungroup() %>% 
+  dplyr::group_by(MLocID, StationDes, Lat_DD, Long_DD) %>%
+  dplyr::summarize(
+    CharData = paste0(Char_Name, " (", StartDate," ~ ", EndDate,"): ", DataCount, collapse = "<br>"),
+    .groups = 'drop'
+  )
+
 dta <- rbind(dta_cyan,dta_field) %>% 
   dplyr::mutate(Parameter = ifelse(Parameter == "7DADM","Weekly Mean Daily Max",Parameter)) %>% 
   dplyr::mutate(Parameter = ifelse(Parameter == "7DMDM","Weekly Median Daily Max",Parameter)) %>% 
   dplyr::mutate(Value = round(Value,2))
 
-advisories <- readxl::read_excel(paste0(data_path,"OHA_advisories.xlsx"), sheet = "Advisories") %>% 
+# Advisories ----
+dta_adv_1 <- readxl::read_excel(paste0(data_path,"OHA_advisories_2007-2024.xlsx"), sheet = "Advisories")
+
+dta_adv_2 <- readxl::read_excel(paste0(data_path,"OHA_advisories_2025.xlsx"), sheet = "Advisories") %>% 
+  dplyr::mutate(Details = dplyr::if_else(is.na(Lifted),"Active",Details)) %>% 
+  dplyr::mutate(Lifted = dplyr::if_else(is.na(Lifted),as.POSIXct(Sys.Date()-1),Lifted)) 
+
+advisories <- rbind(dta_adv_1,dta_adv_2) %>% 
+  dplyr::filter(Status_OHA == "Advisory") %>% 
   dplyr::filter(GNIS_Name_ID %in% sort(unique(dta$GNISIDNAME))) %>%
   dplyr::mutate(
     Issued = lubridate::ymd(Issued),
@@ -374,10 +432,11 @@ advisories <- readxl::read_excel(paste0(data_path,"OHA_advisories.xlsx"), sheet 
     Year = lubridate::year(Issued)) %>%
   dplyr::mutate(
     `Dominant genus/toxin` = ifelse(is.na(`Dominant genus/toxin`),"Toxin",`Dominant genus/toxin`),
-    `Cell Count/Toxin` = ifelse(is.na(`Cell Count/Toxin`),"",`Cell Count/Toxin`)
-  ) %>% 
-  dplyr::select(GNIS_Name_ID,Issued, Lifted,`Dominant genus/toxin`,`Cell Count/Toxin`,Unit)
+    `Cell Count/Toxin` = ifelse(is.na(`Cell Count/Toxin`),"",`Cell Count/Toxin`),
+    Lifted_label = if_else(Details %in% "Active","Not Yet Lifted",format(as.Date(Lifted), "%b %d, %Y"))) %>% 
+  dplyr::select(GNIS_Name_ID,Issued, Lifted, Lifted_label,`Dominant genus/toxin`,`Cell Count/Toxin`,Unit)
 
+# Forecast ----
 forecast <- readxl::read_excel(paste0(data_path,"forecast.xlsx")) %>% 
   dplyr::left_join(forecast_lakes, by = "Lake Name") %>% 
   dplyr::mutate(`% Chance of CyanoHAB` = as.numeric(`% Chance of CyanoHAB`)) %>%
@@ -388,7 +447,8 @@ forecast <- readxl::read_excel(paste0(data_path,"forecast.xlsx")) %>%
   dplyr::mutate(
     `% Chance of CyanoHAB` = ifelse(
       `% Chance of CyanoHAB` < 1, "< 1",
-      format(round(`% Chance of CyanoHAB`, 0), big.mark = ",", scientific = FALSE)))
+      format(round(`% Chance of CyanoHAB`, 0), big.mark = ",", scientific = FALSE))) %>% 
+    dplyr::filter(GNIS_Name_ID %in% dta1$inApp) # filter out saline lakes
 
 # (2) Date Lookup Table ----
 dates <- dates %>% dplyr::mutate(Date = lubridate::ymd(Date))

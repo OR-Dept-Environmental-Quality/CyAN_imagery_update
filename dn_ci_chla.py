@@ -47,7 +47,7 @@ from download_list import download_file_list
 for i, raw_name in enumerate(download_file_list, start=1):
   print(f"[{i}/{len(download_file_list)}] Processing {raw_name}...", flush=True)
 
-  # test: raw_name = '2025133'
+  # test: raw_name = '2025194'
   print(raw_name)
   
   raw_tif_path = os.path.join(raw_path, f"{raw_name}.tif")
@@ -277,3 +277,4 @@ for i, raw_name in enumerate(download_file_list, start=1):
   zonal_chl_df = pd.DataFrame(dtype='object')
 
 print("Step 3.1 - conversion is completed")
+

@@ -219,8 +219,6 @@ shinyApp(
                   "These probabilities are presented for all highlighted waterbodies and for any other waterbodies ",
                   "where the modeled probabilities are ≥50%.")),
         
-        # tags$h4(p(strong("Reporting Period: ", report_start_fmt, " - ", report_end_fmt))),
-        
         # ___ 7-Day Table ----
         shinydashboard::box(
           width = 6,
@@ -243,8 +241,6 @@ shinyApp(
           solidHeader = TRUE,
           
           tags$img(src = "map_7d.jpg", width = "100%")
-          # shinyfullscreen::fullscreen_this(shiny::imageOutput("maps7"))
-          # leaflet::leafletOutput("map7d", height = "700px")
           
         )
         
@@ -273,14 +269,12 @@ shinyApp(
           tags$h4(p("Select a waterbody to zoom in on its location on the map. ",
                     "Once selected, information will be displayed indicating whether the waterbody is used for recreation or as a public drinking water source.")),
           
-          # shinyWidgets::pickerInput(inputId = "waterbody",
-          #                           label = tags$h4(strong("Select a Waterbody:")),
-          #                           choices = c("Oregon", sort(as.character(unique(lakes.resolvable$GNISIDNAME)))),
-          #                           selected = "Oregon",
-          #                           multiple = FALSE),
-          selectInput("waterbody", "Select a waterbody:",
+          selectInput(inputId = "waterbody", 
+                      label = tags$h4(strong("Select a Waterbody:")),
                       choices = c("Oregon", sort(as.character(unique(lakes.resolvable$GNISIDNAME)))),
-                      selected = "Oregon"),
+                      selected = "Oregon",
+                      selectize = FALSE,
+                      size = 10),
           # ___ Drinking Water Area ----
           shiny::textOutput("dw"),
           
@@ -336,7 +330,7 @@ shinyApp(
           #title = "right",
           solidHeader = TRUE,
           
-          shinycssloaders::withSpinner(leaflet::leafletOutput("map", height = "800px"))
+          shinycssloaders::withSpinner(leaflet::leafletOutput("map", height = "900px"))
           
         )
         
@@ -371,17 +365,13 @@ shinyApp(
             #title = "left",
             solidHeader = FALSE,
             
-            # h3("Time Series Plot and Data:"),
-            
             # ____ Select a Waterbody 2 ----
-            # shinyWidgets::pickerInput(inputId = "waterbody2",
-            #                           label = tags$h4(strong("Select a waterbody:")),
-            #                           choices = c("Oregon", sort(as.character(unique(lakes.resolvable$GNISIDNAME)))),
-            #                           selected = "Oregon",
-            #                           multiple = FALSE),
-            selectInput("waterbody2", "Select a waterbody:",
+            selectInput(inputId = "waterbody2", 
+                        label = tags$h4(strong("Select a Waterbody:")),
                         choices = c("Oregon", sort(as.character(unique(lakes.resolvable$GNISIDNAME)))),
-                        selected = "Oregon"),
+                        selected = "Oregon",
+                        selectize = FALSE,
+                        size = 10),
             
             # ____ Date range ----
             shiny::radioButtons(
@@ -442,13 +432,14 @@ shinyApp(
                     "Microcystins" = "Microcystins",
                     "Saxitoxin" = "Saxitoxin"
                     # "Pheophytin-a" = "Pheophytin a"
-                  )
+                  ),
+                  selected = c("Anatoxin-A", "Cylindrospermopsin","Microcystins","Saxitoxin")
                 )
               ),
               
               tags$br(),
               
-              # Buttons in a row
+              # Check/Clear all on Checkboxs
               fluidRow(
                 column(4, actionButton("select_all", "Check All", icon = icon("check-square"))),
                 column(8, actionButton("clear_all", "Clear All", icon = icon("square")))
@@ -469,7 +460,23 @@ shinyApp(
             
             checkboxGroupInput(
               inputId = "plot_log",
-              label = tags$h4(strong("")))
+              label = tags$h4(strong(""))),
+            
+            # ____ Advisory ----
+            tags$hr(),
+            
+            tags$div("Show or hide OHA advisory periods on the plot. Hover over the upward triangle to see advisory dates and associated cyanotoxins.",
+                     style = "font-size: 1.2em; line-height: 1.2em;"),
+            
+            tags$h4(strong("OHA Advisories:")),
+            
+            shinyWidgets::switchInput(
+              inputId = "advisory_bars", 
+              label = "", 
+              value = TRUE, 
+              onLabel = "Show", 
+              offLabel = "Hide", 
+              size = "normal")
             
           ),
           
@@ -479,11 +486,19 @@ shinyApp(
             solidHeader = FALSE,
             
             # ____ Time series plot ----
-            tags$h4(p(strong("Time series plot of Chlorophyll-a (μg/L) with cyanobacteria dominance in the selected waterbody."))),
+            tags$h4(p(strong("Chlorophyll-a estimates from CyAN and field data (if available)."))),
             
-            textOutput("no_plot"),
+            textOutput("no_plot_1"),
             
-            plotlyOutput("plot_cell"),
+            plotlyOutput("plot_chl"),
+            
+            tags$br(),
+            
+            tags$h4(p(strong("Cyanotoxin data from field data."))),
+            
+            textOutput("no_plot_2"),
+            
+            plotlyOutput("plot_toxin"),
             
             tags$br(),
             tags$br(),
@@ -743,7 +758,7 @@ shinyApp(
       }else{
         
         selected_waterbody(input$waterbody)
-        # shinyWidgets::updatePickerInput(session, "waterbody2", selected = selected_waterbody())
+        
         shiny::updateSelectInput(session, "waterbody2", selected = selected_waterbody())
         
         if(input$waterbody == c("Oregon")) {
@@ -776,7 +791,7 @@ shinyApp(
     observeEvent(input$waterbody2, {
       if (input$waterbody != input$waterbody2) {
         selected_waterbody(input$waterbody2)
-        # shinyWidgets::updatePickerInput(session, "waterbody", selected = selected_waterbody())
+        
         shiny::updateSelectInput(session, "waterbody", selected = selected_waterbody())
       }
     })
@@ -788,8 +803,8 @@ shinyApp(
       "Chlorophyll a", "Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin", "Pheophytin a")
     
     parameter_colors <- c(
-      "blue", "brown", "orange", "green", 
-      "purple", "#17becf", "gold", "red", "pink", "gray")
+      "blue", "brown", "#17becf", "green", 
+      "orange", "#d01c8b", "#f4a582", "#4dac26", "#b8e186", "gray")
     
     pal.plot <- setNames(parameter_colors, parameters)
     
@@ -823,6 +838,10 @@ shinyApp(
     
     df <- reactive({
       
+      if (length(selected_matrix()) == 0) {
+        return(NULL)
+      }
+      
       if(input$ploty == "Current Year: 2025"){
         
         dta %>% 
@@ -851,10 +870,6 @@ shinyApp(
       
     })
     
-    df_after_gap <- reactive({ 
-      df() %>% dplyr::filter(Date >= as.Date("2016-01-01"))
-    })
-    
     type <- reactive({
       
       input$plot_log
@@ -873,17 +888,28 @@ shinyApp(
       
       if(input$waterbody == c("Oregon")) {
         
-        output$no_plot <- renderText({ 
+        output$no_plot_1 <- renderText({ 
           
-          "Select a waterbody to show the plot."
+          "Select a waterbody to view the time series plot."
+          
+        })
+        
+        output$no_plot_2 <- renderText({ 
+          
+          "Select a waterbody to view the plot. Field cyanotoxin data are based on individual samples and shown only when available."
           
         })
         
       } else {
         
-        output$no_plot <- renderText({})
+        output$no_plot_1 <- renderText({})
         
-        advisory_shapes <- reactive({
+        output$no_plot_2 <- renderText({})
+        
+        advisory_shapes_chl <- reactive({
+          
+          if (is.null(df()) || nrow(df()) == 0) return(NULL)
+          
           advisories %>%
             dplyr::filter(GNIS_Name_ID == input$waterbody) %>%
             dplyr::filter(Issued <= max(df()$Date), Lifted >= min(df()$Date)) %>% 
@@ -894,7 +920,7 @@ shinyApp(
                 x0 = as.Date(Issued),
                 x1 = as.Date(Lifted),
                 y0 = 0.5,
-                y1 = max(df()$Value, na.rm = TRUE) + 10,
+                y1 = max(max(df()$Value, na.rm = TRUE), 25),
                 fillcolor = "red",
                 line = list(color = "red"),
                 opacity = 0.2
@@ -902,7 +928,7 @@ shinyApp(
             })
         })
         
-        advisory_hover_markers <- reactive({
+        advisory_hover_markers_chl <- reactive({
           req(df())
           
           advisories %>%
@@ -914,60 +940,106 @@ shinyApp(
             # tidyr::drop_na() %>%
             dplyr::mutate(
               x = as.Date(Lifted),
-              y = max(df()$Value, na.rm = TRUE) * 1.05,
-              label = paste0(
+              y = max(max(df()$Value, na.rm = TRUE), 25) * 1.05,
+              label = as.character(paste0(
                 "<span style='color:black;'>",
                 "<b>Advisory</b><br>",
                 "Issued: ", format(Issued, "%b %d, %Y"), "<br>",
-                "Lifted: ", format(Lifted, "%b %d, %Y"), "<br>",
-                "`", `Dominant genus/toxin`, "`: ", `Cell Count/Toxin`, " ", Unit
-              )
+                "Lifted: ", Lifted_label, "<br>",
+                "`", `Dominant genus/toxin`, "`: ", `Cell Count/Toxin`, " ", Unit,
+                "</span>"
+              ))
             )
         })
         
-        report_shape <- list(
-          type = "rect",
-          x0 = as.Date(max(dta2$Date)) - 6,
-          x1 = as.Date(max(dta2$Date)),
-          y0 = 0.5,
-          y1 = max(max(df()$Value, na.rm = TRUE), 25),
-          fillcolor = "green",
-          line = list(color = "green"),
-          opacity = 0.2
-        )
+        advisory_shapes_toxins <- reactive({
+          
+          if (is.null(df()) || nrow(df()) == 0) return(NULL)
+          
+          advisories %>%
+            dplyr::filter(GNIS_Name_ID == input$waterbody) %>%
+            dplyr::filter(Issued <= max(df()$Date), Lifted >= min(df()$Date)) %>% 
+            # tidyr::drop_na() %>% 
+            purrr::pmap(function(Issued, Lifted, ...) {
+              list(
+                type = "rect",
+                x0 = as.Date(Issued),
+                x1 = as.Date(Lifted),
+                y0 = 0.5,
+                y1 = max(
+                  max((df() %>% dplyr::filter(Parameter %in% c("Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin")))$Value, na.rm = TRUE),
+                  16),
+                fillcolor = "red",
+                line = list(color = "red"),
+                opacity = 0.2
+              )
+            })
+        })
         
-        report_label <- list(
-          x = as.Date(max(dta2$Date)) - 4,
-          y = max(max(df()$Value, na.rm = TRUE),24),
-          text = "RP*",
-          textfont = list(size = 12),
-          showlegend = FALSE
-        )
+        advisory_hover_markers_toxins <- reactive({
+          req(df())
+          
+          advisories %>%
+            dplyr::filter(
+              GNIS_Name_ID == input$waterbody,
+              Issued <= max(df()$Date),
+              Lifted >= min(df()$Date)
+            ) %>%
+            # tidyr::drop_na() %>%
+            dplyr::mutate(
+              x = as.Date(Lifted),
+              y = max(
+                max((df() %>% dplyr::filter(Parameter %in% c("Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin")))$Value, na.rm = TRUE),
+                16) * 1.05,
+              label = as.character(paste0(
+                "<span style='color:black;'>",
+                "<b>Advisory</b><br>",
+                "Issued: ", format(Issued, "%b %d, %Y"), "<br>",
+                "Lifted: ", Lifted_label, "<br>",
+                "`", `Dominant genus/toxin`, "`: ", `Cell Count/Toxin`, " ", Unit,
+                "</span>"
+              ))
+            )
+        })
         
-        # who_line_annotation <- list(
-        #   x = max(df()$Date),
-        #   y = 24,
-        #   text = "High (24 μg/L)**",
-        #   font = list(size = 12),
-        #   xref = "x", yref = "y",
-        #   showarrow = TRUE,
-        #   arrowhead = 3,
-        #   arrowsize = 1,
-        #   ax = -60, ay = -20
-        # )
+        report_shape <- reactive({
+          list(
+            type = "rect",
+            x0 = as.Date(max(dta2$Date)) - 6,
+            x1 = as.Date(max(dta2$Date)),
+            y0 = 0.5,
+            y1 = max(max(df()$Value, na.rm = TRUE), 25),
+            fillcolor = "green",
+            line = list(color = "green"),
+            opacity = 0.2
+          )
+        })
         
-        all_shapes <- reactive({c(list(report_shape), advisory_shapes())})
-        # all_annotations <- reactive({c(list(report_label), advisory_labels(), list(who_line_annotation))})
-        # all_annotations <- reactive({c(list(report_label), list(who_line_annotation))})
-        all_annotations <- reactive({c(list(report_label))})
+        report_hover_markers <- reactive({
+          req(df(), dta2)
+          
+          tibble::tibble(
+            x = as.Date(max(dta2$Date)) - 4,
+            y = max(max(df()$Value, na.rm = TRUE), 25) * 1.05,
+            label = as.character(glue::glue(
+              "<span style='color:black;'><b>Reporting period:</b><br>{report_start_fmt} - {report_end_fmt}</span>"
+            ))
+          )
+        })
         
-        output$plot_cell <- renderPlotly({
+        all_shapes <- reactive({c(list(report_shape()), advisory_shapes_chl())})
+        # all_annotations <- reactive({c(list(report_label))})
+        
+        # __ Plot chl-a ----
+        output$plot_chl <- renderPlotly({
+          
+          req(df()) # prevent the plot from rendering if df() is NULL
           
           if(input$ploty == "Current Year: 2025"){
             
-            plotly::plot_ly() %>%
+            p1 <- plotly::plot_ly() %>%
               plotly::add_trace(
-                data = df_after_gap() %>% dplyr::filter(Parameter %in% c("Weekly Mean Daily Max", "Weekly Median Daily Max", "Daily Maximum", "Daily Mean")),
+                data = df() %>% dplyr::filter(Parameter %in% c("Weekly Mean Daily Max", "Weekly Median Daily Max", "Daily Maximum", "Daily Mean")),
                 x = ~as.Date(Date), 
                 y = ~Value,
                 split = ~Parameter,
@@ -978,43 +1050,50 @@ shinyApp(
                 marker = list(size = 8),
                 legendgroup = "line") %>%
               plotly::add_trace(
-                data = df_after_gap() %>% dplyr::filter(Parameter %in% c("Chlorophyll a", "Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin", "Pheophytin a")),
-                x = ~as.Date(Date),
+                data = df() %>% dplyr::filter(Parameter %in% c("Chlorophyll a")),
+                x = ~Date,
                 y = ~Value,
-                type = "bar",
-                name = ~Parameter,
-                color = ~Parameter,
-                colors = pal.plot,
-                legendgroup = "bar") %>%
+                type = "scatter",
+                mode = "markers",
+                name = "Chlorophyll-a (Field)",
+                marker = list(color = pal.plot[["Chlorophyll a"]], size = 14),
+                legendgroup = "bar"
+              ) %>% 
               plotly::add_trace(
                 y = 24, 
                 mode = "lines",
                 # x = ~as.Date(dta$Date),
                 x = ~as.Date(df()$Date),
                 line = list(shape = 'spline', color = '#006d2c', width = 1.5),
-                name = "Chl-a: 24**",
+                name = "Chl-a: 24*",
                 legendgroup = "high",
                 showlegend = TRUE) %>% 
               plotly::add_trace(
-                y = 15, 
-                mode = "lines",
-                # x = ~as.Date(dta$Date),
-                x = ~as.Date(df()$Date),
-                line = list(shape = 'spline', color = '#993404', width = 1.5),
-                name = "Toxin: 15***",
-                legendgroup = "high",
-                showlegend = TRUE) %>% 
+                # for adding legends only
+                x = c(min(df()$Date) - 100), 
+                y = c(1), 
+                type = "bar",
+                name = "Advisory Period",
+                marker = list(color = "pink"),
+                showlegend = TRUE,
+                hoverinfo = "none",
+                legendgroup = "advisory_legend"
+              ) %>% 
               plotly::add_trace(
-                y = 8, 
-                mode = "lines",
-                # x = ~as.Date(dta$Date),
-                x = ~as.Date(df()$Date),
-                line = list(shape = 'spline', color = '#cc4c02', width = 1.5),
-                name = "Toxin: 8***",
-                legendgroup = "high",
-                showlegend = TRUE) %>% 
+                # for adding legends only
+                x = c(min(df()$Date) - 100),  
+                y = c(1),
+                type = "bar",
+                name = "Reporting Period",
+                marker = list(color = "#b8e186"),
+                showlegend = TRUE,
+                hoverinfo = "none",
+                legendgroup = "reporting_legend"
+              )
+            
+            p2 <- p1 %>% 
               plotly::add_trace(
-                data = advisory_hover_markers(),
+                data = report_hover_markers(),
                 x = ~x,
                 y = ~y,
                 text = ~label,
@@ -1023,157 +1102,61 @@ shinyApp(
                 hoverinfo = "text",
                 marker = list(
                   size = 10,
-                  symbol = "triangle-up",
+                  symbol = "triangle-down",
                   color = "#D3D3D3"),
-                name = "Advisory",
+                name = "Reporting Period:",
                 showlegend = FALSE) %>% 
               plotly::layout(
-                xaxis = list(title = "Date", range = c(min(df()$Date),max(df()$Date)+1)),
-                title = as.character(unique(df()$GNISIDNAME)),
-                shapes = all_shapes(),
-                annotations = all_annotations()) %>% 
-              plotly::layout(
-                yaxis = list(type = type(),
-                             title = yaxis(),
-                             range = c(
-                               -0.5,
-                               max(max(df_after_gap()$Value[df_after_gap()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,25)
-                             )))
-            
-          } else if (input$ploty == "Reset to Complete Data Range") {
-            
-            plotly::plot_ly() %>%
-              plotly::add_trace(
-                data = df_after_gap() %>% dplyr::filter(Parameter %in% c("Weekly Mean Daily Max", "Weekly Median Daily Max", "Daily Maximum", "Daily Mean")),
-                x = ~as.Date(Date), 
-                y = ~Value,
-                split = ~Parameter,
-                type = "scatter",
-                mode = "lines+markers",
-                color = ~Parameter,
-                colors = pal.plot,
-                marker = list(size = 8),
-                legendgroup = "line") %>%
-              plotly::add_trace(
-                data = df_after_gap() %>% dplyr::filter(Parameter %in% c("Chlorophyll a", "Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin", "Pheophytin a")),
-                x = ~as.Date(Date),
-                y = ~Value,
-                type = "bar",
-                name = ~Parameter,
-                color = ~Parameter,
-                colors = pal.plot,
-                legendgroup = "bar") %>%
-              plotly::add_trace(
-                y = 24, 
-                mode = "lines",
-                # x = ~as.Date(dta$Date),
-                x = ~as.Date(df()$Date),
-                line = list(shape = 'spline', color = '#006d2c', width = 1.5),
-                name = "Chl-a: 24**",
-                legendgroup = "high",
-                showlegend = TRUE) %>% 
-              plotly::add_trace(
-                y = 15, 
-                mode = "lines",
-                # x = ~as.Date(dta$Date),
-                x = ~as.Date(df()$Date),
-                line = list(shape = 'spline', color = '#993404', width = 1.5),
-                name = "Toxin: 15***",
-                legendgroup = "high",
-                showlegend = TRUE) %>% 
-              plotly::add_trace(
-                y = 8, 
-                mode = "lines",
-                # x = ~as.Date(dta$Date),
-                x = ~as.Date(df()$Date),
-                line = list(shape = 'spline', color = '#cc4c02', width = 1.5),
-                name = "Toxin: 8***",
-                legendgroup = "high",
-                showlegend = TRUE) %>% 
-              plotly::add_trace(
-                data = advisory_hover_markers(),
-                x = ~x,
-                y = ~y,
-                text = ~label,
-                type = "scatter",
-                mode = "markers",
-                hoverinfo = "text",
-                marker = list(
-                  size = 10,
-                  symbol = "triangle-up",
-                  color = "#D3D3D3"),
-                name = "Advisory",
-                showlegend = FALSE) %>% 
+                title = as.character(unique(df()$GNISIDNAME))) %>% 
               plotly::layout(
                 xaxis = list(
                   title = "Date", 
-                  range = c(min(df()$Date),max(df()$Date)+1)),
-                title = as.character(unique(df()$GNISIDNAME)),
-                shapes = all_shapes(),
-                annotations = all_annotations()) %>% 
+                  range = c(as.Date(min(df()$Date)) - 5, as.Date(max(df()$Date)) + 5))) %>% 
               plotly::layout(
                 yaxis = list(type = type(),
                              title = yaxis(),
                              range = c(
                                -0.5,
                                max(
-                                 max(df_after_gap()$Value[df_after_gap()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
+                                 max(df()$Value[df()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
                                  25
                                )
-                             )))
+                             ))) %>%
+              plotly::layout(shapes = if (!is.null(report_shape())) list(report_shape()) else NULL)
             
-          } else {
-            
-            plotly::plot_ly() %>%
+            p3 <- p1 %>% 
               plotly::add_trace(
-                data = df_after_gap() %>% dplyr::filter(Parameter %in% c("Weekly Mean Daily Max", "Weekly Median Daily Max", "Daily Maximum", "Daily Mean")),
-                x = ~as.Date(Date), 
-                y = ~Value,
-                split = ~Parameter,
+                data = report_hover_markers(),
+                x = ~x,
+                y = ~y,
+                text = ~label,
                 type = "scatter",
-                mode = "lines+markers",
-                color = ~Parameter,
-                colors = pal.plot,
-                marker = list(size = 8),
-                legendgroup = "line") %>%
+                mode = "markers",
+                hoverinfo = "text",
+                marker = list(
+                  size = 10,
+                  symbol = "triangle-down",
+                  color = "#D3D3D3"),
+                name = "Reporting Period:",
+                showlegend = FALSE) %>% 
+              plotly::layout(
+                title = as.character(unique(df()$GNISIDNAME))) %>% 
+              plotly::layout(
+                xaxis = list(
+                  title = "Date", 
+                  range = c(as.Date(min(df()$Date)) - 5, as.Date(max(df()$Date)) + 5))) %>% 
+              plotly::layout(
+                yaxis = list(type = type(),
+                             title = yaxis(),
+                             range = c(
+                               -0.5,
+                               max(
+                                 max(df()$Value[df()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
+                                 25
+                               )
+                             ))) %>%
               plotly::add_trace(
-                data = df_after_gap() %>% dplyr::filter(Parameter %in% c("Chlorophyll a", "Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin", "Pheophytin a")),
-                x = ~as.Date(Date),
-                y = ~Value,
-                type = "bar",
-                name = ~Parameter,
-                color = ~Parameter,
-                colors = pal.plot,
-                legendgroup = "bar") %>%
-              plotly::add_trace(
-                y = 24, 
-                mode = "lines",
-                # x = ~as.Date(dta$Date),
-                x = ~as.Date(df()$Date),
-                line = list(shape = 'spline', color = '#006d2c', width = 1.5),
-                name = "Chl-a: 24**",
-                legendgroup = "high",
-                showlegend = TRUE) %>% 
-              plotly::add_trace(
-                y = 15, 
-                mode = "lines",
-                # x = ~as.Date(dta$Date),
-                x = ~as.Date(df()$Date),
-                line = list(shape = 'spline', color = '#993404', width = 1.5),
-                name = "Toxin: 15***",
-                legendgroup = "high",
-                showlegend = TRUE) %>% 
-              plotly::add_trace(
-                y = 8, 
-                mode = "lines",
-                # x = ~as.Date(dta$Date),
-                x = ~as.Date(df()$Date),
-                line = list(shape = 'spline', color = '#cc4c02', width = 1.5),
-                name = "Toxin: 8***",
-                legendgroup = "high",
-                showlegend = TRUE) %>% 
-              plotly::add_trace(
-                data = advisory_hover_markers(),
+                data = advisory_hover_markers_chl(),
                 x = ~x,
                 y = ~y,
                 text = ~label,
@@ -1186,38 +1169,606 @@ shinyApp(
                   color = "#D3D3D3"),
                 name = "Advisory",
                 showlegend = FALSE) %>% 
+              plotly::layout(shapes = if (!is.null(all_shapes())) all_shapes() else NULL)
+            
+            if(input$advisory_bars){p3}else{p2}
+            
+          } else if (input$ploty == "Reset to Complete Data Range") {
+            
+            p1 <- plotly::plot_ly() %>%
+              plotly::add_trace(
+                data = df() %>% dplyr::filter(Parameter %in% c("Weekly Mean Daily Max", "Weekly Median Daily Max", "Daily Maximum", "Daily Mean")),
+                x = ~as.Date(Date), 
+                y = ~Value,
+                split = ~Parameter,
+                type = "scatter",
+                mode = "lines+markers",
+                color = ~Parameter,
+                colors = pal.plot,
+                marker = list(size = 8),
+                legendgroup = "line") %>%
+              plotly::add_trace(
+                data = df() %>% dplyr::filter(Parameter %in% c("Chlorophyll a")),
+                x = ~Date,
+                y = ~Value,
+                type = "scatter",
+                mode = "markers",
+                name = "Chlorophyll-a (Field)",
+                marker = list(color = pal.plot[["Chlorophyll a"]], size = 14),
+                legendgroup = "bar"
+              ) %>% 
+              plotly::add_trace(
+                y = 24, 
+                mode = "lines",
+                # x = ~as.Date(dta$Date),
+                x = ~as.Date(df()$Date),
+                line = list(shape = 'spline', color = '#006d2c', width = 1.5),
+                name = "Chl-a: 24*",
+                legendgroup = "high",
+                showlegend = TRUE) %>% 
               plotly::layout(
-                xaxis = list(title = "Date", range = c(min(df()$Date),max(df()$Date)+1)),
-                title = as.character(unique(df()$GNISIDNAME)),
-                shapes = all_shapes(),
-                annotations = all_annotations()) %>% 
+                title = as.character(unique(df()$GNISIDNAME))) %>% 
+              plotly::layout(
+                xaxis = list(
+                  title = "Date", 
+                  range = c(as.Date(min(df()$Date)) - 30, as.Date(max(df()$Date)) + 30))) %>% 
               plotly::layout(
                 yaxis = list(type = type(),
                              title = yaxis(),
                              range = c(
                                -0.5,
                                max(
-                                 max(df_after_gap()$Value[df_after_gap()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
+                                 max(df()$Value[df()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
                                  25
                                )
-                             )))
+                             ))) %>%
+              plotly::add_trace(
+                # for adding legends only
+                x = c(min(df()$Date) - 100),
+                y = c(1),
+                type = "bar",
+                name = "Advisory Period",
+                marker = list(color = "pink"),
+                showlegend = TRUE,
+                hoverinfo = "none",
+                legendgroup = "advisory"
+              ) %>% 
+              plotly::add_trace(
+                # for adding legends only
+                x = c(min(df()$Date) - 100), 
+                y = c(1),
+                type = "bar",
+                name = "Reporting Period",
+                marker = list(color = "#b8e186"),
+                showlegend = TRUE,
+                hoverinfo = "none",
+                legendgroup = "reporting"
+              )
+            
+            p2 <- p1 %>% 
+              plotly::add_trace(
+                data = report_hover_markers(),
+                x = ~x,
+                y = ~y,
+                text = ~label,
+                type = "scatter",
+                mode = "markers",
+                hoverinfo = "text",
+                marker = list(
+                  size = 10,
+                  symbol = "triangle-down",
+                  color = "#D3D3D3"),
+                name = "Reporting Period:",
+                showlegend = FALSE) %>% 
+              plotly::layout(
+                title = as.character(unique(df()$GNISIDNAME))) %>% 
+              plotly::layout(
+                xaxis = list(
+                  title = "Date", 
+                  range = c(as.Date(min(df()$Date)) - 5, as.Date(max(df()$Date)) + 5))) %>% 
+              plotly::layout(
+                yaxis = list(type = type(),
+                             title = yaxis(),
+                             range = c(
+                               -0.5,
+                               max(
+                                 max(df()$Value[df()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
+                                 25
+                               )
+                             ))) %>%
+              plotly::layout(shapes = if (!is.null(report_shape())) list(report_shape()) else NULL)
+            
+            p3 <- p1 %>% 
+              plotly::add_trace(
+                data = report_hover_markers(),
+                x = ~x,
+                y = ~y,
+                text = ~label,
+                type = "scatter",
+                mode = "markers",
+                hoverinfo = "text",
+                marker = list(
+                  size = 10,
+                  symbol = "triangle-down",
+                  color = "#D3D3D3"),
+                name = "Reporting Period:",
+                showlegend = FALSE) %>% 
+              plotly::layout(
+                title = as.character(unique(df()$GNISIDNAME))) %>% 
+              plotly::layout(
+                xaxis = list(
+                  title = "Date", 
+                  range = c(as.Date(min(df()$Date)) - 5, as.Date(max(df()$Date)) + 5))) %>% 
+              plotly::layout(
+                yaxis = list(type = type(),
+                             title = yaxis(),
+                             range = c(
+                               -0.5,
+                               max(
+                                 max(df()$Value[df()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
+                                 25
+                               )
+                             ))) %>%
+              plotly::add_trace(
+                data = advisory_hover_markers_chl(),
+                x = ~x,
+                y = ~y,
+                text = ~label,
+                type = "scatter",
+                mode = "markers",
+                hoverinfo = "text",
+                marker = list(
+                  size = 10,
+                  symbol = "triangle-up",
+                  color = "#D3D3D3"),
+                name = "Advisory",
+                showlegend = FALSE) %>% 
+              plotly::layout(shapes = if (!is.null(all_shapes())) all_shapes() else NULL)
+            
+            if(input$advisory_bars){p3}else{p2}
+            
+            
+          } else {
+            
+            p1 <- plotly::plot_ly() %>%
+              plotly::add_trace(
+                data = df() %>% dplyr::filter(Parameter %in% c("Weekly Mean Daily Max", "Weekly Median Daily Max", "Daily Maximum", "Daily Mean")),
+                x = ~as.Date(Date), 
+                y = ~Value,
+                split = ~Parameter,
+                type = "scatter",
+                mode = "lines+markers",
+                color = ~Parameter,
+                colors = pal.plot,
+                marker = list(size = 8),
+                legendgroup = "line") %>%
+              plotly::add_trace(
+                data = df() %>% dplyr::filter(Parameter %in% c("Chlorophyll a")),
+                x = ~Date,
+                y = ~Value,
+                type = "scatter",
+                mode = "markers",
+                name = "Chlorophyll-a (Field)",
+                marker = list(color = pal.plot[["Chlorophyll a"]], size = 14),
+                legendgroup = "bar"
+              ) %>% 
+              plotly::add_trace(
+                y = 24, 
+                mode = "lines",
+                # x = ~as.Date(dta$Date),
+                x = ~as.Date(df()$Date),
+                line = list(shape = 'spline', color = '#006d2c', width = 1.5),
+                name = "Chl-a: 24*",
+                legendgroup = "high",
+                showlegend = TRUE) %>% 
+              plotly::layout(
+                title = as.character(unique(df()$GNISIDNAME))) %>% 
+              plotly::layout(
+                xaxis = list(
+                  title = "Date", 
+                  range = c(as.Date(min(df()$Date)) - 30, as.Date(max(df()$Date)) + 30))) %>% 
+              plotly::layout(
+                yaxis = list(type = type(),
+                             title = yaxis(),
+                             range = c(
+                               -0.5,
+                               max(
+                                 max(df()$Value[df()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
+                                 25
+                               )
+                             ))) %>%
+              plotly::add_trace(
+                # for adding legends only
+                x = c(min(df()$Date) - 100),
+                y = c(1),
+                type = "bar",
+                name = "Advisory Period",
+                marker = list(color = "pink"),
+                showlegend = TRUE,
+                hoverinfo = "none",
+                legendgroup = "advisory"
+              ) %>% 
+              plotly::add_trace(
+                # for adding legends only
+                x = c(min(df()$Date) - 100),
+                y = c(1),
+                type = "bar",
+                name = "Reporting Period",
+                marker = list(color = "#b8e186"),
+                showlegend = TRUE,
+                hoverinfo = "none",
+                legendgroup = "reporting"
+              )
+            
+            p2 <- p1 %>% 
+              plotly::add_trace(
+                data = report_hover_markers(),
+                x = ~x,
+                y = ~y,
+                text = ~label,
+                type = "scatter",
+                mode = "markers",
+                hoverinfo = "text",
+                marker = list(
+                  size = 10,
+                  symbol = "triangle-down",
+                  color = "#D3D3D3"),
+                name = "Reporting Period:",
+                showlegend = FALSE) %>% 
+              plotly::layout(
+                title = as.character(unique(df()$GNISIDNAME))) %>% 
+              plotly::layout(
+                xaxis = list(
+                  title = "Date", 
+                  range = c(as.Date(min(df()$Date)) - 5, as.Date(max(df()$Date)) + 5))) %>% 
+              plotly::layout(
+                yaxis = list(type = type(),
+                             title = yaxis(),
+                             range = c(
+                               -0.5,
+                               max(
+                                 max(df()$Value[df()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
+                                 25
+                               )
+                             ))) %>%
+              plotly::layout(shapes = if (!is.null(report_shape())) list(report_shape()) else NULL)
+            
+            p3 <- p1 %>% 
+              plotly::add_trace(
+                data = report_hover_markers(),
+                x = ~x,
+                y = ~y,
+                text = ~label,
+                type = "scatter",
+                mode = "markers",
+                hoverinfo = "text",
+                marker = list(
+                  size = 10,
+                  symbol = "triangle-down",
+                  color = "#D3D3D3"),
+                name = "Reporting Period:",
+                showlegend = FALSE) %>% 
+              plotly::layout(
+                title = as.character(unique(df()$GNISIDNAME))) %>% 
+              plotly::layout(
+                xaxis = list(
+                  title = "Date", 
+                  range = c(as.Date(min(df()$Date)) - 5, as.Date(max(df()$Date)) + 5))) %>% 
+              plotly::layout(
+                yaxis = list(type = type(),
+                             title = yaxis(),
+                             range = c(
+                               -0.5,
+                               max(
+                                 max(df()$Value[df()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
+                                 25
+                               )
+                             ))) %>%
+              plotly::add_trace(
+                data = advisory_hover_markers_chl(),
+                x = ~x,
+                y = ~y,
+                text = ~label,
+                type = "scatter",
+                mode = "markers",
+                hoverinfo = "text",
+                marker = list(
+                  size = 10,
+                  symbol = "triangle-up",
+                  color = "#D3D3D3"),
+                name = "Advisory",
+                showlegend = FALSE) %>% 
+              plotly::layout(shapes = if (!is.null(all_shapes())) all_shapes() else NULL)
+            
+            if(input$advisory_bars){p3}else{p2}
+            
+          }
+          
+        })
+        
+        # __ Plot toxins ----
+        output$plot_toxin <- renderPlotly({
+          
+          req(df()) # prevent the plot from rendering if df() is NULL
+          
+          if(input$ploty == "Current Year: 2025"){
+            
+            p1 <- plotly::plot_ly() %>%
+              plotly::add_trace(
+                data = df() %>%
+                  dplyr::filter(Parameter %in% c("Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin")),
+                x = ~Date,
+                y = ~Value,
+                type = "scatter",
+                mode = "markers",
+                name = ~Parameter,
+                color = ~Parameter,
+                colors = pal.plot,
+                marker = list(size = 14),
+                legendgroup = "toxins") %>% 
+              plotly::add_trace(
+                y = 15, 
+                mode = "lines",
+                # x = ~as.Date(dta$Date),
+                x = ~as.Date(df()$Date),
+                line = list(shape = 'spline', color = '#7f8c8d', width = 1.5),
+                name = "Toxin: 15**",
+                legendgroup = "high",
+                showlegend = TRUE) %>% 
+              plotly::add_trace(
+                y = 8, 
+                mode = "lines",
+                # x = ~as.Date(dta$Date),
+                x = ~as.Date(df()$Date),
+                line = list(shape = 'spline', color = '#cc4c02', width = 1.5),
+                name = "Toxin: 8***",
+                legendgroup = "high",
+                showlegend = TRUE) %>% 
+              # plotly::layout(
+              #   title = as.character(unique(df()$GNISIDNAME))) %>% 
+              plotly::layout(
+                xaxis = list(
+                  title = "Date", 
+                  range = c(as.Date(min(df()$Date)) - 5, as.Date(max(df()$Date)) + 5))) %>% 
+              plotly::layout(
+                yaxis = list(
+                  type = type(),
+                  title = yaxis(),
+                  range = c(
+                    -0.5,
+                    max(
+                      max(
+                        df() %>%
+                          dplyr::filter(
+                            Parameter %in% c("Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin"),
+                            Parameter %in% selected_matrix()
+                          ) %>%
+                          dplyr::pull(Value),
+                        na.rm = TRUE
+                      ) * 1.1,
+                      17)))) %>%
+              plotly::add_trace(
+                # for adding legends only
+                x = c(min(df()$Date) - 100),
+                y = c(1),
+                type = "bar",
+                name = "Advisory Period",
+                marker = list(color = "pink"),
+                showlegend = TRUE,
+                hoverinfo = "none",
+                legendgroup = "advisory")
+            
+            p2 <- p1 %>% 
+              plotly::add_trace(
+                data = advisory_hover_markers_toxins(),
+                x = ~x,
+                y = ~y,
+                text = ~label,
+                type = "scatter",
+                mode = "markers",
+                hoverinfo = "text",
+                marker = list(
+                  size = 10,
+                  symbol = "triangle-up",
+                  color = "#D3D3D3"),
+                name = "Advisory",
+                showlegend = FALSE) %>% 
+              plotly::layout(shapes = advisory_shapes_toxins())
+            
+            if(input$advisory_bars){p2}else{p1}
+            
+          } else if (input$ploty == "Reset to Complete Data Range") {
+            
+            p1 <- plotly::plot_ly() %>%
+              plotly::add_trace(
+                data = df() %>%
+                  dplyr::filter(Parameter %in% c("Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin")),
+                x = ~Date,
+                y = ~Value,
+                type = "scatter",
+                mode = "markers",
+                name = ~Parameter,
+                color = ~Parameter,
+                colors = pal.plot,
+                marker = list(size = 14),
+                legendgroup = "toxins"
+              ) %>% 
+              plotly::add_trace(
+                y = 15, 
+                mode = "lines",
+                # x = ~as.Date(dta$Date),
+                x = ~as.Date(df()$Date),
+                line = list(shape = 'spline', color = '#993404', width = 1.5),
+                name = "Toxin: 15**",
+                legendgroup = "high",
+                showlegend = TRUE) %>% 
+              plotly::add_trace(
+                y = 8, 
+                mode = "lines",
+                # x = ~as.Date(dta$Date),
+                x = ~as.Date(df()$Date),
+                line = list(shape = 'spline', color = '#cc4c02', width = 1.5),
+                name = "Toxin: 8***",
+                legendgroup = "high",
+                showlegend = TRUE) %>% 
+              # plotly::layout(
+              #   title = as.character(unique(df()$GNISIDNAME))) %>% 
+              plotly::layout(
+                xaxis = list(
+                  title = "Date", 
+                  range = c(as.Date(min(df()$Date)) - 30, as.Date(max(df()$Date)) + 30))) %>% 
+              plotly::layout(
+                yaxis = list(
+                  type = type(),
+                  title = yaxis(),
+                  range = c(
+                    -0.5,
+                    max(
+                      max(
+                        df() %>%
+                          dplyr::filter(
+                            Parameter %in% c("Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin"),
+                            Parameter %in% selected_matrix()
+                          ) %>%
+                          dplyr::pull(Value),
+                        na.rm = TRUE
+                      ) * 1.1,
+                      17)))) %>%
+              plotly::add_trace(
+                # for adding legends only
+                x = c(min(df()$Date) - 100),
+                y = c(1),
+                type = "bar",
+                name = "Advisory Period",
+                marker = list(color = "pink"),
+                showlegend = TRUE,
+                hoverinfo = "none",
+                legendgroup = "advisory"
+              )
+            
+            p2 <- p1 %>% 
+              plotly::add_trace(
+                data = advisory_hover_markers_toxins(),
+                x = ~x,
+                y = ~y,
+                text = ~label,
+                type = "scatter",
+                mode = "markers",
+                hoverinfo = "text",
+                marker = list(
+                  size = 10,
+                  symbol = "triangle-up",
+                  color = "#D3D3D3"),
+                name = "Advisory",
+                showlegend = FALSE) %>% 
+              plotly::layout(shapes = advisory_shapes_toxins())
+            
+            if(input$advisory_bars){p2}else{p1}
+            
+          } else {
+            
+            p1 <- plotly::plot_ly() %>%
+              plotly::add_trace(
+                data = df() %>%
+                  dplyr::filter(Parameter %in% c("Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin")),
+                x = ~Date,
+                y = ~Value,
+                type = "scatter",
+                mode = "markers",
+                name = ~Parameter,
+                color = ~Parameter,
+                colors = pal.plot,
+                marker = list(size = 14),
+                legendgroup = "toxins"
+              ) %>% 
+              plotly::add_trace(
+                y = 15, 
+                mode = "lines",
+                # x = ~as.Date(dta$Date),
+                x = ~as.Date(df()$Date),
+                line = list(shape = 'spline', color = '#993404', width = 1.5),
+                name = "Toxin: 15**",
+                legendgroup = "high",
+                showlegend = TRUE) %>% 
+              plotly::add_trace(
+                y = 8, 
+                mode = "lines",
+                # x = ~as.Date(dta$Date),
+                x = ~as.Date(df()$Date),
+                line = list(shape = 'spline', color = '#cc4c02', width = 1.5),
+                name = "Toxin: 8***",
+                legendgroup = "high",
+                showlegend = TRUE) %>% 
+              # plotly::layout(
+              #   title = as.character(unique(df()$GNISIDNAME))) %>% 
+              plotly::layout(
+                xaxis = list(
+                  title = "Date", 
+                  range = c(as.Date(min(df()$Date)) - 30, as.Date(max(df()$Date)) + 30))) %>% 
+              plotly::layout(
+                yaxis = list(
+                  type = type(),
+                  title = yaxis(),
+                  range = c(
+                    -0.5,
+                    max(
+                      max(
+                        df() %>%
+                          dplyr::filter(
+                            Parameter %in% c("Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin"),
+                            Parameter %in% selected_matrix()
+                          ) %>%
+                          dplyr::pull(Value),
+                        na.rm = TRUE
+                      ) * 1.1,
+                      17)))) %>%
+              plotly::add_trace(
+                # for adding legends only
+                x = c(min(df()$Date) - 100),
+                y = c(1),
+                type = "bar",
+                name = "Advisory Period",
+                marker = list(color = "pink"),
+                showlegend = TRUE,
+                hoverinfo = "none",
+                legendgroup = "advisory"
+              )
+            
+            p2 <- p1 %>% 
+              plotly::add_trace(
+                data = advisory_hover_markers_toxins(),
+                x = ~x,
+                y = ~y,
+                text = ~label,
+                type = "scatter",
+                mode = "markers",
+                hoverinfo = "text",
+                marker = list(
+                  size = 10,
+                  symbol = "triangle-up",
+                  color = "#D3D3D3"),
+                name = "Advisory",
+                showlegend = FALSE) %>% 
+              plotly::layout(shapes = advisory_shapes_toxins())
+            
+            if(input$advisory_bars){p2}else{p1}
             
           }
           
         })
         
         output$who_line <- renderUI(HTML(paste("&nbsp;","&nbsp;","&nbsp;","&nbsp;",
-                                               em(paste0("*RP: Reporting period from ",
-                                                         report_start_fmt," to ", report_end_fmt,".")),
+                                               # em(paste0("*RP: Reporting period from ",
+                                               #           report_start_fmt," to ", report_end_fmt,".")),
                                                "<br/>",
                                                "&nbsp;","&nbsp;","&nbsp;","&nbsp;",
-                                               em("**Chl-a: 24 μg/L: World Health Organization (WHO) Alert Level 2 Guideline for monitoring and managing cyanobacteria in waterbodies used for recreation."),
+                                               em("*Chl-a: 24 μg/L: World Health Organization (WHO) Alert Level 2 Guideline for monitoring and managing cyanobacteria in waterbodies used for recreation."),
                                                "<br/>",
                                                "&nbsp;","&nbsp;","&nbsp;","&nbsp;",
-                                               em("***Toxin: 15 μg/L: Oregon Health Authority (OHA)'s Recreational Use Value (RUV) for anatoxin-a and cylindrospermopsin."),
+                                               em("**Toxin: 15 μg/L: Oregon Health Authority (OHA)'s Recreational Use Value (RUV) for anatoxin-a and cylindrospermopsin."),
                                                "<br/>",
                                                "&nbsp;","&nbsp;","&nbsp;","&nbsp;",
-                                               em("***Toxin: 8 μg/L: OHA's RUV for microcystin and saxitoxin."),
+                                               em("**Toxin: 8 μg/L: OHA's RUV for microcystin and saxitoxin."),
                                                "<br/>",
                                                "&nbsp;","&nbsp;","&nbsp;","&nbsp;",
                                                em("Chlorophyll-a concentration at 0 μg/L is derived from low imagery digital values, indicating non-detection."))))
@@ -1324,6 +1875,8 @@ shinyApp(
     # _ Data table ----
     df_tbl <- reactive({
       
+      req(df())
+      
       df() %>% 
         dplyr::select(GNISIDNAME,Date,Parameter,Value,Unit,`Result Status`,`Data Source`) %>% 
         dplyr::mutate(Note = ifelse(Value == 0, "Non-detect", "")) %>% 
@@ -1332,6 +1885,8 @@ shinyApp(
     })
     
     observeEvent(input$waterbody,{
+      
+      if (is.null(df_tbl()) || nrow(df_tbl()) == 0) return(NULL)
       
       if(input$waterbody == c("Oregon")) {
         
@@ -1345,7 +1900,10 @@ shinyApp(
         
         output$no_data <- renderText({})
         
-        output$caption <- renderUI(HTML(unique((df_tbl()$Waterbody_GNISID))))
+        output$caption <- renderUI({
+          if (is.null(df_tbl()) || nrow(df_tbl()) == 0) return(NULL)
+          HTML(unique(df_tbl()$Waterbody_GNISID))
+        })
         
         output$table <- DT::renderDataTable({
           
