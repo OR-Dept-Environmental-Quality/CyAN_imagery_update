@@ -312,8 +312,7 @@ writexl::write_xlsx(field_data, paste0(data_path,"field_data_all_2025.xlsx"))
 
 field_data_clean <- field_data %>%
   dplyr::left_join(field_lakes, by = "AU_ID") %>%
-  dplyr::select(MLocID,StationDes,Lat_DD,Long_DD,SampleStartDate,Char_Name,Result_Numeric,Result_Unit,GNIS_Name_ID,
-                Result_status,DQL,QualifierAbbr,Result_Type,MonLocType,`Project1`) %>% 
+  dplyr::select(MLocID,StationDes,Lat_DD,Long_DD,SampleStartDate,Char_Name,Result_Operator,Result_Numeric,Result_Unit,GNIS_Name_ID,Result_status,DQL,QualifierAbbr,Result_Type,MonLocType,`Project1`) %>% 
   dplyr::filter(!is.na(GNIS_Name_ID)) %>% 
   dplyr::filter(Result_status %in% c("Final","Accepted","Validated")) %>% # excluded: "Preliminary" and "Rejected" 
   dplyr::filter(DQL %in% c("A","B","E",NA)) %>% # excluded: "C" and "D" 
@@ -327,7 +326,7 @@ field_data_clean <- field_data %>%
     "Total Maximum Daily Load Sampling",
     "Water Quality Response Monitoring",
     "Unknown"
-  ))
+  )) 
 
 writexl::write_xlsx(field_data_clean, paste0(data_path,"field_data_2025.xlsx"))
 
@@ -357,6 +356,7 @@ dta_cyan <- rbind(dta2,dta3) %>%
   dplyr::mutate(Date = lubridate::ymd(Date)) %>% 
   dplyr::arrange(desc(Date)) %>% 
   dplyr::mutate(
+    `Detection Qualifier` = "",
     Value = as.numeric(Value),
     Unit = "µg/L",
     `Result Status` = "Estimate",
@@ -364,7 +364,7 @@ dta_cyan <- rbind(dta2,dta3) %>%
     Lat_DD = "",
     Long_DD = "",
     wi_DWSA = ifelse(GNISIDNAME %in% dta1$wi_DWSA, "Yes", "No")) %>% 
-  dplyr::select(GNISIDNAME,Date,Year,Month,Day,Julian_day,`Days of Data`,Parameter,Value,Unit,`Result Status`,`Data Source`,Lat_DD,Long_DD,wi_DWSA) %>% 
+  dplyr::select(GNISIDNAME,Date,Year,Month,Day,Julian_day,`Days of Data`,Parameter,`Detection Qualifier`,Value,Unit,`Result Status`,`Data Source`,Lat_DD,Long_DD,wi_DWSA) %>% 
   dplyr::filter(Year > 2015)
 
 # Field data ----
@@ -373,7 +373,7 @@ dta_field_1 <- readxl::read_excel(paste0(data_path,"field_data_2025.xlsx"))
 dta_field_2 <- readxl::read_excel(paste0(data_path,"field_data_1999-2024.xlsx"))
 
 dta_field <- rbind(dta_field_1,dta_field_2) %>% 
-  dplyr::select(MLocID,StationDes,Lat_DD,Long_DD,SampleStartDate,Char_Name,Result_status,Result_Numeric,Result_Unit,GNIS_Name_ID) %>% 
+  dplyr::select(MLocID,StationDes,Lat_DD,Long_DD,SampleStartDate,Char_Name,Result_Operator,Result_status,Result_Numeric,Result_Unit,GNIS_Name_ID) %>% 
   dplyr::filter(!Char_Name %in% "Pheophytin a") %>% 
   dplyr::mutate(
     GNISIDNAME = GNIS_Name_ID,
@@ -381,6 +381,7 @@ dta_field <- rbind(dta_field_1,dta_field_2) %>%
     Month = lubridate::month(SampleStartDate),
     `Days of Data` ="",
     Parameter = Char_Name,
+    `Detection Qualifier` = Result_Operator,
     Value = Result_Numeric,
     Unit = Result_Unit,
     `Result Status` = Result_status,
@@ -392,7 +393,7 @@ dta_field <- rbind(dta_field_1,dta_field_2) %>%
     Unit == "None" ~ "µg/L",
     TRUE ~ Unit )) %>% 
   dplyr::left_join(dates,by="Date") %>% 
-  dplyr::select(GNISIDNAME,Date,Year,Month,Day,Julian_day,`Days of Data`,Parameter,Value,Unit,`Result Status`,`Data Source`,Lat_DD,Long_DD,wi_DWSA) %>% 
+  dplyr::select(GNISIDNAME,Date,Year,Month,Day,Julian_day,`Days of Data`,Parameter,`Detection Qualifier`,Value,Unit,`Result Status`,`Data Source`,Lat_DD,Long_DD,wi_DWSA) %>% 
   dplyr::filter(Year > 2015)
 
 field_stations <- rbind(dta_field_1,dta_field_2) %>% 

@@ -183,7 +183,7 @@ shinyApp(
                   a("Oregon Health Authority", href="https://www.oregon.gov/oha/ph/healthyenvironments/recreation/harmfulalgaeblooms/pages/blue-greenalgaeadvisories.aspx",.noWS = "outside",target="_blank"),
                   " to learn about recreational use and drinking water advisories related to cyanobacteria blooms. "),
            "Additional assessments using ",
-           a("Sentinel 2", href="https://browser.dataspace.copernicus.eu/?zoom=7&lat=44.3466&lng=-119.25&themeId=DEFAULT-THEME&visualizationUrl=https%3A%2F%2Fsh.dataspace.copernicus.eu%2Fogc%2Fwms%2F274a990e-7090-4676-8f7d-f1867e8474a7&datasetId=S2_L1C_CDAS&fromTime=2023-07-01T00%3A00%3A00.000Z&toTime=2024-01-01T23%3A59%3A59.999Z&layerId=1_TRUE_COLOR&demSource3D=%22MAPZEN%22&cloudCoverage=100&dateMode=MOSAIC",
+           a("Sentinel 2", href="https://rs-algal-blooms.users.earthengine.app/view/idaho#lon=-120.94342697507778;lat=44.24513598650389;zoom=7;date=2025-07-21;L1=false;L2=false;L3=false;L4=true;L5=false;L6=false;L7=true;L8=false;L9=false;min=0;max=0.02;jrc=50;glint=0.02;ndwi=0;RGBmax=0.6442;",
              target="_blank"),
            "imagery, local visual assessments, and/or water quality sampling are needed to provide further information on potential human health ",
            "and environmental effects of cyanobacteria. Factors such as cloud cover, ice, sun glint, water surface roughness, dry lake beds, algal mats, and shoreline effects can interfere with satellite imagery and estimation accuracy.",
@@ -836,7 +836,80 @@ shinyApp(
       
     })
     
-    df <- reactive({
+    type <- reactive({
+      
+      input$plot_log
+      
+    })
+    
+    yaxis <- reactive({
+      
+      if_else(length(input$plot_log)>0,
+              "Concentration (μg/L)",
+              "Concentration (μg/L)")
+      
+    })
+    
+    # plot data
+    df_temp <- reactive({
+
+      if(input$ploty == "Current Year: 2025"){
+        
+        dta %>%
+          dplyr::filter(GNISIDNAME %in% input$waterbody) %>% 
+          dplyr::filter(Year %in% c(yr())) 
+        
+      }else if (input$ploty == "Reset to Complete Data Range") {
+        
+        dta %>% 
+          dplyr::filter(GNISIDNAME %in% input$waterbody) 
+        
+      } else {
+        
+        dta %>% 
+          dplyr::filter(GNISIDNAME %in% input$waterbody) %>% 
+          dplyr::filter(Year %in% c(yr())) %>%
+          dplyr::filter(Date >= input$date_plot[1],Date <= input$date_plot[2])
+        
+      }
+      
+    })
+    
+    df_chla <- reactive({
+      
+      if (length(selected_matrix()) == 0) {
+        return(NULL)
+      }
+      
+      if(input$ploty == "Current Year: 2025"){
+        
+        dta %>%
+          dplyr::filter(GNISIDNAME %in% input$waterbody) %>% 
+          dplyr::filter(Parameter %in% selected_matrix()) %>% 
+          dplyr::filter(Year %in% c(yr())) %>% 
+          dplyr::mutate(Value = round(Value,2))
+        
+      }else if (input$ploty == "Reset to Complete Data Range") {
+        
+        dta %>% 
+          dplyr::filter(GNISIDNAME %in% input$waterbody) %>% 
+          dplyr::filter(Parameter %in% selected_matrix()) %>%
+          dplyr::mutate(Value = round(Value,2))
+        
+      } else {
+        
+        dta %>% 
+          dplyr::filter(GNISIDNAME %in% input$waterbody) %>% 
+          dplyr::filter(Parameter %in% selected_matrix()) %>% 
+          dplyr::filter(Year %in% c(yr())) %>%
+          dplyr::mutate(Value = round(Value,2)) %>%
+          dplyr::filter(Date >= input$date_plot[1],Date <= input$date_plot[2])
+        
+      }
+      
+    })
+      
+    df_toxins <- reactive({
       
       if (length(selected_matrix()) == 0) {
         return(NULL)
@@ -870,19 +943,9 @@ shinyApp(
       
     })
     
-    type <- reactive({
-      
-      input$plot_log
-      
-    })
-    
-    yaxis <- reactive({
-      
-      if_else(length(input$plot_log)>0,
-              "Concentration (μg/L)",
-              "Concentration (μg/L)")
-      
-    })
+    df <- reactive({df_chla()}) # df = df_chla = df_toxins
+
+    # render plots
     
     observeEvent(input$waterbody,{
       
@@ -908,11 +971,11 @@ shinyApp(
         
         advisory_shapes_chl <- reactive({
           
-          if (is.null(df()) || nrow(df()) == 0) return(NULL)
+          if (is.null(df_chla()) || nrow(df_chla()) == 0) return(NULL)
           
           advisories %>%
             dplyr::filter(GNIS_Name_ID == input$waterbody) %>%
-            dplyr::filter(Issued <= max(df()$Date), Lifted >= min(df()$Date)) %>% 
+            dplyr::filter(Issued <= max(df_chla()$Date), Lifted >= min(df_chla()$Date)) %>%
             # tidyr::drop_na() %>% 
             purrr::pmap(function(Issued, Lifted, ...) {
               list(
@@ -920,7 +983,7 @@ shinyApp(
                 x0 = as.Date(Issued),
                 x1 = as.Date(Lifted),
                 y0 = 0.5,
-                y1 = max(max(df()$Value, na.rm = TRUE), 25),
+                y1 = max(max(df_chla()$Value, na.rm = TRUE), 25),
                 fillcolor = "red",
                 line = list(color = "red"),
                 opacity = 0.2
@@ -929,18 +992,15 @@ shinyApp(
         })
         
         advisory_hover_markers_chl <- reactive({
-          req(df())
+          req(df_chla())
           
           advisories %>%
-            dplyr::filter(
-              GNIS_Name_ID == input$waterbody,
-              Issued <= max(df()$Date),
-              Lifted >= min(df()$Date)
-            ) %>%
+            dplyr::filter(GNIS_Name_ID == input$waterbody) %>% 
+            dplyr::filter(Issued <= max(df_chla()$Date), Lifted >= min(df_chla()$Date)) %>%
             # tidyr::drop_na() %>%
             dplyr::mutate(
               x = as.Date(Lifted),
-              y = max(max(df()$Value, na.rm = TRUE), 25) * 1.05,
+              y = max(max(df_chla()$Value, na.rm = TRUE), 25) * 1.05,
               label = as.character(paste0(
                 "<span style='color:black;'>",
                 "<b>Advisory</b><br>",
@@ -954,21 +1014,18 @@ shinyApp(
         
         advisory_shapes_toxins <- reactive({
           
-          if (is.null(df()) || nrow(df()) == 0) return(NULL)
+          if (is.null(df_toxins()) || nrow(df_toxins()) == 0) return(NULL)
           
           advisories %>%
             dplyr::filter(GNIS_Name_ID == input$waterbody) %>%
-            dplyr::filter(Issued <= max(df()$Date), Lifted >= min(df()$Date)) %>% 
-            # tidyr::drop_na() %>% 
+            dplyr::filter(Issued <= max(df_temp()$Date), Lifted >= min(df_temp()$Date)) %>%
             purrr::pmap(function(Issued, Lifted, ...) {
               list(
                 type = "rect",
                 x0 = as.Date(Issued),
                 x1 = as.Date(Lifted),
                 y0 = 0.5,
-                y1 = max(
-                  max((df() %>% dplyr::filter(Parameter %in% c("Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin")))$Value, na.rm = TRUE),
-                  16),
+                y1 = max(max(df_toxins()$Value, na.rm = TRUE), 16),
                 fillcolor = "red",
                 line = list(color = "red"),
                 opacity = 0.2
@@ -977,20 +1034,15 @@ shinyApp(
         })
         
         advisory_hover_markers_toxins <- reactive({
-          req(df())
+          
+          req(df_toxins())
           
           advisories %>%
-            dplyr::filter(
-              GNIS_Name_ID == input$waterbody,
-              Issued <= max(df()$Date),
-              Lifted >= min(df()$Date)
-            ) %>%
-            # tidyr::drop_na() %>%
+            dplyr::filter(GNIS_Name_ID == input$waterbody) %>% 
+            dplyr::filter(Issued <= max(df_temp()$Date), Lifted >= min(df_temp()$Date)) %>%
             dplyr::mutate(
               x = as.Date(Lifted),
-              y = max(
-                max((df() %>% dplyr::filter(Parameter %in% c("Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin")))$Value, na.rm = TRUE),
-                16) * 1.05,
+              y = max(max(df_toxins()$Value, na.rm = TRUE), 16) * 1.05,
               label = as.character(paste0(
                 "<span style='color:black;'>",
                 "<b>Advisory</b><br>",
@@ -1001,7 +1053,7 @@ shinyApp(
               ))
             )
         })
-        
+
         report_shape <- reactive({
           list(
             type = "rect",
@@ -1033,13 +1085,13 @@ shinyApp(
         # __ Plot chl-a ----
         output$plot_chl <- renderPlotly({
           
-          req(df()) # prevent the plot from rendering if df() is NULL
+          req(df_chla()) # prevent the plot from rendering if df() is NULL
           
           if(input$ploty == "Current Year: 2025"){
             
             p1 <- plotly::plot_ly() %>%
               plotly::add_trace(
-                data = df() %>% dplyr::filter(Parameter %in% c("Weekly Mean Daily Max", "Weekly Median Daily Max", "Daily Maximum", "Daily Mean")),
+                data = df_chla() %>% dplyr::filter(Parameter %in% c("Weekly Mean Daily Max", "Weekly Median Daily Max", "Daily Maximum", "Daily Mean")),
                 x = ~as.Date(Date), 
                 y = ~Value,
                 split = ~Parameter,
@@ -1050,7 +1102,7 @@ shinyApp(
                 marker = list(size = 8),
                 legendgroup = "line") %>%
               plotly::add_trace(
-                data = df() %>% dplyr::filter(Parameter %in% c("Chlorophyll a")),
+                data = df_chla() %>% dplyr::filter(Parameter %in% c("Chlorophyll a")),
                 x = ~Date,
                 y = ~Value,
                 type = "scatter",
@@ -1063,14 +1115,14 @@ shinyApp(
                 y = 24, 
                 mode = "lines",
                 # x = ~as.Date(dta$Date),
-                x = ~as.Date(df()$Date),
+                x = ~as.Date(df_chla()$Date),
                 line = list(shape = 'spline', color = '#006d2c', width = 1.5),
                 name = "Chl-a: 24*",
                 legendgroup = "high",
                 showlegend = TRUE) %>% 
               plotly::add_trace(
                 # for adding legends only
-                x = c(min(df()$Date) - 100), 
+                x = c(min(df_chla()$Date) - 100), 
                 y = c(1), 
                 type = "bar",
                 name = "Advisory Period",
@@ -1081,7 +1133,7 @@ shinyApp(
               ) %>% 
               plotly::add_trace(
                 # for adding legends only
-                x = c(min(df()$Date) - 100),  
+                x = c(min(df_chla()$Date) - 100),  
                 y = c(1),
                 type = "bar",
                 name = "Reporting Period",
@@ -1107,18 +1159,18 @@ shinyApp(
                 name = "Reporting Period:",
                 showlegend = FALSE) %>% 
               plotly::layout(
-                title = as.character(unique(df()$GNISIDNAME))) %>% 
+                title = as.character(unique(df_chla()$GNISIDNAME))) %>% 
               plotly::layout(
                 xaxis = list(
                   title = "Date", 
-                  range = c(as.Date(min(df()$Date)) - 5, as.Date(max(df()$Date)) + 5))) %>% 
+                  range = c(as.Date(min(df_chla()$Date)) - 5, as.Date(max(df_chla()$Date)) + 5))) %>% 
               plotly::layout(
                 yaxis = list(type = type(),
                              title = yaxis(),
                              range = c(
                                -0.5,
                                max(
-                                 max(df()$Value[df()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
+                                 max(df_chla()$Value[df_chla()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
                                  25
                                )
                              ))) %>%
@@ -1140,18 +1192,18 @@ shinyApp(
                 name = "Reporting Period:",
                 showlegend = FALSE) %>% 
               plotly::layout(
-                title = as.character(unique(df()$GNISIDNAME))) %>% 
+                title = as.character(unique(df_chla()$GNISIDNAME))) %>% 
               plotly::layout(
                 xaxis = list(
                   title = "Date", 
-                  range = c(as.Date(min(df()$Date)) - 5, as.Date(max(df()$Date)) + 5))) %>% 
+                  range = c(as.Date(min(df_chla()$Date)) - 5, as.Date(max(df_chla()$Date)) + 5))) %>% 
               plotly::layout(
                 yaxis = list(type = type(),
                              title = yaxis(),
                              range = c(
                                -0.5,
                                max(
-                                 max(df()$Value[df()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
+                                 max(df_chla()$Value[df_chla()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
                                  25
                                )
                              ))) %>%
@@ -1177,7 +1229,7 @@ shinyApp(
             
             p1 <- plotly::plot_ly() %>%
               plotly::add_trace(
-                data = df() %>% dplyr::filter(Parameter %in% c("Weekly Mean Daily Max", "Weekly Median Daily Max", "Daily Maximum", "Daily Mean")),
+                data = df_chla() %>% dplyr::filter(Parameter %in% c("Weekly Mean Daily Max", "Weekly Median Daily Max", "Daily Maximum", "Daily Mean")),
                 x = ~as.Date(Date), 
                 y = ~Value,
                 split = ~Parameter,
@@ -1188,7 +1240,7 @@ shinyApp(
                 marker = list(size = 8),
                 legendgroup = "line") %>%
               plotly::add_trace(
-                data = df() %>% dplyr::filter(Parameter %in% c("Chlorophyll a")),
+                data = df_chla() %>% dplyr::filter(Parameter %in% c("Chlorophyll a")),
                 x = ~Date,
                 y = ~Value,
                 type = "scatter",
@@ -1201,30 +1253,30 @@ shinyApp(
                 y = 24, 
                 mode = "lines",
                 # x = ~as.Date(dta$Date),
-                x = ~as.Date(df()$Date),
+                x = ~as.Date(df_chla()$Date),
                 line = list(shape = 'spline', color = '#006d2c', width = 1.5),
                 name = "Chl-a: 24*",
                 legendgroup = "high",
                 showlegend = TRUE) %>% 
               plotly::layout(
-                title = as.character(unique(df()$GNISIDNAME))) %>% 
+                title = as.character(unique(df_chla()$GNISIDNAME))) %>% 
               plotly::layout(
                 xaxis = list(
                   title = "Date", 
-                  range = c(as.Date(min(df()$Date)) - 30, as.Date(max(df()$Date)) + 30))) %>% 
+                  range = c(as.Date(min(df_chla()$Date)) - 30, as.Date(max(df_chla()$Date)) + 30))) %>% 
               plotly::layout(
                 yaxis = list(type = type(),
                              title = yaxis(),
                              range = c(
                                -0.5,
                                max(
-                                 max(df()$Value[df()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
+                                 max(df_chla()$Value[df_chla()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
                                  25
                                )
                              ))) %>%
               plotly::add_trace(
                 # for adding legends only
-                x = c(min(df()$Date) - 100),
+                x = c(min(df_chla()$Date) - 100),
                 y = c(1),
                 type = "bar",
                 name = "Advisory Period",
@@ -1235,7 +1287,7 @@ shinyApp(
               ) %>% 
               plotly::add_trace(
                 # for adding legends only
-                x = c(min(df()$Date) - 100), 
+                x = c(min(df_chla()$Date) - 100), 
                 y = c(1),
                 type = "bar",
                 name = "Reporting Period",
@@ -1261,18 +1313,18 @@ shinyApp(
                 name = "Reporting Period:",
                 showlegend = FALSE) %>% 
               plotly::layout(
-                title = as.character(unique(df()$GNISIDNAME))) %>% 
+                title = as.character(unique(df_chla()$GNISIDNAME))) %>% 
               plotly::layout(
                 xaxis = list(
                   title = "Date", 
-                  range = c(as.Date(min(df()$Date)) - 5, as.Date(max(df()$Date)) + 5))) %>% 
+                  range = c(as.Date(min(df_chla()$Date)) - 5, as.Date(max(df_chla()$Date)) + 5))) %>% 
               plotly::layout(
                 yaxis = list(type = type(),
                              title = yaxis(),
                              range = c(
                                -0.5,
                                max(
-                                 max(df()$Value[df()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
+                                 max(df_chla()$Value[df_chla()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
                                  25
                                )
                              ))) %>%
@@ -1294,18 +1346,18 @@ shinyApp(
                 name = "Reporting Period:",
                 showlegend = FALSE) %>% 
               plotly::layout(
-                title = as.character(unique(df()$GNISIDNAME))) %>% 
+                title = as.character(unique(df_chla()$GNISIDNAME))) %>% 
               plotly::layout(
                 xaxis = list(
                   title = "Date", 
-                  range = c(as.Date(min(df()$Date)) - 5, as.Date(max(df()$Date)) + 5))) %>% 
+                  range = c(as.Date(min(df_chla()$Date)) - 5, as.Date(max(df_chla()$Date)) + 5))) %>% 
               plotly::layout(
                 yaxis = list(type = type(),
                              title = yaxis(),
                              range = c(
                                -0.5,
                                max(
-                                 max(df()$Value[df()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
+                                 max(df_chla()$Value[df_chla()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
                                  25
                                )
                              ))) %>%
@@ -1327,12 +1379,11 @@ shinyApp(
             
             if(input$advisory_bars){p3}else{p2}
             
-            
           } else {
             
             p1 <- plotly::plot_ly() %>%
               plotly::add_trace(
-                data = df() %>% dplyr::filter(Parameter %in% c("Weekly Mean Daily Max", "Weekly Median Daily Max", "Daily Maximum", "Daily Mean")),
+                data = df_chla() %>% dplyr::filter(Parameter %in% c("Weekly Mean Daily Max", "Weekly Median Daily Max", "Daily Maximum", "Daily Mean")),
                 x = ~as.Date(Date), 
                 y = ~Value,
                 split = ~Parameter,
@@ -1343,7 +1394,7 @@ shinyApp(
                 marker = list(size = 8),
                 legendgroup = "line") %>%
               plotly::add_trace(
-                data = df() %>% dplyr::filter(Parameter %in% c("Chlorophyll a")),
+                data = df_chla() %>% dplyr::filter(Parameter %in% c("Chlorophyll a")),
                 x = ~Date,
                 y = ~Value,
                 type = "scatter",
@@ -1356,30 +1407,30 @@ shinyApp(
                 y = 24, 
                 mode = "lines",
                 # x = ~as.Date(dta$Date),
-                x = ~as.Date(df()$Date),
+                x = ~as.Date(df_chla()$Date),
                 line = list(shape = 'spline', color = '#006d2c', width = 1.5),
                 name = "Chl-a: 24*",
                 legendgroup = "high",
                 showlegend = TRUE) %>% 
               plotly::layout(
-                title = as.character(unique(df()$GNISIDNAME))) %>% 
+                title = as.character(unique(df_chla()$GNISIDNAME))) %>% 
               plotly::layout(
                 xaxis = list(
                   title = "Date", 
-                  range = c(as.Date(min(df()$Date)) - 30, as.Date(max(df()$Date)) + 30))) %>% 
+                  range = c(as.Date(min(df_chla()$Date)) - 30, as.Date(max(df_chla()$Date)) + 30))) %>% 
               plotly::layout(
                 yaxis = list(type = type(),
                              title = yaxis(),
                              range = c(
                                -0.5,
                                max(
-                                 max(df()$Value[df()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
+                                 max(df_chla()$Value[df_chla()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
                                  25
                                )
                              ))) %>%
               plotly::add_trace(
                 # for adding legends only
-                x = c(min(df()$Date) - 100),
+                x = c(min(df_chla()$Date) - 100),
                 y = c(1),
                 type = "bar",
                 name = "Advisory Period",
@@ -1390,7 +1441,7 @@ shinyApp(
               ) %>% 
               plotly::add_trace(
                 # for adding legends only
-                x = c(min(df()$Date) - 100),
+                x = c(min(df_chla()$Date) - 100),
                 y = c(1),
                 type = "bar",
                 name = "Reporting Period",
@@ -1416,18 +1467,18 @@ shinyApp(
                 name = "Reporting Period:",
                 showlegend = FALSE) %>% 
               plotly::layout(
-                title = as.character(unique(df()$GNISIDNAME))) %>% 
+                title = as.character(unique(df_chla()$GNISIDNAME))) %>% 
               plotly::layout(
                 xaxis = list(
                   title = "Date", 
-                  range = c(as.Date(min(df()$Date)) - 5, as.Date(max(df()$Date)) + 5))) %>% 
+                  range = c(as.Date(min(df_chla()$Date)) - 5, as.Date(max(df_chla()$Date)) + 5))) %>% 
               plotly::layout(
                 yaxis = list(type = type(),
                              title = yaxis(),
                              range = c(
                                -0.5,
                                max(
-                                 max(df()$Value[df()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
+                                 max(df_chla()$Value[df_chla()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
                                  25
                                )
                              ))) %>%
@@ -1449,18 +1500,18 @@ shinyApp(
                 name = "Reporting Period:",
                 showlegend = FALSE) %>% 
               plotly::layout(
-                title = as.character(unique(df()$GNISIDNAME))) %>% 
+                title = as.character(unique(df_chla()$GNISIDNAME))) %>% 
               plotly::layout(
                 xaxis = list(
                   title = "Date", 
-                  range = c(as.Date(min(df()$Date)) - 5, as.Date(max(df()$Date)) + 5))) %>% 
+                  range = c(as.Date(min(df_chla()$Date)) - 5, as.Date(max(df_chla()$Date)) + 5))) %>% 
               plotly::layout(
                 yaxis = list(type = type(),
                              title = yaxis(),
                              range = c(
                                -0.5,
                                max(
-                                 max(df()$Value[df()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
+                                 max(df_chla()$Value[df_chla()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1,
                                  25
                                )
                              ))) %>%
@@ -1489,13 +1540,13 @@ shinyApp(
         # __ Plot toxins ----
         output$plot_toxin <- renderPlotly({
           
-          req(df()) # prevent the plot from rendering if df() is NULL
+          req(df_toxins()) # prevent the plot from rendering if df() is NULL
           
           if(input$ploty == "Current Year: 2025"){
             
             p1 <- plotly::plot_ly() %>%
               plotly::add_trace(
-                data = df() %>%
+                data = df_toxins() %>%
                   dplyr::filter(Parameter %in% c("Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin")),
                 x = ~Date,
                 y = ~Value,
@@ -1510,7 +1561,7 @@ shinyApp(
                 y = 15, 
                 mode = "lines",
                 # x = ~as.Date(dta$Date),
-                x = ~as.Date(df()$Date),
+                x = ~as.Date(df_temp()$Date),
                 line = list(shape = 'spline', color = '#7f8c8d', width = 1.5),
                 name = "Toxin: 15**",
                 legendgroup = "high",
@@ -1519,7 +1570,7 @@ shinyApp(
                 y = 8, 
                 mode = "lines",
                 # x = ~as.Date(dta$Date),
-                x = ~as.Date(df()$Date),
+                x = ~as.Date(df_temp()$Date),
                 line = list(shape = 'spline', color = '#cc4c02', width = 1.5),
                 name = "Toxin: 8***",
                 legendgroup = "high",
@@ -1529,7 +1580,7 @@ shinyApp(
               plotly::layout(
                 xaxis = list(
                   title = "Date", 
-                  range = c(as.Date(min(df()$Date)) - 5, as.Date(max(df()$Date)) + 5))) %>% 
+                  range = c(as.Date(min(df_temp()$Date)) - 5, as.Date(max(df_temp()$Date)) + 5))) %>% 
               plotly::layout(
                 yaxis = list(
                   type = type(),
@@ -1538,7 +1589,7 @@ shinyApp(
                     -0.5,
                     max(
                       max(
-                        df() %>%
+                        df_toxins() %>%
                           dplyr::filter(
                             Parameter %in% c("Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin"),
                             Parameter %in% selected_matrix()
@@ -1549,7 +1600,7 @@ shinyApp(
                       17)))) %>%
               plotly::add_trace(
                 # for adding legends only
-                x = c(min(df()$Date) - 100),
+                x = c(min(df_toxins()$Date) - 100),
                 y = c(1),
                 type = "bar",
                 name = "Advisory Period",
@@ -1581,7 +1632,7 @@ shinyApp(
             
             p1 <- plotly::plot_ly() %>%
               plotly::add_trace(
-                data = df() %>%
+                data = df_toxins() %>%
                   dplyr::filter(Parameter %in% c("Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin")),
                 x = ~Date,
                 y = ~Value,
@@ -1597,7 +1648,7 @@ shinyApp(
                 y = 15, 
                 mode = "lines",
                 # x = ~as.Date(dta$Date),
-                x = ~as.Date(df()$Date),
+                x = ~as.Date(df_temp()$Date),
                 line = list(shape = 'spline', color = '#993404', width = 1.5),
                 name = "Toxin: 15**",
                 legendgroup = "high",
@@ -1606,7 +1657,7 @@ shinyApp(
                 y = 8, 
                 mode = "lines",
                 # x = ~as.Date(dta$Date),
-                x = ~as.Date(df()$Date),
+                x = ~as.Date(df_temp()$Date),
                 line = list(shape = 'spline', color = '#cc4c02', width = 1.5),
                 name = "Toxin: 8***",
                 legendgroup = "high",
@@ -1616,7 +1667,7 @@ shinyApp(
               plotly::layout(
                 xaxis = list(
                   title = "Date", 
-                  range = c(as.Date(min(df()$Date)) - 30, as.Date(max(df()$Date)) + 30))) %>% 
+                  range = c(as.Date(min(df_temp()$Date)) - 30, as.Date(max(df_temp()$Date)) + 30))) %>% 
               plotly::layout(
                 yaxis = list(
                   type = type(),
@@ -1625,7 +1676,7 @@ shinyApp(
                     -0.5,
                     max(
                       max(
-                        df() %>%
+                        df_toxins() %>%
                           dplyr::filter(
                             Parameter %in% c("Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin"),
                             Parameter %in% selected_matrix()
@@ -1636,7 +1687,7 @@ shinyApp(
                       17)))) %>%
               plotly::add_trace(
                 # for adding legends only
-                x = c(min(df()$Date) - 100),
+                x = c(min(df_toxins()$Date) - 100),
                 y = c(1),
                 type = "bar",
                 name = "Advisory Period",
@@ -1669,7 +1720,7 @@ shinyApp(
             
             p1 <- plotly::plot_ly() %>%
               plotly::add_trace(
-                data = df() %>%
+                data = df_toxins() %>%
                   dplyr::filter(Parameter %in% c("Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin")),
                 x = ~Date,
                 y = ~Value,
@@ -1685,7 +1736,7 @@ shinyApp(
                 y = 15, 
                 mode = "lines",
                 # x = ~as.Date(dta$Date),
-                x = ~as.Date(df()$Date),
+                x = ~as.Date(df_temp()$Date),
                 line = list(shape = 'spline', color = '#993404', width = 1.5),
                 name = "Toxin: 15**",
                 legendgroup = "high",
@@ -1694,7 +1745,7 @@ shinyApp(
                 y = 8, 
                 mode = "lines",
                 # x = ~as.Date(dta$Date),
-                x = ~as.Date(df()$Date),
+                x = ~as.Date(df_temp()$Date),
                 line = list(shape = 'spline', color = '#cc4c02', width = 1.5),
                 name = "Toxin: 8***",
                 legendgroup = "high",
@@ -1704,7 +1755,7 @@ shinyApp(
               plotly::layout(
                 xaxis = list(
                   title = "Date", 
-                  range = c(as.Date(min(df()$Date)) - 30, as.Date(max(df()$Date)) + 30))) %>% 
+                  range = c(as.Date(min(df_temp()$Date)) - 30, as.Date(max(df_temp()$Date)) + 30))) %>% 
               plotly::layout(
                 yaxis = list(
                   type = type(),
@@ -1713,7 +1764,7 @@ shinyApp(
                     -0.5,
                     max(
                       max(
-                        df() %>%
+                        df_toxins() %>%
                           dplyr::filter(
                             Parameter %in% c("Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin"),
                             Parameter %in% selected_matrix()
@@ -1724,7 +1775,7 @@ shinyApp(
                       17)))) %>%
               plotly::add_trace(
                 # for adding legends only
-                x = c(min(df()$Date) - 100),
+                x = c(min(df_toxins()$Date) - 100),
                 y = c(1),
                 type = "bar",
                 name = "Advisory Period",
@@ -1878,8 +1929,8 @@ shinyApp(
       req(df())
       
       df() %>% 
-        dplyr::select(GNISIDNAME,Date,Parameter,Value,Unit,`Result Status`,`Data Source`) %>% 
-        dplyr::mutate(Note = ifelse(Value == 0, "Non-detect", "")) %>% 
+        dplyr::select(GNISIDNAME,Date,Parameter,`Detection Qualifier`,Value,Unit,`Result Status`,`Data Source`) %>% 
+        dplyr::mutate(Note = dplyr::if_else((Value == 0) | (`Detection Qualifier` %in% c("<")), "Non-detect", "")) %>% 
         # dplyr::mutate(Value = scales::comma(Value)) %>%
         dplyr::rename(Waterbody_GNISID = GNISIDNAME)
     })
@@ -1919,8 +1970,11 @@ shinyApp(
                            buttons = list(
                              list(extend = 'collection',
                                   buttons = c('csv','excel'),
-                                  text = 'Download')
-                           )),
+                                  text = 'Download')),
+                           columnDefs = list(
+                             list(targets = 0, width = '150px'), 
+                             list(targets = 4, width = '30px'))
+                           ),
             rownames = FALSE,
             filter = 'bottom')
         }, server = FALSE)
