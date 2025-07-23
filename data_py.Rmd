@@ -449,7 +449,7 @@ forecast <- readxl::read_excel(paste0(data_path,"forecast.xlsx")) %>%
     `% Chance of CyanoHAB` = ifelse(
       `% Chance of CyanoHAB` < 1, "< 1",
       format(round(`% Chance of CyanoHAB`, 0), big.mark = ",", scientific = FALSE))) %>% 
-    dplyr::filter(GNIS_Name_ID %in% dta1$inApp) # filter out saline lakes
+  dplyr::filter(GNIS_Name_ID %in% dta1$inApp) # filter out saline lakes
 
 # (2) Date Lookup Table ----
 dates <- dates %>% dplyr::mutate(Date = lubridate::ymd(Date))
@@ -544,15 +544,181 @@ lakes.resolvable.7d <- lakes.resolvable %>%
 
 sf::st_write(lakes.resolvable.7d, dsn = paste0(data_path, "gis/map_7d_pre.shp"), delete_layer = TRUE)
 
-# (8) Boxplot Data Table  ----
-# dn_tbl <- readxl::read_excel(paste0(data_path,"cyan_dn_2024.xlsx")) %>% 
-#   dplyr::filter(GNISIDNAME %in% dta1$inApp) %>%  # filter out saline lakes
-#   dplyr::filter(Date >= as.Date("2024-03-01")) %>% 
-#   dplyr::select(-c(VALUE_254,VALUE_255)) %>% 
-#   dplyr::mutate_at(vars(starts_with("VALUE_")), as.numeric) %>% 
-#   dplyr::mutate_all(~replace(., is.na(.), 0)) %>% 
-#   dplyr::mutate(total_counts = rowSums(across(c(VALUE_0:VALUE_253)))) %>% 
-#   dplyr::filter(!total_counts == 0)
+# (8) Functions  ----
+format_report_date <- function(date) {
+  if (month(date) %in% c(8,9,10,11,12,1,2)) {
+    gsub("(\\D)0", "\\1", format(date, '%b. %d, %Y'))
+  } else {
+    gsub("(\\D)0", "\\1", format(date, '%B %d, %Y'))
+  }
+}
+
+make_timeseries_plot <- function(df,
+                                 df_temp,
+                                 parameters_line = NULL, 
+                                 parameter_chla = NULL, 
+                                 parameter_toxins = NULL, 
+                                 pal.plot, 
+                                 selected_matrix,
+                                 y_max,
+                                 report_markers = NULL,
+                                 advisory_markers = NULL,
+                                 shapes = NULL,
+                                 type = "linear",
+                                 yaxis_title = "Concentration (μg/L)",
+                                 range_padding = 10,
+                                 value_floor = -0.5,
+                                 horizontal_lines = list(),
+                                 add_advisory_legend = TRUE,
+                                 add_reporting_legend = TRUE,
+                                 plot_title = NULL
+) {
+  
+  p <- plotly::plot_ly()
+  
+  # Add main lines+markers
+  p <- p %>%
+    plotly::add_trace(
+      data = df %>% dplyr::filter(Parameter %in% parameters_line),
+      x = ~as.Date(Date), 
+      y = ~Value,
+      split = ~Parameter,
+      type = "scatter",
+      mode = "lines+markers",
+      color = ~Parameter,
+      colors = pal.plot,
+      marker = list(size = 8),
+      legendgroup = "line"
+    )
+  
+  # Add Chlorophyll-a markers
+  if (!is.null(parameter_chla)) {
+    p <- p %>%
+      plotly::add_trace(
+        data = df %>% dplyr::filter(Parameter %in% parameter_chla),
+        x = ~as.Date(Date), 
+        y = ~Value,
+        type = "scatter",
+        mode = "markers",
+        name = paste0(parameter_chla, " (Field)"),
+        marker = list(color = pal.plot[[parameter_chla]], size = 14),
+        legendgroup = "chla"
+      )
+  }
+  
+  # Add Cyanotoxin markers
+  if (!is.null(parameter_toxins)) {
+    p <- p %>%
+      plotly::add_trace(
+        data = df %>% dplyr::filter(Parameter %in% parameter_toxins),
+        x = ~as.Date(Date),
+        y = ~Value,
+        type = "scatter",
+        mode = "markers",
+        name = ~Parameter,
+        color = ~Parameter,
+        colors = pal.plot,
+        marker = list(size = 14),
+        legendgroup = "toxins"
+      )
+  }
+  
+  # Add horizontal guideline lines (e.g. 24 for Chl-a, 15 and 8 for Toxins)
+  for (line in horizontal_lines) {
+    p <- p %>%
+      plotly::add_trace(
+        x = ~as.Date(df_temp$Date),
+        y = line$y,
+        mode = "lines",
+        line = list(shape = 'spline', color = line$color, width = 1.5),
+        name = line$name,
+        legendgroup = line$group,
+        showlegend = TRUE
+      )
+  }
+  
+  # Add dummy bars for legends
+  if (add_advisory_legend) {
+    p <- p %>% plotly::add_trace(
+      x = c(min(df$Date) - 10000),
+      y = c(1),
+      type = "bar",
+      name = "Advisory Period",
+      marker = list(color = "pink"),
+      showlegend = TRUE,
+      hoverinfo = "none",
+      legendgroup = "advisory"
+    )
+  }
+  
+  if (add_reporting_legend) {
+    p <- p %>% plotly::add_trace(
+      x = c(min(df$Date) - 10000),
+      y = c(1),
+      type = "bar",
+      name = "Reporting Period",
+      marker = list(color = "#b8e186"),
+      showlegend = TRUE,
+      hoverinfo = "none",
+      legendgroup = "reporting"
+    )
+  }
+  
+  # Add advisory markers (up triangle)
+  if (!is.null(advisory_markers)) {
+    p <- p %>%
+      plotly::add_trace(
+        data = advisory_markers,
+        x = ~x,
+        y = ~y,
+        text = ~label,
+        type = "scatter",
+        mode = "markers",
+        hoverinfo = "text",
+        marker = list(size = 10, symbol = "triangle-up", color = "#D3D3D3"),
+        name = "Advisory",
+        showlegend = FALSE
+      )
+  }
+  
+  # Add report markers (down triangle)
+  if (!is.null(report_markers)) {
+    p <- p %>%
+      plotly::add_trace(
+        data = report_markers,
+        x = ~x,
+        y = ~y,
+        text = ~label,
+        type = "scatter",
+        mode = "markers",
+        hoverinfo = "text",
+        marker = list(size = 10, symbol = "triangle-down", color = "#D3D3D3"),
+        name = "Reporting Period:",
+        showlegend = FALSE
+      )
+  }
+  
+  # Layout
+  p <- p %>%
+    plotly::layout(
+      title = plot_title,
+      xaxis = list(
+        title = "Date",
+        range = c(as.Date(min(df_temp$Date)) - range_padding, as.Date(max(df_temp$Date)) + range_padding)
+      ),
+      yaxis = list(
+        type = type,
+        title = yaxis_title,
+        range = c(
+          value_floor,
+          y_max
+        )
+      ),
+      shapes = shapes
+    )
+  
+  p
+}
 
 # Save data ----
 save(#dn_tbl,
@@ -571,6 +737,8 @@ save(#dn_tbl,
   pal.map,
   state.boundary,
   thevalues,
+  format_report_date,
+  make_timeseries_plot,
   file = "data.RData")
 
 ```
