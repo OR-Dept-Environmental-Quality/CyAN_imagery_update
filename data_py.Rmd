@@ -334,7 +334,6 @@ print("Step 4 - AWQMS is completed")
 
 ```
 
-
 ## Step 5. Gether data for the shiny app.
 ```{r shiny_data}
 # (1) Timeseries Data Table ----
@@ -506,12 +505,11 @@ dta_max <- dta_wide %>%
                    `Date of 7DADM Max` = Date[which.max(`7DADM`)],
                    `7DADM` = max(`7DADM`, na.rm = TRUE),
                    `7DMDM` = max(`7DMDM`, na.rm = TRUE),
-                   .groups = "drop") %>%
-  dplyr::filter(`7DADM` >= 24)
+                   .groups = "drop") 
 
 map.tbl.data <- dta_wide %>% 
   dplyr::filter((as.Date(Date) <= as.Date(max(Date))) & (as.Date(Date) >= as.Date(max(Date))-6)) %>% 
-  dplyr::filter(`7DADM` >= 24) %>% 
+  # dplyr::filter(`7DADM` >= 24) %>% 
   dplyr::group_by(GNISIDNAME) %>%
   dplyr::summarise(`7DADM` = max(`7DADM`, na.rm = TRUE),
                    `7DMDM` = max(`7DMDM`, na.rm = TRUE),
@@ -529,7 +527,8 @@ map.tbl.data <- dta_wide %>%
                 `Weekly Median Daily Max (μg/L)` = `7DMDM`) %>%
   dplyr::left_join(forecast %>% dplyr::select(GNIS_Name_ID,`% Chance of CyanoHAB`,`% Chance of CyanoHAB_map`), 
                    by = c("Waterbody_GNISID*" = "GNIS_Name_ID")) %>%
-  dplyr::filter(as.numeric(`Weekly Mean Daily Max (μg/L)`) >= 24 | as.numeric(`% Chance of CyanoHAB_map`) >= 50) %>%
+  dplyr::filter((!is.na(`Weekly Mean Daily Max (μg/L)`) & as.numeric(`Weekly Mean Daily Max (μg/L)`) >= 24) | 
+                   as.numeric(`% Chance of CyanoHAB_map`) >= 50) %>%
   dplyr::select(`Waterbody_GNISID*`, Basin, `Weekly Mean Daily Max (μg/L)`,
                 `Weekly Median Daily Max (μg/L)`, `Days of Data`, `Date of Daily Max`,
                 `% Chance of CyanoHAB`) %>%

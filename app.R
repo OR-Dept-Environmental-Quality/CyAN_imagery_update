@@ -143,7 +143,7 @@ shinyApp(
         collapsible = FALSE,
         collapsed = FALSE,
         
-        h4("This report presents recent and historical estimates of chlorophyll-a concentrations for 49 large waterbodies in Oregon. ",
+        h4("This report presents recent and historical estimates of chlorophyll a concentrations for 49 large waterbodies in Oregon. ",
            "These estimates are derived from satellite imagery provided by the  ", 
            a("Cyanobacteria Assessment Network (CyAN)", href="https://www.epa.gov/water-research/cyanobacteria-assessment-network-cyan",target="_blank"),
            " project. The Oregon DEQ updates the estimates weekly from spring through fall each year. ",
@@ -155,13 +155,13 @@ shinyApp(
            "as well as recreational health advisories for cyanobacterial bloom issued by the Oregon Health Authority.",
            .noWS = c("after-begin", "before-end")),
         
-        h4("Concentrations of chlorophyll-a (μg/L) associated with cyanobacteria dominance are shown at three levels: Low: 3-12 μg/L, Moderate: 12-24 μg/L, and High: >24 μg/L. ",
+        h4("Concentrations of chlorophyll a (μg/L) associated with cyanobacteria dominance are shown at three levels: Low: 3-12 μg/L, Moderate: 12-24 μg/L, and High: >24 μg/L. ",
            "These levels correspond to the World Health Organization (WHO) exposure guideline values for recreational waters ",
            "(",a("WHO, 2021", href="https://www.who.int/publications/m/item/toxic-cyanobacteria-in-water---second-edition",.noWS = "outside",target="_blank"),"). ",
            "Also included are ",
            a("EPA’s seven-day forecasts", href="https://www.epa.gov/water-research/cyanobacterial-harmful-algal-blooms-forecasting-research",.noWS = "outside",target="_blank"), 
            " from the experimental CyanoHAB forecasting model based on CyAN satellite data. ",
-           "The model provides weekly probabilities that the median surface chlorophyll-a concentration is ≥12 µg/L. ",
+           "The model provides weekly probabilities that the median surface chlorophyll a concentration is ≥12 µg/L. ",
            "Higher probabilities indicate greater likelihoods of bloom occurrence. ",
            "For more information on harmful algal blooms in Oregon, visit the ",
            a("Oregon DEQ", href="https://www.oregon.gov/deq/wq/Pages/Harmful-Algal-Blooms.aspx",target="_blank")," and ",
@@ -197,7 +197,7 @@ shinyApp(
         
         # ___ Section Introduction ----
         tags$h4(p(tags$strong(report_start_fmt), " - ", tags$strong(report_end_fmt), "- ",
-                  "Waterbodies with high chlorophyll-a concentration (≥24 μg/L) are identified based on ",
+                  "Waterbodies with high chlorophyll a concentration (≥24 μg/L) are identified based on ",
                   "the maximum value of the weekly means of daily maximums (",tags$strong("'Weekly Mean Daily Max'"),").",
                   "The weekly median of daily maximums (",tags$strong("'Weekly Median Daily Max'"),") is also reported for each highlighted waterbody. ",
                   "Both metrics represent 7-day moving averages calculated using daily maximum values from ",
@@ -207,7 +207,7 @@ shinyApp(
                   "The", tags$strong("'Date of Daily Max'"), "indicates the date on which the daily maximum value occurred.")),
         
         tags$h4(p(tags$strong(forecast_start_fmt), " - ", tags$strong(forecast_end_fmt), "- ",
-                  "Modeled probabilities of chlorophyll-a concentrations ≥12 µg/L are shown in the '",tags$strong("% Chance of CyanoHAB"), "' column.",
+                  "Modeled probabilities of chlorophyll a concentrations ≥12 µg/L are shown in the '",tags$strong("% Chance of CyanoHAB"), "' column.",
                   "These probabilities are presented for all highlighted waterbodies and for any other waterbodies ",
                   "where the modeled probabilities are ≥50%.")),
         
@@ -333,11 +333,11 @@ shinyApp(
         collapsed = FALSE,
         
         # ___ Section Introduction ----
-        tags$h4(p("Time series plots for each of the 49 Oregon waterbodies display satellite estimates of chlorophyll-a concentrations and ",
+        tags$h4(p("Time series plots for each of the 49 Oregon waterbodies display satellite estimates of chlorophyll a concentrations and ",
                   "available field measurements. Satellite estimates follow methods established by the ",
                   a("CyAN Project", href="https://www.epa.gov/water-research/cyanobacteria-assessment-network-cyan",.noWS = "outside",target="_blank"),", ",
                   " including data from Sentinel-3A (2016-present) and Sentinel-3B (2018-present). ",
-                  "Field measurements include chlorophyll-a and cyanotoxin concentrations. ",
+                  "Field measurements include chlorophyll a and cyanotoxin concentrations. ",
                   .noWS = c("after-begin", "before-end"))),
         
         # ___ Plot and Table ----
@@ -392,7 +392,7 @@ shinyApp(
               
               # Checkbox group
               tagList(
-                tags$h5(tags$i(tags$strong("CyAN Chlorophyll-a Estimates:"))),
+                tags$h5(tags$i(tags$strong("CyAN Chlorophyll a Estimates:"))),
                 tags$hr(style = "margin-top: 5px; margin-bottom: 5px; border: none;"),
                 checkboxGroupInput(
                   inputId = "matrix_cyan",
@@ -412,7 +412,7 @@ shinyApp(
                   inputId = "matrix_field",
                   label = NULL,
                   choices = c(
-                    "Chlorophyll-a" = "Chlorophyll a",
+                    "Chlorophyll a" = "Chlorophyll a",
                     "Anatoxin-A" = "Anatoxin-A",
                     "Cylindrospermopsin" = "Cylindrospermopsin",
                     "Microcystins" = "Microcystins",
@@ -472,7 +472,7 @@ shinyApp(
             solidHeader = FALSE,
             
             # ____ Time series plot ----
-            tags$h4(p(strong("Chlorophyll-a estimates from CyAN and field data (if available)."))),
+            tags$h4(p(strong("Chlorophyll a estimates from CyAN and field data (if available)."))),
             
             textOutput("no_plot_1"),
             
@@ -694,7 +694,7 @@ shinyApp(
           clearControls() %>%
           addRasterImage(rst(), layerId = "Value", project = FALSE, colors = pal.map, opacity = 1,
                          group = "Satellite Imagery (Selected Date)") %>%
-          addLegend(pal = pal.map, values = thevalues, title = "Chlorophyll-a (μg/L)", position = "topright",
+          addLegend(pal = pal.map, values = thevalues, title = "Chlorophyll a (μg/L)", position = "topright",
                     labFormat = function(type, cuts, p) { paste0(labels) }, opacity = 1) %>%
           addLegend(position = "topright",
                     colors = c("orange", "red"),
@@ -1110,7 +1110,7 @@ shinyApp(
                                                em("**Toxin: 8 μg/L: OHA's RUV for microcystin and saxitoxin."),
                                                "<br/>",
                                                "&nbsp;","&nbsp;","&nbsp;","&nbsp;",
-                                               em("Chlorophyll-a concentration at 0 μg/L is derived from low imagery digital values, indicating non-detection."))))
+                                               em("Chlorophyll a concentration at 0 μg/L is derived from low imagery digital values, indicating non-detection."))))
         
       }
       
