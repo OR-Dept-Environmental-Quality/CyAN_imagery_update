@@ -6,6 +6,7 @@ output: html_document
 This script is a modified version based on data.Rmd. When arcpy cannot be used within R via reticulate, an external python script, dn_ci_chla.py is used to convert dn to ci and chla.
 
 ## Step 1. Import data
+
 ```{r setup}
 knitr::opts_chunk$set(echo = TRUE) # echo = TRUE means that the R code inside the chunks will be displayed in the final output
 library(dplyr)
@@ -21,8 +22,8 @@ forecast_lakes <- readxl::read_excel(paste0(data_path,"Resolvable_Lakes.xlsx"), 
 field_lakes <- readxl::read_excel(paste0(data_path,"Resolvable_Lakes.xlsx"), sheet = "field")
 ```
 
-## Step 2. Download data from [NASA's data site].
-[NASA's data site]: https://oceandata.sci.gsfc.nasa.gov/directdataaccess/Level-3%20Mapped%20with%20GEO/Merged-S3-CYAN/
+## Step 2. Download data from [NASA's data site](https://oceandata.sci.gsfc.nasa.gov/directdataaccess/Level-3%20Mapped%20with%20GEO/Merged-S3-CYAN/).
+
 ```{r OceanData}
 library(curl)
 day_start <- paste0(max(data_chla$Year), sprintf("%03d", max(as.numeric(data_chla$Julian_day))+1))
@@ -68,14 +69,19 @@ for (i in 1:length(fileNums)) {
   download_file_list <- c(download_file_list, stringr::str_sub(merged_file_name,start = 1, end = 7))
 }
 
+saveRDS(download_file_list, file = "download_file_list.rds")
+
 print("Step 2 - download is completed")
 
 ```
 
 ## Step 3. Process satellite data.
+
 ### - 3.1 Convert raw data-DN-CI-Chla
+
 ```{r dn-ci-chla}
 
+# download_file_list <- readRDS("download_file_list.rds")
 download_file_list <- unlist(download_file_list)
 python_list <- paste0("download_file_list = [", 
                       paste(sprintf('"%s"', download_file_list), collapse = ", "), 
@@ -88,6 +94,7 @@ system2(python_path, args = shQuote(script_path))
 ```
 
 ### - 3.2 Generate DN tabulate data table
+
 ```{r tabulate_tbl}
 # download_file_list <- c("2025132")
 
@@ -141,6 +148,7 @@ system2(python_path, args = shQuote(script_path))
 ```
 
 ### - 3.3 Generate CI zonal statistics data table
+
 ```{r zonal_ci_tbl}
 # download_file_list <- c('2024113', '2024114', '2024115', '2024116')
 
@@ -215,6 +223,7 @@ system2(python_path, args = shQuote(script_path))
 ```
 
 ### - 3.4 Generate Chla zonal statistics data table
+
 ```{r zonal_chl_tbl}
 # download_file_list <- c(paste0("2025", sprintf("%03d", 1:153)))
 
@@ -295,6 +304,7 @@ print("Step 3.4 - Chl-a table is completed")
 ```
 
 ## Step 4. Download AWQMS data.
+
 ```{r awqms_data}
 field_data <- AWQMSdata::AWQMS_Data(
   Char_Name = c(
@@ -335,6 +345,7 @@ print("Step 4 - AWQMS is completed")
 ```
 
 ## Step 5. Gether data for the shiny app.
+
 ```{r shiny_data}
 # (1) Timeseries Data Table ----
 dta1 <- resolvable_lakes
@@ -532,7 +543,8 @@ map.tbl.data <- dta_wide %>%
   dplyr::select(`Waterbody_GNISID*`, Basin, `Weekly Mean Daily Max (μg/L)`,
                 `Weekly Median Daily Max (μg/L)`, `Days of Data`, `Date of Daily Max`,
                 `% Chance of CyanoHAB`) %>%
-  dplyr::filter(!`Waterbody_GNISID*` %in% c("Crater Lake_01163669", "Waldo Lake_01151818"))
+  dplyr::filter(!`Waterbody_GNISID*` %in% c("Crater Lake_01163669", "Waldo Lake_01151818")) 
+  # dplyr::filter(!`Waterbody_GNISID*` %in% c("Timothy Lake_01151253")) # 20251112
 
 # (6) 7D Map  ----
 lakes.resolvable.7d <- lakes.resolvable %>% 

@@ -163,6 +163,7 @@ shinyApp(
            " from the experimental CyanoHAB forecasting model based on CyAN satellite data. ",
            "The model provides weekly probabilities that the median surface chlorophyll a concentration is ≥12 µg/L. ",
            "Higher probabilities indicate greater likelihoods of bloom occurrence. ",
+           # tags$i("EPA has currently suspended the update of the forecasts. DEQ will resume reporting the forecasts once data become available. "),
            "For more information on harmful algal blooms in Oregon, visit the ",
            a("Oregon DEQ", href="https://www.oregon.gov/deq/wq/Pages/Harmful-Algal-Blooms.aspx",target="_blank")," and ",
            a("Oregon Health Authority", href="https://www.oregon.gov/oha/ph/healthyenvironments/recreation/harmfulalgaeblooms/pages/blue-greenalgaeadvisories.aspx",.noWS = "outside",target="_blank"),
@@ -206,7 +207,7 @@ shinyApp(
                   "each 7-day window used for computing both Weekly Mean Daily Max and Weekly Median Daily Max.",
                   "The", tags$strong("'Date of Daily Max'"), "indicates the date on which the daily maximum value occurred.")),
         
-        tags$h4(p(tags$strong(forecast_start_fmt), " - ", tags$strong(forecast_end_fmt), "- ",
+        tags$h4(p(tags$strong(forecast_start_fmt), " - ", tags$strong(forecast_end_fmt), " - ",
                   "Modeled probabilities of chlorophyll a concentrations ≥12 µg/L are shown in the '",tags$strong("% Chance of CyanoHAB"), "' column.",
                   "These probabilities are presented for all highlighted waterbodies and for any other waterbodies ",
                   "where the modeled probabilities are ≥50%.")),
@@ -700,7 +701,7 @@ shinyApp(
                     colors = c("orange", "red"),
                     labels = c("<50% chance", "≥50% chance"),
                     title = "Forecast<br><small>(Circle size ~ % chance)</small>",
-                    opacity = 0.7) %>% 
+                    opacity = 0.7) %>%
           addLayersControl(
             baseGroups = c("OpenStreetMap", "National Geographic World Map"),
             position = "topleft",
@@ -1091,7 +1092,8 @@ shinyApp(
             horizontal_lines = list(
               list(y=15, color='#737373', name="Toxin: 15**", group="high"),
               list(y=8,  color='#cc4c02', name="Toxin: 8***", group="high")
-            )#,
+            ),
+            add_reporting_legend = FALSE
             # plot_title = as.character(unique(df()$GNISIDNAME))
           )
         })
