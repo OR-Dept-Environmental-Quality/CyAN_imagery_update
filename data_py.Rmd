@@ -14,8 +14,8 @@ source("path.R") # path.R is not provided to the public because
 # data_dn <- readxl::read_excel(paste0(data_path,"cyan_dn_2025.xlsx")) %>%
 #   dplyr::mutate_at(dplyr::vars(dplyr::starts_with("VALUE_")), as.numeric)
 # data_ci <- readxl::read_excel(paste0(data_path,"cyan_ci_2025.xlsx"))
-data_chla <- readxl::read_excel(paste0(data_path,"cyan_chla_2025.xlsx"))
-data_field <- readxl::read_excel(paste0(data_path,"field_data_2025.xlsx"))
+data_chla <- readxl::read_excel(paste0(data_path,"cyan_chla_2026.xlsx"))
+data_field <- readxl::read_excel(paste0(data_path,"field_data_2026.xlsx"))
 dates <- readxl::read_excel(paste0(data_path,"calendar-dates.xlsx"))
 resolvable_lakes <- readxl::read_excel(paste0(data_path,"Resolvable_Lakes.xlsx"), sheet = "cyan_resolvable_lakes")
 forecast_lakes <- readxl::read_excel(paste0(data_path,"Resolvable_Lakes.xlsx"), sheet = "forecast")
@@ -225,7 +225,7 @@ system2(python_path, args = shQuote(script_path))
 ### - 3.4 Generate Chla zonal statistics data table
 
 ```{r zonal_chl_tbl}
-# download_file_list <- c(paste0("2025", sprintf("%03d", 1:153)))
+# download_file_list <- c(paste0("2026", sprintf("%03d", 1:4)))
 
 zonal_temp_file_names <- paste0("zonal_chl_", download_file_list, ".csv")
 zonal_temp_file_paths <- file.path(temp_dir, zonal_temp_file_names)
@@ -297,7 +297,7 @@ zonal <- zonal_new %>%
 zonal_update <- dplyr::bind_rows(data_chla,zonal) %>% dplyr::mutate(Date = as.Date(Date)) %>% 
   dplyr::mutate(Julian_day = sprintf("%03d", as.numeric(Julian_day)))
 
-writexl::write_xlsx(zonal_update, paste0(data_path,"cyan_chla_2025.xlsx"))
+writexl::write_xlsx(zonal_update, paste0(data_path,"cyan_chla_2026.xlsx"))
 
 print("Step 3.4 - Chl-a table is completed")
 
@@ -315,10 +315,10 @@ field_data <- AWQMSdata::AWQMS_Data(
     'Pheophytin a',
     'Saxitoxin'
   ),
-  startdate = '2025-01-01', 
+  startdate = '2025-10-01', 
   enddate = Sys.Date())
 
-writexl::write_xlsx(field_data, paste0(data_path,"field_data_all_2025.xlsx"))
+writexl::write_xlsx(field_data, paste0(data_path,"field_data_all_2026.xlsx"))
 
 field_data_clean <- field_data %>%
   dplyr::left_join(field_lakes, by = "AU_ID") %>%
@@ -338,7 +338,7 @@ field_data_clean <- field_data %>%
     "Unknown"
   )) 
 
-writexl::write_xlsx(field_data_clean, paste0(data_path,"field_data_2025.xlsx"))
+writexl::write_xlsx(field_data_clean, paste0(data_path,"field_data_2026.xlsx"))
 
 print("Step 4 - AWQMS is completed")
 
@@ -351,10 +351,10 @@ print("Step 4 - AWQMS is completed")
 dta1 <- resolvable_lakes
 
 # CyAN Chla ----
-dta2 <- readxl::read_excel(paste0(data_path,"cyan_chla_2025.xlsx")) %>% 
+dta2 <- readxl::read_excel(paste0(data_path,"cyan_chla_2026.xlsx")) %>% 
   dplyr::filter(GNISIDNAME %in% dta1$inApp) # filter out saline lakes
 
-dta3 <- readxl::read_excel(paste0(data_path,"cyan_chla_2016-2024.xlsx")) %>% 
+dta3 <- readxl::read_excel(paste0(data_path,"cyan_chla_2016-2025.xlsx")) %>% 
   dplyr::filter(GNISIDNAME %in% dta1$inApp) # filter out saline lakes
 
 dta_cyan <- rbind(dta2,dta3) %>% 
@@ -378,9 +378,9 @@ dta_cyan <- rbind(dta2,dta3) %>%
   dplyr::filter(Year > 2015)
 
 # Field data ----
-dta_field_1 <- readxl::read_excel(paste0(data_path,"field_data_2025.xlsx"))
+dta_field_1 <- readxl::read_excel(paste0(data_path,"field_data_2026.xlsx"))
 
-dta_field_2 <- readxl::read_excel(paste0(data_path,"field_data_1999-2024.xlsx"))
+dta_field_2 <- readxl::read_excel(paste0(data_path,"field_data_1999-2025.xlsx"))
 
 dta_field <- rbind(dta_field_1,dta_field_2) %>% 
   dplyr::select(MLocID,StationDes,Lat_DD,Long_DD,SampleStartDate,Char_Name,Result_Operator,Result_status,Result_Numeric,Result_Unit,GNIS_Name_ID) %>% 
@@ -428,9 +428,9 @@ dta <- rbind(dta_cyan,dta_field) %>%
   dplyr::mutate(Value = round(Value,2))
 
 # Advisories ----
-dta_adv_1 <- readxl::read_excel(paste0(data_path,"OHA_advisories_2007-2024.xlsx"), sheet = "Advisories")
+dta_adv_1 <- readxl::read_excel(paste0(data_path,"OHA_advisories_2007-2025.xlsx"), sheet = "Advisories")
 
-dta_adv_2 <- readxl::read_excel(paste0(data_path,"OHA_advisories_2025.xlsx"), sheet = "Advisories") %>% 
+dta_adv_2 <- readxl::read_excel(paste0(data_path,"OHA_advisories_2026.xlsx"), sheet = "Advisories") %>% 
   dplyr::mutate(Details = dplyr::if_else(is.na(Lifted),"Active",Details)) %>% 
   dplyr::mutate(Lifted = dplyr::if_else(is.na(Lifted),as.POSIXct(Sys.Date()-1),Lifted)) 
 
@@ -543,8 +543,8 @@ map.tbl.data <- dta_wide %>%
   dplyr::select(`Waterbody_GNISID*`, Basin, `Weekly Mean Daily Max (μg/L)`,
                 `Weekly Median Daily Max (μg/L)`, `Days of Data`, `Date of Daily Max`,
                 `% Chance of CyanoHAB`) %>%
-  dplyr::filter(!`Waterbody_GNISID*` %in% c("Crater Lake_01163669", "Waldo Lake_01151818")) 
-  # dplyr::filter(!`Waterbody_GNISID*` %in% c("Timothy Lake_01151253")) # 20251112
+  dplyr::filter(!`Waterbody_GNISID*` %in% c("Crater Lake_01163669", "Waldo Lake_01151818")) %>% 
+  dplyr::filter(!`Waterbody_GNISID*` %in% c("Summit Lake_01150624")) # 20260408
 
 # (6) 7D Map  ----
 lakes.resolvable.7d <- lakes.resolvable %>% 

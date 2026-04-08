@@ -147,11 +147,12 @@ shinyApp(
            "These estimates are derived from satellite imagery provided by the  ", 
            a("Cyanobacteria Assessment Network (CyAN)", href="https://www.epa.gov/water-research/cyanobacteria-assessment-network-cyan",target="_blank"),
            " project. The Oregon DEQ updates the estimates weekly from spring through fall each year. ",
-           "The current report presents Version 6 (V6) data reprocessed by NASA in February 2025. ",
-           "The V6 dataset includes updated calibration for Sentinel 3A and 3B, an enhanced filter for turbid water, and atmospheric correction for water vapor. ",
-           "Additional information about the V6 dataset can be found on the ",
-           a("NASA Ocean Color website", href="https://oceancolor.gsfc.nasa.gov/data/reprocessing/projects/cyan/version/6/",.noWS = "outside",target="_blank"),
-           ". This report also includes available field measurements collected by the Oregon DEQ and other entities, ",
+           # "The current report presents Version 6 (V6) data reprocessed by NASA in February 2025. ",
+           # "The V6 dataset includes updated calibration for Sentinel 3A and 3B, an enhanced filter for turbid water, and atmospheric correction for water vapor. ",
+           # "Additional information about the V6 dataset can be found on the ",
+           # a("NASA Ocean Color website", href="https://oceancolor.gsfc.nasa.gov/data/reprocessing/projects/cyan/version/6/",.noWS = "outside",target="_blank"),
+           # ". ",
+           "This report also includes available field measurements collected by the Oregon DEQ and other entities, ",
            "as well as recreational health advisories for cyanobacterial bloom issued by the Oregon Health Authority.",
            .noWS = c("after-begin", "before-end")),
         
@@ -160,7 +161,7 @@ shinyApp(
            "(",a("WHO, 2021", href="https://www.who.int/publications/m/item/toxic-cyanobacteria-in-water---second-edition",.noWS = "outside",target="_blank"),"). ",
            "Also included are ",
            a("EPA’s seven-day forecasts", href="https://www.epa.gov/water-research/cyanobacterial-harmful-algal-blooms-forecasting-research",.noWS = "outside",target="_blank"), 
-           " from the experimental CyanoHAB forecasting model based on CyAN satellite data. ",
+           " from the experimental cyanoHAB forecasting model based on CyAN satellite data. ",
            "The model provides weekly probabilities that the median surface chlorophyll a concentration is ≥12 µg/L. ",
            "Higher probabilities indicate greater likelihoods of bloom occurrence. ",
            # tags$i("EPA has currently suspended the update of the forecasts. DEQ will resume reporting the forecasts once data become available. "),
@@ -176,7 +177,7 @@ shinyApp(
                   a("Oregon Health Authority", href="https://www.oregon.gov/oha/ph/healthyenvironments/recreation/harmfulalgaeblooms/pages/blue-greenalgaeadvisories.aspx",.noWS = "outside",target="_blank"),
                   " to learn about recreational use and drinking water advisories related to cyanobacteria blooms. "),
            "Additional assessments using ",
-           a("Sentinel 2", href="https://rs-algal-blooms.users.earthengine.app/view/idaho#lon=-120.94342697507778;lat=44.24513598650389;zoom=7;date=2025-07-21;L1=false;L2=false;L3=false;L4=true;L5=false;L6=false;L7=true;L8=false;L9=false;min=0;max=0.02;jrc=50;glint=0.02;ndwi=0;RGBmax=0.6442;",
+           a("Sentinel 2", href="https://rs-algal-blooms.users.earthengine.app/view/idaho#lon=-120.94342697507778;lat=44.24513598650389;zoom=7",
              target="_blank"),
            "imagery, local visual assessments, and/or water quality sampling are needed to provide further information on potential human health ",
            "and environmental effects of cyanobacteria. Factors such as cloud cover, ice, sun glint, water surface roughness, dry lake beds, algal mats, and shoreline effects can interfere with satellite imagery and estimation accuracy.",
@@ -249,7 +250,7 @@ shinyApp(
         collapsed = FALSE,
         
         # ___ Section Introduction ----
-        tags$h4(p("The interactive map provides satellite imagery for 49 Oregon waterbodies from April 1, 2025 to the present.")),
+        tags$h4(p("The interactive map provides satellite imagery for 49 Oregon waterbodies from April 1, 2026 to the present.")),
         
         shinydashboard::box(
           width = 3,
@@ -275,12 +276,12 @@ shinyApp(
           tags$hr(),
           
           # ___ Select a Date ----
-          tags$h4(p(paste0("Select a date to update the map with satellite imagery from that day. Imagery is available from April 1, 2025 to ", report_end_fmt, "."))),
+          tags$h4(p(paste0("Select a date to update the map with satellite imagery from that day. Imagery is available from April 1, 2026 to ", report_end_fmt, "."))),
           
           shiny::dateInput(inputId = "date_map",
                            label = tags$h4(strong("Select a Date:")),
                            value = as.Date(max(dta2$Date)),
-                           min = as.Date("2025-04-01"),
+                           min = as.Date("2026-04-01"),
                            max = as.Date(max(dta2$Date)),
                            format = "yyyy-mm-dd",
                            startview = "month",
@@ -364,10 +365,10 @@ shinyApp(
             shiny::radioButtons(
               inputId = "ploty",
               label = tags$h4(strong("Date Range:")),
-              choices = c("Current Year: 2025",
+              choices = c("Current Year: 2026",
                           "Reset to Complete Data Range",
                           "Select a Date Range"),
-              selected = "Current Year: 2025"),
+              selected = "Current Year: 2026"),
             
             shiny::dateRangeInput(inputId = "date_plot",
                                   label = "",
@@ -520,7 +521,7 @@ shinyApp(
             #title = "copyright",
             solidHeader = FALSE,
             
-            h4("The report is provided by the Oregon DEQ Watershed Management Section. Copyright (C) 2020-2025, Oregon DEQ."),
+            h4("The report is provided by the Oregon DEQ Watershed Management Section. Copyright (C) 2020-2026, Oregon DEQ."),
             h4("The source code of this report is publicly available at GitHub repository: ", 
                a("Satellite Estimates of Cyanobacteria in Oregon Lakes and Reservoirs",
                  href="https://github.com/OR-Dept-Environmental-Quality/CyAN_imagery_update",.noWS = "outside",target="_blank"),".",
@@ -818,7 +819,7 @@ shinyApp(
     
     yr <- reactive({ 
       
-      if(input$ploty == "Current Year: 2025"){"2025"}else{sort(unique(dta$Year))}
+      if(input$ploty == "Current Year: 2026"){"2026"}else{sort(unique(dta$Year))}
       
     })
     
@@ -840,7 +841,7 @@ shinyApp(
     
     df_temp <- reactive({
       
-      if(input$ploty == "Current Year: 2025"){
+      if(input$ploty == "Current Year: 2026"){
         
         dta %>%
           dplyr::filter(GNISIDNAME %in% input$waterbody) %>% 
@@ -867,7 +868,7 @@ shinyApp(
         return(NULL)
       }
       
-      if(input$ploty == "Current Year: 2025"){
+      if(input$ploty == "Current Year: 2026"){
         
         dta %>%
           dplyr::filter(GNISIDNAME %in% input$waterbody) %>% 
@@ -1144,6 +1145,7 @@ shinyApp(
             list(targets = 5, className = "dt-nowrap"), # no wrap for "Date of Max"
             list(targets = 6, width = "10%")
           ),
+          language = list(emptyTable = "No highlighted waterbodies for this reporting period."),
           buttons = list(#'print',
             list(extend = 'collection',
                  buttons = c('csv','excel'),

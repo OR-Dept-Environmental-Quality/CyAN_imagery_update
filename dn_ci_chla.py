@@ -28,7 +28,7 @@ zonal_chl_df = pd.DataFrame(dtype='object')
 
 extent = arcpy.Extent(-2315637.32, 2919264.13, -1566307.49, 2284415.24)
 
-year = 2025
+year = 2026
 raw_path = os.path.join(base_path, f"raw\\{year}")
 dn_path = os.path.join(base_path, f"dn\\{year}")
 ci_path = os.path.join(base_path, f"ci\\{year}")
@@ -41,14 +41,15 @@ temp_zonal_chl = os.path.join(temp_dir, f"zonal_chl_{year}.dbf")
 from download_list import download_file_list
 
 # update r.download_file_list as needed; also update it in Step 3.
-# download_file_list = ['2025329', '2025330', '2025331', '2025332', '2025333', '2025334', '2025335', '2025336', '2025337']
-# download_file_list = ['2025337']
+# download_file_list = ["2026001","2026002","2026003","2026004"]
+# download_file_list = ['2025363']
 
 # for raw_name in download_file_list:
 for i, raw_name in enumerate(download_file_list, start=1):
   print(f"[{i}/{len(download_file_list)}] Processing {raw_name}...", flush=True)
 
-  # test: raw_name = '2025337'
+  # test: 
+  raw_name = '2026097'
   print(raw_name)
   
   raw_tif_path = os.path.join(raw_path, f"{raw_name}.tif")
