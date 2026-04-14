@@ -543,8 +543,8 @@ map.tbl.data <- dta_wide %>%
   dplyr::select(`Waterbody_GNISID*`, Basin, `Weekly Mean Daily Max (μg/L)`,
                 `Weekly Median Daily Max (μg/L)`, `Days of Data`, `Date of Daily Max`,
                 `% Chance of CyanoHAB`) %>%
-  dplyr::filter(!`Waterbody_GNISID*` %in% c("Crater Lake_01163669", "Waldo Lake_01151818")) %>% 
-  dplyr::filter(!`Waterbody_GNISID*` %in% c("Summit Lake_01150624")) # 20260408
+  dplyr::filter(!`Waterbody_GNISID*` %in% c("Crater Lake_01163669", "Waldo Lake_01151818")) #%>% 
+  # dplyr::filter(!`Waterbody_GNISID*` %in% c("Summit Lake_01150624")) # 20260408
 
 # (6) 7D Map  ----
 lakes.resolvable.7d <- lakes.resolvable %>% 
