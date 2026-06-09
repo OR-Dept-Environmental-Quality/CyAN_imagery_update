@@ -5,9 +5,13 @@ account: l_ygrund
 server: rstudioconnect.deq.state.or.us
 hostUrl: https://rstudioconnect.deq.state.or.us/__api__
 appId: 65
+<<<<<<< Updated upstream
 bundleId: 1468
+=======
+bundleId: 1476
+>>>>>>> Stashed changes
 url: https://rstudioconnect.deq.state.or.us/Oregon-cyanobacteria-satellite-report/
 version: 1
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: __pycache__/download_list.cpython-311.pyc|__pycache__/download_list.cpython-313.pyc|awqms.R|data_py.Rmd|dn_ci_chla.py|download_file_list.rds|download_list.py|lake_7day_imagery.R|package_versions.R|README.md|renv.lock|user_guide/user_guide.docx|www/Thumbs.db|Images
+ignoredFiles: __pycache__/download_list.cpython-311.pyc|__pycache__/download_list.cpython-313.pyc|awqms.R|data_py.Rmd|dn_ci_chla.py|download_file_list.rds|download_list.py|lake_7day_imagery.R|package_versions.R|README.md|renv.lock|www/Thumbs.db
