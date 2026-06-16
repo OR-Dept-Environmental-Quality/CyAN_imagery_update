@@ -22,8 +22,8 @@ max_date <- as.Date(max(dta2$Date))
 report_start <- max_date - 6
 report_end <- max_date
 report_start_fmt <- format_report_date(report_start)
-# report_end_fmt <- format_report_date(report_end)
-report_end_fmt <- format_report_date(as.Date("2026-06-08"))
+report_end_fmt <- format_report_date(report_end)
+# report_end_fmt <- format_report_date(as.Date("2026-06-08"))
 forecast_end <- lubridate::mdy(unique(forecast$`Forecast End Date`))
 forecast_start <- forecast_end - 6
 forecast_start_fmt <- format_report_date(forecast_start)
