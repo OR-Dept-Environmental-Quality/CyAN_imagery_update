@@ -27,6 +27,7 @@ field_lakes <- readxl::read_excel(paste0(data_path,"Resolvable_Lakes.xlsx"), she
 ```{r OceanData}
 library(curl)
 day_start <- paste0(max(data_chla$Year), sprintf("%03d", max(as.numeric(data_chla$Julian_day))+1))
+# day_start <- "2026187"
 day_end <- dates %>% dplyr::filter(as.POSIXlt(Date) == as.POSIXlt(Sys.Date()-1)) %>% dplyr::pull(CyAN_File_NUM)
 hab_days <- as.character(seq(day_start, day_end))
 hab_days <- substr(hab_days, nchar(hab_days) - 2, nchar(hab_days))
@@ -444,7 +445,7 @@ advisories <- rbind(dta_adv_1,dta_adv_2) %>%
   dplyr::mutate(
     `Dominant genus/toxin` = ifelse(is.na(`Dominant genus/toxin`),"Toxin",`Dominant genus/toxin`),
     `Cell Count/Toxin` = ifelse(is.na(`Cell Count/Toxin`),"",`Cell Count/Toxin`),
-    Lifted_label = if_else(Details %in% "Active","Not Yet Lifted",format(as.Date(Lifted), "%b %d, %Y"))) %>% 
+    Lifted_label = if_else(Advisory_status %in% "Active","Not Yet Lifted",format(as.Date(Lifted), "%b %d, %Y"))) %>% 
   dplyr::select(GNIS_Name_ID,Issued, Lifted, Lifted_label,`Dominant genus/toxin`,`Cell Count/Toxin`,Unit)
 
 # Forecast ----
