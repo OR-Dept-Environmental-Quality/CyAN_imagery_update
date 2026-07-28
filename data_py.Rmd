@@ -84,9 +84,11 @@ print("Step 2 - download is completed")
 
 # download_file_list <- readRDS("download_file_list.rds")
 download_file_list <- unlist(download_file_list)
-python_list <- paste0("download_file_list = [", 
-                      paste(sprintf('"%s"', download_file_list), collapse = ", "), 
+python_list <- paste0("download_file_list = [",
+                      paste(sprintf('"%s"', download_file_list), collapse = ", "),
                       "]")
+# python_list <- "download_file_list = [\"2026204\", \"2026205\", \"2026206\", \"2026207\"]"
+
 writeLines(python_list, "download_list.py")
 
 script_path <- "dn_ci_chla.py"
