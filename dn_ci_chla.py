@@ -40,15 +40,11 @@ temp_zonal_chl = os.path.join(temp_dir, f"zonal_chl_{year}.dbf")
 
 from download_list import download_file_list
 
-# update r.download_file_list as needed; also update it in Step 3.
-# download_file_list = ["2026001","2026002","2026003","2026004"]
-# download_file_list = ['2025363']
-
 # for raw_name in download_file_list:
 for i, raw_name in enumerate(download_file_list, start=1):
   print(f"[{i}/{len(download_file_list)}] Processing {raw_name}...", flush=True)
 
-  # test: raw_name = '2026201'
+  # test: raw_name = '2026256'
   print(raw_name)
   
   raw_tif_path = os.path.join(raw_path, f"{raw_name}.tif")

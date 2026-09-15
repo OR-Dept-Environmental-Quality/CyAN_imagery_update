@@ -40,6 +40,8 @@ fileNums <- dates %>%
   dplyr::filter (as.numeric(CyAN_File_NUM)>=as.numeric(day_start) & as.numeric(CyAN_File_NUM)<=as.numeric(day_end)) %>% 
   dplyr::pull(CyAN_File_NUM)
 
+# fileNums <- c("2026249") # when running breaks
+
 tiles = c("1_1","1_2","2_1","2_2")
 
 download_file_list <- list()
@@ -70,6 +72,9 @@ for (i in 1:length(fileNums)) {
   download_file_list <- c(download_file_list, stringr::str_sub(merged_file_name,start = 1, end = 7))
 }
 
+# after th loop, run fileNums <- dates ... 
+# download_file_list <- as.list(fileNums) # when running breaks
+
 saveRDS(download_file_list, file = "download_file_list.rds")
 
 print("Step 2 - download is completed")
@@ -87,7 +92,7 @@ download_file_list <- unlist(download_file_list)
 python_list <- paste0("download_file_list = [",
                       paste(sprintf('"%s"', download_file_list), collapse = ", "),
                       "]")
-# python_list <- "download_file_list = [\"2026204\", \"2026205\", \"2026206\", \"2026207\"]"
+# python_list <- "download_file_list = [\"2026230\", \"2026231\", \"2026232\", \"2026233\", \"2026234\"]" # + writeLines
 
 writeLines(python_list, "download_list.py")
 
@@ -314,11 +319,12 @@ field_data <- AWQMSdata::AWQMS_Data(
     'Anatoxin-A',
     'Chlorophyll a',
     'Cylindrospermopsin',
-    'Microcystins',
+    'Cylindrospermopsins',
+    'Microcystin',
     'Pheophytin a',
     'Saxitoxin'
   ),
-  startdate = '2025-10-01', 
+  startdate = '2026-01-01', 
   enddate = Sys.Date())
 
 writexl::write_xlsx(field_data, paste0(data_path,"field_data_all_2026.xlsx"))

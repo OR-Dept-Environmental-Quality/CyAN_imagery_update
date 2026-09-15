@@ -28,18 +28,28 @@ forecast_end <- lubridate::mdy(unique(forecast$`Forecast End Date`))
 forecast_start <- forecast_end - 6
 forecast_start_fmt <- format_report_date(forecast_start)
 forecast_end_fmt <- format_report_date(forecast_end)
-
-shinyApp(
   
   ui = shinydashboardPlus::dashboardPage(
+    
+    title = "Satellite Estimates of Cyanobacteria in Oregon Lakes and Reservoirs",
+    
     options = list(sidebarExpandOnHover = FALSE),
-    header = shinydashboardPlus::dashboardHeader(titleWidth = 0, disable = TRUE),
+    
+    header = shinydashboardPlus::dashboardHeader(
+      titleWidth = 0,
+      disable = TRUE
+    ),
     
     sidebar = shinydashboardPlus::dashboardSidebar(width = "0px"),
     
     body = shinydashboard::dashboardBody(
       
       tags$head(
+        
+        tags$script(
+          HTML("document.documentElement.setAttribute('lang', 'en');")
+        ),
+
         tags$style(HTML('/* logo */
                          .skin-blue .main-header .logo {
                          background-color: #23769a;
@@ -88,6 +98,21 @@ shinyApp(
                          padding-left: 10px;
                          padding-right: 10px;
                          }
+                         /* box headers */
+                         .box.box-solid.box-primary > .box-header {
+                         background-color: #23769A;
+                         color: #FFFFFF;
+                         padding-top: 11px;
+                         padding-bottom: 9px;
+                         }
+                         .box.box-solid.box-primary {
+                         border-top-color: #23769A;
+                         }
+                         /* switchInput - OHA advisory button */
+                         .bootstrap-switch .bootstrap-switch-handle-on.bootstrap-switch-primary {
+                         background-color: #23769A !important;
+                         color: #FFFFFF !important;
+                         }
                          /* sidebar */
                          .sidebar {
                          padding-top: 100px;
@@ -122,97 +147,190 @@ shinyApp(
                          '))
       ),
       
+      tags$main(
+        id = "main-content",
+      
       # _ Header ----
-      shinydashboard::box(
-        width = 12,
-        solidHeader = TRUE,
+      tags$div(
+        style = "width: 100%; padding: 10px;",
         
-        tags$img(src = "DEQ-logo-color-horizontal370x73.png"),
-        tags$div(span("Satellite Estimates of Cyanobacteria in Oregon Lakes and Reservoirs",
-                      style = "color: black; font-size: 40px; font-weight:bold")),
+        tags$img(
+          src = "DEQ-logo-color-horizontal370x73.png",
+          alt = "State of Oregon Department of Environmental Quality logo"
+        ),
         
-        tags$h3("Reporting Period: ", report_start_fmt, " - ", report_end_fmt)
+        tags$h1(
+          "Satellite Estimates of Cyanobacteria in Oregon Lakes and Reservoirs",
+          style = "color: black; font-size: 40px; font-weight: bold;"
+        ),
         
+        tags$p(
+          "Reporting Period: ",
+          report_start_fmt,
+          " - ",
+          report_end_fmt,
+          style = "font-size: 24px;"
+        )
       ), # Header END
       
       # _ 1. Introduction ----
       shinydashboardPlus::box(
         width = 12,
-        title = "Introduction",
+        height = "100%",
+        title = tags$span(
+          "Introduction",
+          style = "font-size: 22px;"),
         status = "primary",
         solidHeader = TRUE,
         collapsible = FALSE,
         collapsed = FALSE,
         
-        h4("This report presents recent and historical estimates of chlorophyll a concentrations for 49 large waterbodies in Oregon. ",
-           "These estimates are derived from satellite imagery provided by the  ", 
-           a("Cyanobacteria Assessment Network (CyAN)", href="https://www.epa.gov/water-research/cyanobacteria-assessment-network-cyan",target="_blank"),
-           " project. The Oregon DEQ updates the estimates weekly from spring through fall each year. ",
-           # "The current report presents Version 6 (V6) data reprocessed by NASA in February 2025. ",
-           # "The V6 dataset includes updated calibration for Sentinel 3A and 3B, an enhanced filter for turbid water, and atmospheric correction for water vapor. ",
-           # "Additional information about the V6 dataset can be found on the ",
-           # a("NASA Ocean Color website", href="https://oceancolor.gsfc.nasa.gov/data/reprocessing/projects/cyan/version/6/",.noWS = "outside",target="_blank"),
-           # ". ",
-           "This report also includes available field measurements collected by the Oregon DEQ and other entities, ",
-           "as well as recreational health advisories for cyanobacterial bloom issued by the Oregon Health Authority.",
-           .noWS = c("after-begin", "before-end")),
+        tags$p(
+          "This report presents recent and historical estimates of chlorophyll a concentrations for 49 large waterbodies in Oregon. ",
+          "These estimates are derived from satellite imagery provided by the ",
+          a(
+            "Cyanobacteria Assessment Network (CyAN)",
+            href = "https://www.epa.gov/water-research/cyanobacteria-assessment-network-cyan",
+            target = "_blank",
+            style = "text-decoration: underline;"
+          ),
+          " project. The Oregon DEQ updates the estimates weekly from spring through fall each year. ",
+          "This report also includes available field measurements collected by the Oregon DEQ and other entities, ",
+          "as well as recreational health advisories for cyanobacterial bloom issued by the Oregon Health Authority.",
+          style = "font-size: 18px;"
+        ),
         
-        h4("Concentrations of chlorophyll a (μg/L) associated with cyanobacteria dominance are shown at three levels: Low: 3-12 μg/L, Moderate: 12-24 μg/L, and High: >24 μg/L. ",
-           "These levels correspond to the World Health Organization (WHO) exposure guideline values for recreational waters ",
-           "(",a("WHO, 2021", href="https://www.who.int/publications/m/item/toxic-cyanobacteria-in-water---second-edition",.noWS = "outside",target="_blank"),"). ",
-           "Also included are ",
-           a("EPA’s seven-day forecasts", href="https://www.epa.gov/water-research/cyanobacterial-harmful-algal-blooms-forecasting-research",.noWS = "outside",target="_blank"), 
-           " from the experimental cyanoHAB forecasting model based on CyAN satellite data. ",
-           "The model provides weekly probabilities that the median surface chlorophyll a concentration is ≥12 µg/L. ",
-           "Higher probabilities indicate greater likelihoods of bloom occurrence. ",
-           # tags$i("EPA has currently suspended the update of the forecasts. DEQ will resume reporting the forecasts once data become available. "),
-           "For more information on harmful algal blooms in Oregon, visit the ",
-           a("Oregon DEQ", href="https://www.oregon.gov/deq/wq/Pages/Harmful-Algal-Blooms.aspx",target="_blank")," and ",
-           a("Oregon Health Authority", href="https://www.oregon.gov/oha/ph/healthyenvironments/recreation/harmfulalgaeblooms/pages/blue-greenalgaeadvisories.aspx",.noWS = "outside",target="_blank"),
-           " websites.",
-           .noWS = c("after-begin", "before-end")),
+        tags$p(
+          "Concentrations of chlorophyll a (μg/L) associated with cyanobacteria dominance are shown at three levels: ",
+          "Low: 3-12 μg/L, Moderate: 12-24 μg/L, and High: >24 μg/L. ",
+          "These levels correspond to the World Health Organization (WHO) exposure guideline values for recreational waters ",
+          "(",
+          a(
+            "WHO, 2021",
+            href = "https://www.who.int/publications/m/item/toxic-cyanobacteria-in-water---second-edition",
+            target = "_blank",
+            style = "text-decoration: underline;"
+          ),
+          "). ",
+          "Also included are ",
+          a(
+            "EPA’s seven-day forecasts",
+            href = "https://www.epa.gov/water-research/cyanobacterial-harmful-algal-blooms-forecasting-research",
+            target = "_blank",
+            style = "text-decoration: underline;"
+          ),
+          " from the experimental cyanoHAB forecasting model based on CyAN satellite data. ",
+          "The model provides weekly probabilities that the median surface chlorophyll a concentration is ≥12 µg/L. ",
+          "Higher probabilities indicate greater likelihoods of bloom occurrence. ",
+          "For more information on harmful algal blooms in Oregon, visit the ",
+          a(
+            "Oregon DEQ",
+            href = "https://www.oregon.gov/deq/wq/Pages/Harmful-Algal-Blooms.aspx",
+            target = "_blank",
+            style = "text-decoration: underline;"
+          ),
+          " and ",
+          a(
+            "Oregon Health Authority",
+            href = "https://www.oregon.gov/oha/ph/healthyenvironments/recreation/harmfulalgaeblooms/pages/blue-greenalgaeadvisories.aspx",
+            target = "_blank",
+            style = "text-decoration: underline;"
+          ),
+          " websites.",
+          style = "font-size: 18px;"
+        ),
         
-        h4("All data presented in this report are provisional and subject to change. Satellite-derived estimates do not ",
-           "confirm the presence of cyanotoxins or other water quality impairments and do not have regulatory implications. ",
-           tags$b("Visit the ",
-                  a("Oregon Health Authority", href="https://www.oregon.gov/oha/ph/healthyenvironments/recreation/harmfulalgaeblooms/pages/blue-greenalgaeadvisories.aspx",.noWS = "outside",target="_blank"),
-                  " to learn about recreational use and drinking water advisories related to cyanobacteria blooms. "),
-           "Additional assessments using ",
-           a("Sentinel 2", href="https://rs-algal-blooms.users.earthengine.app/view/idaho#lon=-120.94342697507778;lat=44.24513598650389;zoom=7",
-             target="_blank"),
-           "imagery, local visual assessments, and/or water quality sampling are needed to provide further information on potential human health ",
-           "and environmental effects of cyanobacteria. Factors such as cloud cover, ice, sun glint, water surface roughness, dry lake beds, algal mats, and shoreline effects can interfere with satellite imagery and estimation accuracy.",
-           .noWS = c("after-begin", "before-end")),
+        tags$p(
+          "All data presented in this report are provisional and subject to change. ",
+          "Satellite-derived estimates do not confirm the presence of cyanotoxins or other water quality impairments ",
+          "and do not have regulatory implications. ",
+          tags$b(
+            "Visit the ",
+            a(
+              "Oregon Health Authority",
+              href = "https://www.oregon.gov/oha/ph/healthyenvironments/recreation/harmfulalgaeblooms/pages/blue-greenalgaeadvisories.aspx",
+              target = "_blank",
+              style = "text-decoration: underline;"
+            ),
+            " to learn about recreational use and drinking water advisories related to cyanobacteria blooms. "
+          ),
+          "Additional assessments using ",
+          a(
+            "Sentinel 2",
+            href = "https://rs-algal-blooms.users.earthengine.app/view/idaho#lon=-120.94342697507778;lat=44.24513598650389;zoom=7",
+            target = "_blank",
+            style = "text-decoration: underline;"
+          ),
+          " imagery, local visual assessments, and/or water quality sampling are needed to provide further information ",
+          "on potential human health and environmental effects of cyanobacteria. ",
+          "Factors such as cloud cover, ice, sun glint, water surface roughness, dry lake beds, algal mats, ",
+          "and shoreline effects can interfere with satellite imagery and estimation accuracy.",
+          style = "font-size: 18px;"
+        ),
         
-        h4("DISCLAIMER: Information is preliminary. Additional data are needed to confirm the presence of cyanobacteria blooms.",
-           .noWS = c("after-begin", "before-end"))
+        tags$p(
+          tags$strong("DISCLAIMER: "),
+          "Information is preliminary. Additional data are needed to confirm the presence of cyanobacteria blooms.",
+          style = "font-size: 18px; word-spacing: -1px;"
+        )
         
       ), # Introduction End
       
       # _ 2. Highlighted waterbodies ----
       shinydashboardPlus::box(
         width = 12,
-        title = "Highlighted Waterbodies",
+        title = tags$span(
+          "Highlighted Waterbodies",
+          style = "font-size: 22px;"),
         status = "primary",
         solidHeader = TRUE,
         collapsible = FALSE,
         collapsed = FALSE,
         
         # ___ Section Introduction ----
-        tags$h4(p(tags$strong(report_start_fmt), " - ", tags$strong(report_end_fmt), "- ",
-                  "Waterbodies with high chlorophyll a concentration (≥24 μg/L) are identified based on ",
-                  "the maximum value of the weekly means of daily maximums (",tags$strong("'Weekly Mean Daily Max'"),").",
-                  "The weekly median of daily maximums (",tags$strong("'Weekly Median Daily Max'"),") is also reported for each highlighted waterbody. ",
-                  "Both metrics represent 7-day moving averages calculated using daily maximum values from ",
-                  "the most recent available data date and the preceding six days. ",
-                  "The", tags$strong("'Days of Data'"), "field indicates the number of valid observation days within ",
-                  "each 7-day window used for computing both Weekly Mean Daily Max and Weekly Median Daily Max.",
-                  "The", tags$strong("'Date of Daily Max'"), "indicates the date on which the daily maximum value occurred.")),
+        # tags$h4(p(tags$strong(report_start_fmt), " - ", tags$strong(report_end_fmt), "- ",
+        #           "Waterbodies with high chlorophyll a concentration (≥24 μg/L) are identified based on ",
+        #           "the maximum value of the weekly means of daily maximums (",tags$strong("'Weekly Mean Daily Max'"),").",
+        #           "The weekly median of daily maximums (",tags$strong("'Weekly Median Daily Max'"),") is also reported for each highlighted waterbody. ",
+        #           "Both metrics represent 7-day moving averages calculated using daily maximum values from ",
+        #           "the most recent available data date and the preceding six days. ",
+        #           "The", tags$strong("'Days of Data'"), "field indicates the number of valid observation days within ",
+        #           "each 7-day window used for computing both Weekly Mean Daily Max and Weekly Median Daily Max.",
+        #           "The", tags$strong("'Date of Daily Max'"), "indicates the date on which the daily maximum value occurred.")),
+        # 
+        # tags$h4(p(tags$strong(forecast_start_fmt), " - ", tags$strong(forecast_end_fmt), " - ",
+        #           "Modeled probabilities of chlorophyll a concentrations ≥12 µg/L are shown in the '",tags$strong("% Chance of CyanoHAB"), "' column.",
+        #           "These probabilities are presented for all highlighted waterbodies and for any other waterbodies ",
+        #           "where the modeled probabilities are ≥50%.")),
         
-        tags$h4(p(tags$strong(forecast_start_fmt), " - ", tags$strong(forecast_end_fmt), " - ",
-                  "Modeled probabilities of chlorophyll a concentrations ≥12 µg/L are shown in the '",tags$strong("% Chance of CyanoHAB"), "' column.",
-                  "These probabilities are presented for all highlighted waterbodies and for any other waterbodies ",
-                  "where the modeled probabilities are ≥50%.")),
+        tags$p(
+          tags$strong(report_start_fmt), " - ", 
+          tags$strong(report_end_fmt), " - ",
+          "Waterbodies with high chlorophyll a concentration (≥24 μg/L) are identified based on ",
+          "the maximum value of the weekly means of daily maximums (",
+          tags$strong("'Weekly Mean Daily Max'"), "). ",
+          "The weekly median of daily maximums (",
+          tags$strong("'Weekly Median Daily Max'"), 
+          ") is also reported for each highlighted waterbody. ",
+          "Both metrics represent 7-day moving averages calculated using daily maximum values from ",
+          "the most recent available data date and the preceding six days. ",
+          "The ", tags$strong("'Days of Data'"), 
+          " field indicates the number of valid observation days within ",
+          "each 7-day window used for computing both Weekly Mean Daily Max and Weekly Median Daily Max. ",
+          "The ", tags$strong("'Date of Daily Max'"), 
+          " indicates the date on which the daily maximum value occurred.",
+          style = "font-size: 18px; word-spacing: -1px;"
+        ),
+        
+        tags$p(
+          tags$strong(forecast_start_fmt), " - ", 
+          tags$strong(forecast_end_fmt), " - ",
+          "Modeled probabilities of chlorophyll a concentrations ≥12 µg/L are shown in the '",
+          tags$strong("% Chance of CyanoHAB"), "' column. ",
+          "These probabilities are presented for all highlighted waterbodies and for any other waterbodies ",
+          "where the modeled probabilities are ≥50%.",
+          style = "font-size: 18px; word-spacing: -1px;"
+        ),
         
         # ___ 7-Day Table ----
         shinydashboard::box(
@@ -225,7 +343,8 @@ shinyApp(
           tags$em("*GNISID: ",a("USGS Geographic Names Information System Identifier", 
                                 href="https://www.usgs.gov/faqs/what-geographic-names-information-system-gnis",
                                 .noWS = "outside",
-                                target="_blank"),
+                                target="_blank",
+                                style = "text-decoration: underline;"),
                   .noWS = c("after-begin", "before-end"))
           
         ),
@@ -235,7 +354,8 @@ shinyApp(
           width = 6,
           solidHeader = TRUE,
           
-          tags$img(src = "map_7d.jpg", width = "100%")
+          tags$img(src = "map_7d.jpg", width = "100%",
+                   alt = "Map highlighting waterbodies for the reporting period")
           
         )
         
@@ -244,14 +364,19 @@ shinyApp(
       # _ 3. Satellite imagery  ----
       shinydashboardPlus::box(
         width = 12,
-        title = "Satellite Imagery",
+        title = tags$span(
+          "Satellite Imagery",
+          style = "font-size: 22px;"),
         status = "primary",
         solidHeader = TRUE,
         collapsible = FALSE,
         collapsed = FALSE,
         
         # ___ Section Introduction ----
-        tags$h4(p("The interactive map provides satellite imagery for 49 Oregon waterbodies from April 1, 2026 to the present.")),
+        tags$p(
+          "The interactive map provides satellite imagery for 49 Oregon waterbodies from April 1, 2026 to the present.",
+          style = "font-size: 18px;"
+        ),
         
         shinydashboard::box(
           width = 3,
@@ -261,15 +386,30 @@ shinyApp(
           
           # ___ Select a Waterbody ----
           tags$hr(),
-          tags$h4(p("Select a waterbody to zoom in on its location on the map. ",
-                    "Once selected, information will be displayed indicating whether the waterbody is used for recreation or as a public drinking water source.")),
+          # tags$h4(p("Select a waterbody to zoom in on its location on the map. ",
+          #           "Once selected, information will be displayed indicating whether the waterbody is used for recreation or as a public drinking water source.")),
           
-          selectInput(inputId = "waterbody", 
-                      label = tags$h4(strong("Select a Waterbody:")),
-                      choices = c("Oregon", sort(as.character(unique(lakes.resolvable$GNISIDNAME)))),
-                      selected = "Oregon",
-                      selectize = FALSE,
-                      size = 10),
+          tags$p(
+            "Select a waterbody to zoom in on its location on the map. ",
+            "Once selected, information will be displayed indicating whether the waterbody is used for recreation or as a public drinking water source.",
+            style = "font-size: 18px; word-spacing: -1px;"
+          ),
+          
+          selectInput(
+            inputId = "waterbody",
+            label = tags$span(
+              "Select a Waterbody:",
+              style = "font-size: 18px; font-weight: bold;"
+            ),
+            choices = c(
+              "Oregon",
+              sort(as.character(unique(lakes.resolvable$GNISIDNAME)))
+            ),
+            selected = "Oregon",
+            selectize = FALSE,
+            size = 10
+          ),
+          
           # ___ Drinking Water Area ----
           shiny::textOutput("dw"),
           
@@ -277,26 +417,49 @@ shinyApp(
           tags$hr(),
           
           # ___ Select a Date ----
-          tags$h4(p(paste0("Select a date to update the map with satellite imagery from that day. Imagery is available from April 1, 2026 to ", report_end_fmt, "."))),
+          # tags$h4(p(paste0("Select a date to update the map with satellite imagery from that day. Imagery is available from April 1, 2026 to ", report_end_fmt, "."))),
           
-          shiny::dateInput(inputId = "date_map",
-                           label = tags$h4(strong("Select a Date:")),
-                           value = as.Date(max(dta2$Date)),
-                           min = as.Date("2026-04-01"),
-                           max = as.Date(max(dta2$Date)),
-                           format = "yyyy-mm-dd",
-                           startview = "month",
-                           weekstart = 0,
-                           datesdisabled = missing.dates$Date),
+          tags$p(
+            "Select a date to update the map with satellite imagery from that day. ",
+            "Imagery is available from April 1, 2026 to ",
+            report_end_fmt,
+            ".",
+            style = "font-size: 18px; word-spacing: -1px;"
+          ),
+          
+          shiny::dateInput(
+            inputId = "date_map",
+            label = tags$span(
+              "Select a Date:",
+              style = "font-size: 18px; font-weight: bold;"
+            ),
+            value = as.Date(max(dta2$Date)),
+            min = as.Date("2026-04-01"),
+            max = as.Date(max(dta2$Date)),
+            format = "yyyy-mm-dd",
+            startview = "month",
+            weekstart = 0,
+            datesdisabled = missing.dates$Date
+          ),
           
           tags$br(),
           tags$hr(),
           
           # ___ Select Layers ----
-          tags$h4(p("Select layers to display satellite imagery (selected by default), forecasting data, HABs monitoring stations, ",
-                    "and/or watersheds delineated using the USGS 6-digit Hydrologic Unit Code (HUC6).")),
+          # tags$h4(p("Select layers to display satellite imagery (selected by default), forecasting data, HABs monitoring stations, ",
+          #           "and/or watersheds delineated using the USGS 6-digit Hydrologic Unit Code (HUC6).")),
           
-          tags$h4(strong("Select Layers:")),
+          tags$p(
+            "Select layers to display satellite imagery (selected by default), forecasting data, HABs monitoring stations, ",
+            "and/or watersheds delineated using the USGS 6-digit Hydrologic Unit Code (HUC6).",
+            style = "font-size: 18px; word-spacing: -1px;"
+          ),
+          
+          tags$div(
+            tags$strong("Select Layers:"),
+            style = "font-size: 18px;"
+          ),
+          
           tags$br(),
           
           div(style = "font-size: 16px;",
@@ -329,19 +492,28 @@ shinyApp(
       shinydashboardPlus::box(
         width = 12,
         height = "100%",
-        title = "Time Series Data",
+        title = tags$span(
+          "Time Series Data",
+          style = "font-size: 22px;"),
         status = "primary",
         solidHeader = TRUE,
         collapsible = FALSE,
         collapsed = FALSE,
         
         # ___ Section Introduction ----
-        tags$h4(p("Time series plots for each of the 49 Oregon waterbodies display satellite estimates of chlorophyll a concentrations and ",
-                  "available field measurements. Satellite estimates follow methods established by the ",
-                  a("CyAN Project", href="https://www.epa.gov/water-research/cyanobacteria-assessment-network-cyan",.noWS = "outside",target="_blank"),", ",
-                  " including data from Sentinel-3A (2016-present) and Sentinel-3B (2018-present). ",
-                  "Field measurements include chlorophyll a and cyanotoxin concentrations. ",
-                  .noWS = c("after-begin", "before-end"))),
+        tags$p(
+          "Time series plots for each of the 49 Oregon waterbodies display satellite estimates of chlorophyll a concentrations and ",
+          "available field measurements. Satellite estimates follow methods established by the ",
+          a(
+            "CyAN Project",
+            href = "https://www.epa.gov/water-research/cyanobacteria-assessment-network-cyan",
+            target = "_blank",
+            style = "text-decoration: underline;"
+          ),
+          ", including data from Sentinel-3A (2016-present) and Sentinel-3B (2018-present). ",
+          "Field measurements include chlorophyll a and cyanotoxin concentrations.",
+          style = "font-size: 18px;"
+        ),
         
         # ___ Plot and Table ----
         shinydashboard::box(
@@ -356,31 +528,43 @@ shinyApp(
             
             # ____ Select a Waterbody 2 ----
             selectInput(inputId = "waterbody2", 
-                        label = tags$h4(strong("Select a Waterbody:")),
-                        choices = c("Oregon", sort(as.character(unique(lakes.resolvable$GNISIDNAME)))),
+                        label = tags$span(
+                          "Select a Waterbody:",
+                          style = "font-size: 18px; font-weight: bold;"
+                        ),
+                        choices = c(
+                          "Oregon",
+                          sort(as.character(unique(lakes.resolvable$GNISIDNAME)))
+                        ),
                         selected = "Oregon",
                         selectize = FALSE,
-                        size = 10),
+                        size = 10
+            ),
             
             # ____ Date range ----
             shiny::radioButtons(
               inputId = "ploty",
-              label = tags$h4(strong("Date Range:")),
+              label = tags$span(
+                "Date Range:",
+                style = "font-size: 18px; font-weight: bold;"
+              ),
               choices = c("Current Year: 2026",
                           "Reset to Complete Data Range",
                           "Select a Date Range"),
               selected = "Current Year: 2026"),
             
-            shiny::dateRangeInput(inputId = "date_plot",
-                                  label = "",
-                                  start = min(dta$Date),
-                                  end = max(dta$Date),
-                                  min = min(dta$Date),
-                                  max = max(dta$Date),
-                                  separator = "to",
-                                  format = "yyyy-mm-dd",
-                                  startview = "year",
-                                  weekstart = 0),
+            shiny::dateRangeInput(
+              inputId = "date_plot",
+              label = NULL,
+              start = min(dta$Date),
+              end = max(dta$Date),
+              min = min(dta$Date),
+              max = max(dta$Date),
+              separator = "to",
+              format = "yyyy-mm-dd",
+              startview = "year",
+              weekstart = 0
+            ),
             
             uiOutput("dataDate"),
             
@@ -389,13 +573,20 @@ shinyApp(
             
             # ____ Parameters ----
             tagList(
-              tags$h4(strong("Parameters:")),
+              
+              tags$div(
+                tags$strong("Parameters:"),
+                style = "font-size: 18px;"
+              ),
               
               tags$hr(style = "margin-top: 5px; margin-bottom: 5px; border: none;"),
               
               # Checkbox group
               tagList(
-                tags$h5(tags$i(tags$strong("CyAN Chlorophyll a Estimates:"))),
+                tags$div(
+                  tags$i(tags$strong("CyAN Chlorophyll a Estimates:")),
+                  style = "font-size: 14px;"
+                ),
                 tags$hr(style = "margin-top: 5px; margin-bottom: 5px; border: none;"),
                 checkboxGroupInput(
                   inputId = "matrix_cyan",
@@ -409,7 +600,11 @@ shinyApp(
                   selected = c("Weekly Mean Daily Max", "Daily Maximum")
                 ),
                 
-                tags$h5(tags$i(tags$strong("Field data:"))),
+                tags$div(
+                  tags$i(tags$strong("Field data:")),
+                  style = "font-size: 14px;"
+                ),
+                
                 tags$hr(style = "margin-top: 5px; margin-bottom: 5px; border: none;"),
                 checkboxGroupInput(
                   inputId = "matrix_field",
@@ -418,11 +613,11 @@ shinyApp(
                     "Chlorophyll a" = "Chlorophyll a",
                     "Anatoxin-A" = "Anatoxin-A",
                     "Cylindrospermopsin" = "Cylindrospermopsin",
-                    "Microcystins" = "Microcystins",
+                    "Microcystin" = "Microcystin",
                     "Saxitoxin" = "Saxitoxin"
                     # "Pheophytin-a" = "Pheophytin a"
                   ),
-                  selected = c("Anatoxin-A", "Cylindrospermopsin","Microcystins","Saxitoxin")
+                  selected = c("Anatoxin-A", "Cylindrospermopsin","Microcystin","Saxitoxin")
                 )
               ),
               
@@ -449,7 +644,9 @@ shinyApp(
             
             checkboxGroupInput(
               inputId = "plot_log",
-              label = tags$h4(strong(""))),
+              label = NULL,
+              choices = NULL
+            ),
             
             # ____ Advisory ----
             tags$hr(),
@@ -461,7 +658,7 @@ shinyApp(
             
             shinyWidgets::switchInput(
               inputId = "advisory_bars", 
-              label = "", 
+              label = NULL, 
               value = TRUE, 
               onLabel = "Show", 
               offLabel = "Hide", 
@@ -525,21 +722,30 @@ shinyApp(
             h4("The report is provided by the Oregon DEQ Watershed Management Section. Copyright (C) 2020-2026, Oregon DEQ."),
             h4("The source code of this report is publicly available at GitHub repository: ", 
                a("Satellite Estimates of Cyanobacteria in Oregon Lakes and Reservoirs",
-                 href="https://github.com/OR-Dept-Environmental-Quality/CyAN_imagery_update",.noWS = "outside",target="_blank"),".",
+                 href="https://github.com/OR-Dept-Environmental-Quality/CyAN_imagery_update",
+                 .noWS = "outside",target="_blank",
+                 style = "text-decoration: underline;"),".",
                .noWS = c("after-begin", "before-end")),
             h4("For more information on this report, please contact"),
-            h4("Daniel Sobota (Lead), ", a("daniel.sobota@deq.oregon.gov",href="mailto:dan.sobota@deq.oregon.gov",target="_blank")),
-            h4("Yuan Grund, ", a("yuan.grund@deq.oregon.gov",href="mailto:yuan.grund@deq.oregon.gov",target="_blank"))
+            h4("Daniel Sobota (Lead), ", a("daniel.sobota@deq.oregon.gov",
+                                           href="mailto:dan.sobota@deq.oregon.gov",
+                                           target="_blank",
+                                           style = "text-decoration: underline;")),
+            h4("Yuan Grund, ", a("yuan.grund@deq.oregon.gov",
+                                 href="mailto:yuan.grund@deq.oregon.gov",
+                                 target="_blank",
+                                 style = "text-decoration: underline;"))
             
           )
           
         )
         
       )
+      ) # Main-content End
       
     ) # Body End
     
-  ), # ui End
+  ) # ui End
   
   server = function(input, output, session) {
     
@@ -788,7 +994,7 @@ shinyApp(
     # _ Time series plot ----
     parameters <- c(
       "Weekly Mean Daily Max", "Weekly Median Daily Max", "Daily Maximum", "Daily Mean", 
-      "Chlorophyll a", "Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin", "Pheophytin a")
+      "Chlorophyll a", "Anatoxin-A", "Cylindrospermopsin", "Microcystin", "Saxitoxin", "Pheophytin a")
     
     parameter_colors <- c(
       "blue", "brown", "#17becf", "green", 
@@ -809,7 +1015,7 @@ shinyApp(
       updateCheckboxGroupInput(
         session,
         inputId = "matrix_field",
-        selected = c("Chlorophyll a", "Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin")
+        selected = c("Chlorophyll a", "Anatoxin-A", "Cylindrospermopsin", "Microcystin", "Saxitoxin")
       )
     })
     
@@ -955,7 +1161,7 @@ shinyApp(
             x1 = as.Date(Lifted),
             y0 = 0.5,
             y1 = max(
-              max((df() %>% dplyr::filter(Parameter %in% c("Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin")))$Value, na.rm = TRUE),
+              max((df() %>% dplyr::filter(Parameter %in% c("Anatoxin-A", "Cylindrospermopsin", "Microcystin", "Saxitoxin")))$Value, na.rm = TRUE),
               16),
             fillcolor = "red",
             line = list(color = "red"),
@@ -974,7 +1180,7 @@ shinyApp(
         dplyr::mutate(
           x = as.Date(Lifted),
           y = max(
-            max((df() %>% dplyr::filter(Parameter %in% c("Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin")))$Value, na.rm = TRUE),
+            max((df() %>% dplyr::filter(Parameter %in% c("Anatoxin-A", "Cylindrospermopsin", "Microcystin", "Saxitoxin")))$Value, na.rm = TRUE),
             16) * 1.05,
           label = as.character(paste0(
             "<span style='color:black;'>",
@@ -1071,7 +1277,7 @@ shinyApp(
           y_max <- max(
             max(
               df() %>%
-                dplyr::filter(Parameter %in% c("Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin"),
+                dplyr::filter(Parameter %in% c("Anatoxin-A", "Cylindrospermopsin", "Microcystin", "Saxitoxin"),
                               Parameter %in% selected_matrix()) %>%
                 dplyr::pull(Value),
               na.rm = TRUE
@@ -1084,7 +1290,7 @@ shinyApp(
             df_temp = df_temp(),
             parameters_line = NULL,
             parameter_chla = NULL,
-            parameter_toxins = c("Anatoxin-A", "Cylindrospermopsin", "Microcystins", "Saxitoxin"),
+            parameter_toxins = c("Anatoxin-A", "Cylindrospermopsin", "Microcystin", "Saxitoxin"),
             pal.plot = pal.plot,
             selected_matrix = selected_matrix(),
             y_max = y_max,
@@ -1271,4 +1477,7 @@ shinyApp(
     
   }
   
+  shinyApp(
+    ui = ui,
+    server = server
 )
