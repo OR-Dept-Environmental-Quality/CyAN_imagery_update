@@ -755,6 +755,7 @@ forecast_end_fmt <- format_report_date(forecast_end)
     output$map <- leaflet::renderLeaflet({
       
       leaflet::leaflet() %>% 
+        # leaflet::addMapPane("Light Gray Canvas", zIndex = -40) %>% 
         leaflet::addMapPane("OpenStreetMap", zIndex = -40) %>% 
         leaflet::addMapPane("National Geographic World Map", zIndex = -40) %>%
         leaflet::addMapPane("state.boundary", zIndex = -30) %>%
@@ -762,6 +763,8 @@ forecast_end_fmt <- format_report_date(forecast_end)
         leaflet::addMapPane("lakes.resolvable", zIndex = 400) %>%
         leaflet::addMapPane("stations", zIndex = 600) %>%
         leaflet::addMapPane("forecasting", zIndex = 600) %>%
+        # leaflet::addProviderTiles(providers$Esri.WorldGrayCanvas, group = "Light Gray Canvas",
+        #                           options = leaflet::providerTileOptions(pane = "Light Gray Canvas")) %>%
         leaflet::addProviderTiles("OpenStreetMap",group = "OpenStreetMap",
                                   options = leaflet::pathOptions(pane = "OpenStreetMap")) %>% 
         leaflet::addProviderTiles(providers$Esri.NatGeoWorldMap,group = "National Geographic World Map",
@@ -838,6 +841,7 @@ forecast_end_fmt <- format_report_date(forecast_end)
                                     "</div>"),
                                   options = leaflet::pathOptions(pane = "forecasting")) %>% 
         leaflet::addLayersControl(
+          # baseGroups = c("Light Gray Canvas", "OpenStreetMap", "National Geographic World Map"),
           baseGroups = c("OpenStreetMap", "National Geographic World Map"),
           position = "topleft",
           options = layersControlOptions(collapsed = TRUE, autoZIndex = FALSE)) %>% 
@@ -911,6 +915,7 @@ forecast_end_fmt <- format_report_date(forecast_end)
                     title = "Forecast<br><small>(Circle size ~ % chance)</small>",
                     opacity = 0.7) %>%
           addLayersControl(
+            # baseGroups = c("Light Gray Canvas", "OpenStreetMap", "National Geographic World Map"),
             baseGroups = c("OpenStreetMap", "National Geographic World Map"),
             position = "topleft",
             options = layersControlOptions(collapsed = TRUE, autoZIndex = FALSE)
@@ -1250,6 +1255,7 @@ forecast_end_fmt <- format_report_date(forecast_end)
           
           if (is.null(df()) || nrow(df()) == 0) return(NULL)
           
+          x_max <- as.Date(max(dta2$Date, na.rm = TRUE))
           y_max <- max(max(df()$Value[df()$Parameter %in% selected_matrix()], na.rm = TRUE) * 1.1, 27)
           
           make_timeseries_plot(
@@ -1260,6 +1266,7 @@ forecast_end_fmt <- format_report_date(forecast_end)
             parameter_toxins = NULL,
             pal.plot = pal.plot,
             selected_matrix = selected_matrix(),
+            x_max = x_max,
             y_max = y_max,
             report_markers = report_hover_markers(),
             advisory_markers = if(input$advisory_bars) advisory_hover_markers_chl() else NULL,
@@ -1273,6 +1280,8 @@ forecast_end_fmt <- format_report_date(forecast_end)
         output$plot_toxin <- renderPlotly({
           
           if (is.null(df()) || nrow(df()) == 0) return(NULL)
+          
+          x_max <- as.Date(max(dta2$Date, na.rm = TRUE))
           
           y_max <- max(
             max(
@@ -1293,6 +1302,7 @@ forecast_end_fmt <- format_report_date(forecast_end)
             parameter_toxins = c("Anatoxin-A", "Cylindrospermopsin", "Microcystin", "Saxitoxin"),
             pal.plot = pal.plot,
             selected_matrix = selected_matrix(),
+            x_max = x_max,
             y_max = y_max,
             report_markers = NULL,
             advisory_markers = if(input$advisory_bars) advisory_hover_markers_toxins() else NULL,

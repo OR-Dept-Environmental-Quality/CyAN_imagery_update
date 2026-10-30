@@ -27,7 +27,7 @@ field_lakes <- readxl::read_excel(paste0(data_path,"Resolvable_Lakes.xlsx"), she
 ```{r OceanData}
 library(curl)
 day_start <- paste0(max(data_chla$Year), sprintf("%03d", max(as.numeric(data_chla$Julian_day))+1))
-# day_start <- "2026187"
+# day_start <- "2026274"
 day_end <- dates %>% dplyr::filter(as.POSIXlt(Date) == as.POSIXlt(Sys.Date()-1)) %>% dplyr::pull(CyAN_File_NUM)
 hab_days <- as.character(seq(day_start, day_end))
 hab_days <- substr(hab_days, nchar(hab_days) - 2, nchar(hab_days))
@@ -40,7 +40,10 @@ fileNums <- dates %>%
   dplyr::filter (as.numeric(CyAN_File_NUM)>=as.numeric(day_start) & as.numeric(CyAN_File_NUM)<=as.numeric(day_end)) %>% 
   dplyr::pull(CyAN_File_NUM)
 
-# fileNums <- c("2026249") # when running breaks
+# When the run breaks
+# fileNums <- c("2026291") 
+# REMEMBER: DO NOT RUN download_file_list <- list()
+# REMEMBER: RUN saveRDS(download_file_list, file = "download_file_list.rds")
 
 tiles = c("1_1","1_2","2_1","2_2")
 
@@ -72,9 +75,6 @@ for (i in 1:length(fileNums)) {
   download_file_list <- c(download_file_list, stringr::str_sub(merged_file_name,start = 1, end = 7))
 }
 
-# after th loop, run fileNums <- dates ... 
-# download_file_list <- as.list(fileNums) # when running breaks
-
 saveRDS(download_file_list, file = "download_file_list.rds")
 
 print("Step 2 - download is completed")
@@ -92,7 +92,7 @@ download_file_list <- unlist(download_file_list)
 python_list <- paste0("download_file_list = [",
                       paste(sprintf('"%s"', download_file_list), collapse = ", "),
                       "]")
-# python_list <- "download_file_list = [\"2026230\", \"2026231\", \"2026232\", \"2026233\", \"2026234\"]" # + writeLines
+# python_list <- "download_file_list = [\"2026297\", \"2026298\"]" # + writeLines
 
 writeLines(python_list, "download_list.py")
 
@@ -580,6 +580,7 @@ make_timeseries_plot <- function(df,
                                  parameter_toxins = NULL, 
                                  pal.plot, 
                                  selected_matrix,
+                                 x_max,
                                  y_max,
                                  report_markers = NULL,
                                  advisory_markers = NULL,
@@ -647,8 +648,11 @@ make_timeseries_plot <- function(df,
   for (line in horizontal_lines) {
     p <- p %>%
       plotly::add_trace(
-        x = ~as.Date(df_temp$Date),
-        y = line$y,
+        # x = ~as.Date(df_temp$Date),
+        x = ~c(
+          min(as.Date(df_temp$Date), na.rm = TRUE) - range_padding,
+          as.Date(x_max) + range_padding),
+        y = rep(line$y, 2),
         mode = "lines",
         line = list(shape = 'spline', color = line$color, width = 1.5),
         name = line$name,
@@ -722,9 +726,17 @@ make_timeseries_plot <- function(df,
   p <- p %>%
     plotly::layout(
       title = plot_title,
+      # xaxis = list(
+      #   title = "Date",
+      #   # range = c(as.Date(min(df_temp$Date)) - range_padding, as.Date(max(df_temp$Date)) + range_padding)
+      #   range = c(as.Date(min(df_temp$Date)) - range_padding, as.Date(max(dta2$Date)) + range_padding)
+      # ),
       xaxis = list(
         title = "Date",
-        range = c(as.Date(min(df_temp$Date)) - range_padding, as.Date(max(df_temp$Date)) + range_padding)
+        range = c(
+          as.Date(min(df_temp$Date, na.rm = TRUE)) - range_padding,
+          as.Date(x_max) + range_padding
+        )
       ),
       yaxis = list(
         type = type,
