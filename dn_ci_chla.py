@@ -44,7 +44,7 @@ from download_list import download_file_list
 for i, raw_name in enumerate(download_file_list, start=1):
   print(f"[{i}/{len(download_file_list)}] Processing {raw_name}...", flush=True)
 
-  # test: raw_name = '2026299'
+  # test: raw_name = '2026319'
   print(raw_name)
   
   raw_tif_path = os.path.join(raw_path, f"{raw_name}.tif")
@@ -193,7 +193,7 @@ for i, raw_name in enumerate(download_file_list, start=1):
     for row in cursor:
       row[0] = raw_name
       cursor.updateRow(row)
-      
+
   print("...Convert tabulate result to dataframe and append to the final dataframe")
   tabulate_df = pd.DataFrame(arcpy.da.TableToNumPyArray(tabulate_result, '*'))
   if "OID" in tabulate_df.columns:

@@ -27,7 +27,7 @@ field_lakes <- readxl::read_excel(paste0(data_path,"Resolvable_Lakes.xlsx"), she
 ```{r OceanData}
 library(curl)
 day_start <- paste0(max(data_chla$Year), sprintf("%03d", max(as.numeric(data_chla$Julian_day))+1))
-# day_start <- "2026274"
+# day_start <- "2026310"
 day_end <- dates %>% dplyr::filter(as.POSIXlt(Date) == as.POSIXlt(Sys.Date()-1)) %>% dplyr::pull(CyAN_File_NUM)
 hab_days <- as.character(seq(day_start, day_end))
 hab_days <- substr(hab_days, nchar(hab_days) - 2, nchar(hab_days))
@@ -41,7 +41,7 @@ fileNums <- dates %>%
   dplyr::pull(CyAN_File_NUM)
 
 # When the run breaks
-# fileNums <- c("2026291") 
+# fileNums <- c("2026312") # then go to for loop
 # REMEMBER: DO NOT RUN download_file_list <- list()
 # REMEMBER: RUN saveRDS(download_file_list, file = "download_file_list.rds")
 
@@ -75,6 +75,9 @@ for (i in 1:length(fileNums)) {
   download_file_list <- c(download_file_list, stringr::str_sub(merged_file_name,start = 1, end = 7))
 }
 
+# When the run breaks
+# check: download_file_list
+# download_file_list <- unique(download_file_list)
 saveRDS(download_file_list, file = "download_file_list.rds")
 
 print("Step 2 - download is completed")
@@ -92,7 +95,7 @@ download_file_list <- unlist(download_file_list)
 python_list <- paste0("download_file_list = [",
                       paste(sprintf('"%s"', download_file_list), collapse = ", "),
                       "]")
-# python_list <- "download_file_list = [\"2026297\", \"2026298\"]" # + writeLines
+# python_list <- "download_file_list = [\"2026315\"]" # + writeLines
 
 writeLines(python_list, "download_list.py")
 
@@ -280,7 +283,7 @@ zonal_combined <- bind_rows(all_data) %>%
 
 zonal_new <- data.frame()
 for(gnis in sort(unique(zonal_combined$GNISIDNAME))) {
-  # test: gnis = "Sturgeon Lake_01127681"
+  # test: gnis = "Beulah Reservoir_01117569"
   print(gnis)
   
   dta_gnis <- zonal_combined %>% dplyr::filter(GNISIDNAME == gnis) %>% dplyr::arrange(Date) 
